@@ -139,7 +139,7 @@ function Detail({ userId }: { userId: string }) {
           />
           <Row icon={Ruler} label="متراژ" value={faArea(property.area)} />
           {property.bedrooms !== null ? (
-            <Row icon= {Boxes} label="اتاق خواب" value={faDigits(property.bedrooms)} />
+            <Row icon={Boxes} label="اتاق خواب" value={faDigits(property.bedrooms)} />
           ) : null}
           {property.floor !== null ? (
             <Row icon={MoveVertical} label="طبقه" value={faDigits(property.floor)} />
