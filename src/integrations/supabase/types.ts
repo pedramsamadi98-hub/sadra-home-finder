@@ -14,11 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      brokers: {
+        Row: {
+          agency: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agency?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agency?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           address: string | null
           area: number | null
           bedrooms: number | null
+          broker_id: string | null
           building_age: number | null
           city: string
           created_at: string
@@ -41,12 +75,13 @@ export type Database = {
           title: string
           transaction_type: string
           updated_at: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           address?: string | null
           area?: number | null
           bedrooms?: number | null
+          broker_id?: string | null
           building_age?: number | null
           city?: string
           created_at?: string
@@ -69,12 +104,13 @@ export type Database = {
           title: string
           transaction_type?: string
           updated_at?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           address?: string | null
           area?: number | null
           bedrooms?: number | null
+          broker_id?: string | null
           building_age?: number | null
           city?: string
           created_at?: string
@@ -97,9 +133,17 @@ export type Database = {
           title?: string
           transaction_type?: string
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "properties_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
