@@ -28,7 +28,6 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -43,22 +42,12 @@ function AuthPage() {
     event.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast.success("حساب ساخته شد");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("خوش آمدید");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("خوش آمدید");
       router.navigate({ to: "/" });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "خطا در ورود");
+    } catch {
+      toast.error("ایمیل یا رمز عبور نادرست است");
     } finally {
       setBusy(false);
     }
@@ -73,7 +62,7 @@ function AuthPage() {
           </div>
           <h1 className="text-lg font-bold">سامانه املاک صدرا</h1>
           <p className="text-xs text-muted-foreground">
-            مدیریت فایل‌های ملکی شهر صدرا، شیراز
+            دسترسی خصوصی — تنها برای مشاور این مجموعه
           </p>
         </div>
 
@@ -102,23 +91,13 @@ function AuthPage() {
             />
           </div>
           <Button type="submit" disabled={busy} className="h-11 w-full">
-            {busy ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : mode === "signin" ? (
-              "ورود"
-            ) : (
-              "ساخت حساب"
-            )}
+            {busy ? <Loader2 className="size-4 animate-spin" /> : "ورود"}
           </Button>
         </form>
 
-        <button
-          type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="w-full text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
-        >
-          {mode === "signin" ? "حساب ندارید؟ ثبت‌نام کنید" : "حساب دارید؟ وارد شوید"}
-        </button>
+        <p className="text-center text-[11px] text-muted-foreground">
+          ثبت‌نام غیرفعال است؛ فقط حساب شما به این سامانه دسترسی دارد.
+        </p>
       </div>
     </div>
   );
