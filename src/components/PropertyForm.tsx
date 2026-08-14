@@ -1,0 +1,375 @@
+import { ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
+
+import { usePhotoUrls } from "@/components/PhotoGallery";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { faPrice, parseNumber } from "@/lib/fa";
+import {
+  NEIGHBORHOODS,
+  PROPERTY_TYPE_LABELS,
+  STATUS_LABELS,
+  TRANSACTION_LABELS,
+  uploadPhotos,
+  type PropertyInput,
+  type PropertyStatus,
+  type PropertyType,
+  type TransactionType,
+} from "@/lib/properties";
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="surface-card space-y-3 p-4">
+      <h2 className="text-sm font-bold text-primary">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Chips<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: Record<T, string>;
+  onChange: (next: T) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {(Object.keys(options) as T[]).map((key) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onChange(key)}
+          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+            value === key
+              ? "border-primary bg-primary/15 text-primary"
+              : "border-border text-muted-foreground"
+          }`}
+        >
+          {options[key]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function NumberField({
+  label,
+  value,
+  onChange,
+  hint,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (next: number | null) => void;
+  hint?: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{label}</Label>
+      <Input
+        inputMode="numeric"
+        dir="ltr"
+        value={value ?? ""}
+        onChange={(event) => onChange(parseNumber(event.target.value))}
+        className="text-left"
+      />
+      {hint ? <p className="text-[11px] text-muted-foreground">{hint}</p> : null}
+    </div>
+  );
+}
+
+function ToggleRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-secondary/60 px-3 py-2">
+      <Label className="text-sm">{label}</Label>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+export function PropertyForm({
+  initial,
+  userId,
+  submitLabel,
+  onSubmit,
+  submitting,
+}: {
+  initial: PropertyInput;
+  userId: string;
+  submitLabel: string;
+  onSubmit: (input: PropertyInput) => void;
+  submitting: boolean;
+}) {
+  const [form, setForm] = useState<PropertyInput>(initial);
+  const [uploading, setUploading] = useState(false);
+  const { data: photoUrls } = usePhotoUrls(form.photos);
+
+  function set<K extends keyof PropertyInput>(key: K, value: PropertyInput[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleFiles(files: FileList | null) {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      const paths = await uploadPhotos(Array.from(files), userId);
+      setForm((prev) => ({ ...prev, photos: [...prev.photos, ...paths] }));
+      toast.success("عکس‌ها بارگذاری شد");
+    } catch {
+      toast.error("بارگذاری عکس ناموفق بود");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!form.title.trim()) {
+      toast.error("عنوان ملک را وارد کنید");
+      return;
+    }
+    onSubmit(form);
+  }
+
+  const isRent = form.transaction_type === "rent";
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <Section title="مشخصات کلی">
+        <div className="space-y-1.5">
+          <Label className="text-xs">عنوان ملک</Label>
+          <Input
+            value={form.title}
+            onChange={(event) => set("title", event.target.value)}
+            placeholder="مثلاً آپارتمان ۱۲۰ متری فاز یک"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">نوع ملک</Label>
+          <Chips<PropertyType>
+            value={form.property_type}
+            options={PROPERTY_TYPE_LABELS}
+            onChange={(next) => set("property_type", next)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">نوع معامله</Label>
+          <Chips<TransactionType>
+            value={form.transaction_type}
+            options={TRANSACTION_LABELS}
+            onChange={(next) => set("transaction_type", next)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">وضعیت</Label>
+          <Chips<PropertyStatus>
+            value={form.status}
+            options={STATUS_LABELS}
+            onChange={(next) => set("status", next)}
+          />
+        </div>
+      </Section>
+
+      <Section title="موقعیت">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">شهر</Label>
+            <Input value={form.city} onChange={(event) => set("city", event.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">محله</Label>
+            <select
+              value={form.neighborhood ?? ""}
+              onChange={(event) => set("neighborhood", event.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">انتخاب کنید</option>
+              {NEIGHBORHOODS.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">آدرس</Label>
+          <Input
+            value={form.address ?? ""}
+            onChange={(event) => set("address", event.target.value)}
+            placeholder="بلوار، کوچه، پلاک"
+          />
+        </div>
+      </Section>
+
+      <Section title="قیمت و متراژ">
+        <NumberField
+          label="متراژ (متر مربع)"
+          value={form.area}
+          onChange={(next) => set("area", next)}
+        />
+        {isRent ? (
+          <div className="grid grid-cols-2 gap-3">
+            <NumberField
+              label="ودیعه / رهن (تومان)"
+              value={form.deposit}
+              onChange={(next) => set("deposit", next)}
+              hint={faPrice(form.deposit)}
+            />
+            <NumberField
+              label="اجاره ماهانه (تومان)"
+              value={form.monthly_rent}
+              onChange={(next) => set("monthly_rent", next)}
+              hint={faPrice(form.monthly_rent)}
+            />
+          </div>
+        ) : (
+          <NumberField
+            label="قیمت کل (تومان)"
+            value={form.price}
+            onChange={(next) => set("price", next)}
+            hint={faPrice(form.price)}
+          />
+        )}
+      </Section>
+
+      <Section title="جزئیات ساختمان">
+        <div className="grid grid-cols-3 gap-3">
+          <NumberField
+            label="خواب"
+            value={form.bedrooms}
+            onChange={(next) => set("bedrooms", next)}
+          />
+          <NumberField label="طبقه" value={form.floor} onChange={(next) => set("floor", next)} />
+          <NumberField
+            label="سن بنا"
+            value={form.building_age}
+            onChange={(next) => set("building_age", next)}
+          />
+        </div>
+        <div className="grid gap-2">
+          <ToggleRow
+            label="پارکینگ"
+            checked={form.parking}
+            onChange={(next) => set("parking", next)}
+          />
+          <ToggleRow
+            label="آسانسور"
+            checked={form.elevator}
+            onChange={(next) => set("elevator", next)}
+          />
+          <ToggleRow
+            label="انباری"
+            checked={form.storage}
+            onChange={(next) => set("storage", next)}
+          />
+        </div>
+      </Section>
+
+      <Section title="تصاویر ملک">
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border py-6 text-sm text-muted-foreground">
+          {uploading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <ImagePlus className="size-4" />
+          )}
+          {uploading ? "در حال بارگذاری…" : "افزودن عکس"}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(event) => handleFiles(event.target.files)}
+          />
+        </label>
+        {form.photos.length ? (
+          <div className="grid grid-cols-3 gap-2">
+            {form.photos.map((path, index) => (
+              <div key={path} className="relative overflow-hidden rounded-xl">
+                {photoUrls?.[index] ? (
+                  <img
+                    src={photoUrls[index]}
+                    alt={`تصویر ${index + 1}`}
+                    className="h-24 w-full object-cover"
+                  />
+                ) : (
+                  <div className="h-24 w-full animate-pulse bg-secondary" />
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    set(
+                      "photos",
+                      form.photos.filter((item) => item !== path),
+                    )
+                  }
+                  className="absolute end-1 top-1 rounded-md bg-background/85 p-1 text-destructive"
+                  aria-label="حذف عکس"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </Section>
+
+      <Section title="مالک و توضیحات">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">نام مالک</Label>
+            <Input
+              value={form.owner_name ?? ""}
+              onChange={(event) => set("owner_name", event.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">شماره تماس</Label>
+            <Input
+              dir="ltr"
+              inputMode="tel"
+              className="text-left"
+              value={form.owner_phone ?? ""}
+              onChange={(event) => set("owner_phone", event.target.value)}
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">توضیحات</Label>
+          <Textarea
+            rows={3}
+            value={form.description ?? ""}
+            onChange={(event) => set("description", event.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">یادداشت داخلی</Label>
+          <Textarea
+            rows={2}
+            value={form.notes ?? ""}
+            onChange={(event) => set("notes", event.target.value)}
+          />
+        </div>
+      </Section>
+
+      <Button type="submit" disabled={submitting} className="h-12 w-full text-base">
+        {submitting ? <Loader2 className="size-4 animate-spin" /> : submitLabel}
+      </Button>
+    </form>
+  );
+}
