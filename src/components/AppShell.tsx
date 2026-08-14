@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Building2, LayoutDashboard, List, Moon, Plus, Sun, LogOut } from "lucide-react";
+import { Building2, LayoutDashboard, List, Moon, Plus, Sun, LogOut, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 const navItems = [
   { to: "/", label: "داشبورد", icon: LayoutDashboard },
   { to: "/listings", label: "املاک", icon: List },
+  { to: "/brokers", label: "دلال‌ها", icon: Users },
   { to: "/listings/new", label: "ثبت ملک", icon: Plus },
 ] as const;
 

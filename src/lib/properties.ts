@@ -7,6 +7,7 @@ export type PropertyStatus = "active" | "sold" | "rented";
 export interface Property {
   id: string;
   user_id: string | null;
+  broker_id: string | null;
   title: string;
   property_type: PropertyType;
   transaction_type: TransactionType;
@@ -69,6 +70,7 @@ export const NEIGHBORHOODS = [
 ];
 
 export const emptyProperty: PropertyInput = {
+  broker_id: null,
   title: "",
   property_type: "apartment",
   transaction_type: "sale",
