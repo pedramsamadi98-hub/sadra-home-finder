@@ -8,7 +8,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { PropertyForm } from "@/components/PropertyForm";
 import { fetchProperty, updateProperty, type PropertyInput } from "@/lib/properties";
 
-export const Route = createFileRoute("/listings/$id/edit")({
+export const Route = createFileRoute("/listings/$id_/edit")({
   head: () => ({
     meta: [
       { title: "ویرایش ملک | املاک صدرا" },

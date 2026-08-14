@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ListingsIndexRouteImport } from './routes/listings/index'
+import { Route as ListingsIdRouteImport } from './routes/listings/$id'
 import { Route as ListingsNewRouteImport } from './routes/listings/new'
+import { Route as ListingsIdEditRouteImport } from './routes/listings/$id.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,42 +31,78 @@ const ListingsIndexRoute = ListingsIndexRouteImport.update({
   path: '/listings/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListingsIdRoute = ListingsIdRouteImport.update({
+  id: '/listings/$id',
+  path: '/listings/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ListingsNewRoute = ListingsNewRouteImport.update({
   id: '/listings/new',
   path: '/listings/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListingsIdEditRoute = ListingsIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ListingsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/listings/$id': typeof ListingsIdRouteWithChildren
   '/listings/new': typeof ListingsNewRoute
   '/listings/': typeof ListingsIndexRoute
+  '/listings/$id/edit': typeof ListingsIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/listings/$id': typeof ListingsIdRouteWithChildren
   '/listings/new': typeof ListingsNewRoute
   '/listings': typeof ListingsIndexRoute
+  '/listings/$id/edit': typeof ListingsIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/listings/$id': typeof ListingsIdRouteWithChildren
   '/listings/new': typeof ListingsNewRoute
   '/listings/': typeof ListingsIndexRoute
+  '/listings/$id/edit': typeof ListingsIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/listings/new' | '/listings/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/listings/$id'
+    | '/listings/new'
+    | '/listings/'
+    | '/listings/$id/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/listings/new' | '/listings'
-  id: '__root__' | '/' | '/auth' | '/listings/new' | '/listings/'
+  to:
+    | '/'
+    | '/auth'
+    | '/listings/$id'
+    | '/listings/new'
+    | '/listings'
+    | '/listings/$id/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/listings/$id'
+    | '/listings/new'
+    | '/listings/'
+    | '/listings/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  ListingsIdRoute: typeof ListingsIdRouteWithChildren
   ListingsNewRoute: typeof ListingsNewRoute
   ListingsIndexRoute: typeof ListingsIndexRoute
 }
@@ -92,6 +130,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/listings/$id': {
+      id: '/listings/$id'
+      path: '/listings/$id'
+      fullPath: '/listings/$id'
+      preLoaderRoute: typeof ListingsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/listings/new': {
       id: '/listings/new'
       path: '/listings/new'
@@ -99,12 +144,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/listings/$id/edit': {
+      id: '/listings/$id/edit'
+      path: '/edit'
+      fullPath: '/listings/$id/edit'
+      preLoaderRoute: typeof ListingsIdEditRouteImport
+      parentRoute: typeof ListingsIdRoute
+    }
   }
 }
+
+interface ListingsIdRouteChildren {
+  ListingsIdEditRoute: typeof ListingsIdEditRoute
+}
+
+const ListingsIdRouteChildren: ListingsIdRouteChildren = {
+  ListingsIdEditRoute: ListingsIdEditRoute,
+}
+
+const ListingsIdRouteWithChildren = ListingsIdRoute._addFileChildren(
+  ListingsIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  ListingsIdRoute: ListingsIdRouteWithChildren,
   ListingsNewRoute: ListingsNewRoute,
   ListingsIndexRoute: ListingsIndexRoute,
 }
