@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
 import {
   NEIGHBORHOODS,
@@ -117,6 +119,7 @@ export function PropertyForm({
 }) {
   const [form, setForm] = useState<PropertyInput>(initial);
   const [uploading, setUploading] = useState(false);
+  const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
   const { data: photoUrls } = usePhotoUrls(form.photos);
 
   function set<K extends keyof PropertyInput>(key: K, value: PropertyInput[K]) {
@@ -327,6 +330,28 @@ export function PropertyForm({
             ))}
           </div>
         ) : null}
+      </Section>
+
+      <Section title="دلال / منبع فایل">
+        <div className="space-y-1.5">
+          <Label className="text-xs">این فایل از طرف کدام دلال است؟</Label>
+          <select
+            value={form.broker_id ?? ""}
+            onChange={(event) => set("broker_id", event.target.value || null)}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">فایل شخصی (بدون دلال)</option>
+            {(brokers ?? []).map((broker) => (
+              <option key={broker.id} value={broker.id}>
+                {broker.name}
+                {broker.agency ? ` — ${broker.agency}` : ""}
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-muted-foreground">
+            دلال‌ها را از بخش «دلال‌ها» اضافه کنید.
+          </p>
+        </div>
       </Section>
 
       <Section title="مالک و توضیحات">
