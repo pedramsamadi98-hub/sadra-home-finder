@@ -14,7 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ListingsIndexRouteImport } from './routes/listings/index'
 import { Route as ListingsIdRouteImport } from './routes/listings/$id'
 import { Route as ListingsNewRouteImport } from './routes/listings/new'
-import { Route as ListingsIdEditRouteImport } from './routes/listings/$id.edit'
+import { Route as ListingsIdEditRouteImport } from './routes/listings/$id_.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -42,15 +42,15 @@ const ListingsNewRoute = ListingsNewRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ListingsIdEditRoute = ListingsIdEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => ListingsIdRoute,
+  id: '/listings/$id_/edit',
+  path: '/listings/$id/edit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/listings/$id': typeof ListingsIdRouteWithChildren
+  '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
   '/listings/': typeof ListingsIndexRoute
   '/listings/$id/edit': typeof ListingsIdEditRoute
@@ -58,7 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/listings/$id': typeof ListingsIdRouteWithChildren
+  '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
   '/listings': typeof ListingsIndexRoute
   '/listings/$id/edit': typeof ListingsIdEditRoute
@@ -67,10 +67,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/listings/$id': typeof ListingsIdRouteWithChildren
+  '/listings/$id': typeof ListingsIdRoute
   '/listings/new': typeof ListingsNewRoute
   '/listings/': typeof ListingsIndexRoute
-  '/listings/$id/edit': typeof ListingsIdEditRoute
+  '/listings/$id_/edit': typeof ListingsIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,15 +96,16 @@ export interface FileRouteTypes {
     | '/listings/$id'
     | '/listings/new'
     | '/listings/'
-    | '/listings/$id/edit'
+    | '/listings/$id_/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  ListingsIdRoute: typeof ListingsIdRouteWithChildren
+  ListingsIdRoute: typeof ListingsIdRoute
   ListingsNewRoute: typeof ListingsNewRoute
   ListingsIndexRoute: typeof ListingsIndexRoute
+  ListingsIdEditRoute: typeof ListingsIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -144,34 +145,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/listings/$id/edit': {
-      id: '/listings/$id/edit'
-      path: '/edit'
+    '/listings/$id_/edit': {
+      id: '/listings/$id_/edit'
+      path: '/listings/$id/edit'
       fullPath: '/listings/$id/edit'
       preLoaderRoute: typeof ListingsIdEditRouteImport
-      parentRoute: typeof ListingsIdRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface ListingsIdRouteChildren {
-  ListingsIdEditRoute: typeof ListingsIdEditRoute
-}
-
-const ListingsIdRouteChildren: ListingsIdRouteChildren = {
-  ListingsIdEditRoute: ListingsIdEditRoute,
-}
-
-const ListingsIdRouteWithChildren = ListingsIdRoute._addFileChildren(
-  ListingsIdRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  ListingsIdRoute: ListingsIdRouteWithChildren,
+  ListingsIdRoute: ListingsIdRoute,
   ListingsNewRoute: ListingsNewRoute,
   ListingsIndexRoute: ListingsIndexRoute,
+  ListingsIdEditRoute: ListingsIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
