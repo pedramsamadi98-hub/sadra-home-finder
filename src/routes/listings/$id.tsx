@@ -86,6 +86,9 @@ function Detail({ userId }: { userId: string }) {
     queryFn: () => fetchProperty(id),
   });
 
+  const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
+  const broker = brokers?.find((item) => item.id === property?.broker_id) ?? null;
+
   const removal = useMutation({
     mutationFn: () => deleteProperty(id),
     onSuccess: async () => {
