@@ -67,12 +67,15 @@ export type Database = {
           owner_name: string | null
           owner_phone: string | null
           parking: boolean
+          phase: string | null
           photos: string[]
           price: number | null
           property_type: string
           status: string
           storage: boolean
+          street: string | null
           title: string
+          total_floors: number | null
           transaction_type: string
           updated_at: string
           user_id: string
@@ -96,12 +99,15 @@ export type Database = {
           owner_name?: string | null
           owner_phone?: string | null
           parking?: boolean
+          phase?: string | null
           photos?: string[]
           price?: number | null
           property_type?: string
           status?: string
           storage?: boolean
+          street?: string | null
           title: string
+          total_floors?: number | null
           transaction_type?: string
           updated_at?: string
           user_id: string
@@ -125,12 +131,15 @@ export type Database = {
           owner_name?: string | null
           owner_phone?: string | null
           parking?: boolean
+          phase?: string | null
           photos?: string[]
           price?: number | null
           property_type?: string
           status?: string
           storage?: boolean
+          street?: string | null
           title?: string
+          total_floors?: number | null
           transaction_type?: string
           updated_at?: string
           user_id?: string

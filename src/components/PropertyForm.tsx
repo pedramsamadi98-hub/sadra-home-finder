@@ -13,6 +13,7 @@ import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
 import {
   NEIGHBORHOODS,
+  PHASES,
   PROPERTY_TYPE_LABELS,
   STATUS_LABELS,
   TRANSACTION_LABELS,
@@ -149,7 +150,7 @@ export function PropertyForm({
     onSubmit(form);
   }
 
-  const isRent = form.transaction_type === "rent";
+  const isRent = form.transaction_type === "rent" || form.transaction_type === "mortgage";
 
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -196,18 +197,42 @@ export function PropertyForm({
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">محله</Label>
-            <select
+            <Input
+              list="neighborhood-options"
               value={form.neighborhood ?? ""}
               onChange={(event) => set("neighborhood", event.target.value)}
+              placeholder="مثلاً شهرک گلستان"
+            />
+            <datalist id="neighborhood-options">
+              {NEIGHBORHOODS.map((item) => (
+                <option key={item} value={item} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">فاز</Label>
+            <select
+              value={form.phase ?? ""}
+              onChange={(event) => set("phase", event.target.value)}
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
               <option value="">انتخاب کنید</option>
-              {NEIGHBORHOODS.map((item) => (
+              {PHASES.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
             </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">خیابان</Label>
+            <Input
+              value={form.street ?? ""}
+              onChange={(event) => set("street", event.target.value)}
+              placeholder="نام خیابان / بلوار"
+            />
           </div>
         </div>
         <div className="space-y-1.5">
@@ -229,7 +254,7 @@ export function PropertyForm({
         {isRent ? (
           <div className="grid grid-cols-2 gap-3">
             <NumberField
-              label="ودیعه / رهن (تومان)"
+              label="رهن / ودیعه (تومان)"
               value={form.deposit}
               onChange={(next) => set("deposit", next)}
               hint={faPrice(form.deposit)}
@@ -252,13 +277,18 @@ export function PropertyForm({
       </Section>
 
       <Section title="جزئیات ساختمان">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <NumberField
             label="خواب"
             value={form.bedrooms}
             onChange={(next) => set("bedrooms", next)}
           />
           <NumberField label="طبقه" value={form.floor} onChange={(next) => set("floor", next)} />
+          <NumberField
+            label="کل طبقات"
+            value={form.total_floors}
+            onChange={(next) => set("total_floors", next)}
+          />
           <NumberField
             label="سن بنا"
             value={form.building_age}

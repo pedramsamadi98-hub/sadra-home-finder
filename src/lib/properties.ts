@@ -1,8 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type PropertyType = "apartment" | "villa" | "land" | "commercial";
-export type TransactionType = "sale" | "rent";
-export type PropertyStatus = "active" | "sold" | "rented";
+export type TransactionType = "sale" | "rent" | "mortgage";
+export type PropertyStatus = "active" | "sold" | "rented" | "archived";
 
 export interface Property {
   id: string;
@@ -13,7 +13,9 @@ export interface Property {
   transaction_type: TransactionType;
   status: PropertyStatus;
   city: string;
+  phase: string | null;
   neighborhood: string | null;
+  street: string | null;
   address: string | null;
   area: number | null;
   price: number | null;
@@ -21,6 +23,7 @@ export interface Property {
   monthly_rent: number | null;
   bedrooms: number | null;
   floor: number | null;
+  total_floors: number | null;
   building_age: number | null;
   parking: boolean;
   elevator: boolean;
@@ -49,13 +52,25 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
 export const TRANSACTION_LABELS: Record<TransactionType, string> = {
   sale: "فروش",
   rent: "اجاره",
+  mortgage: "رهن و اجاره",
 };
 
 export const STATUS_LABELS: Record<PropertyStatus, string> = {
   active: "فعال",
   sold: "فروش رفته",
   rented: "اجاره داده شده",
+  archived: "بایگانی",
 };
+
+export const PHASES = [
+  "فاز ۱",
+  "فاز ۲",
+  "فاز ۳",
+  "فاز ۴",
+  "فاز ۵",
+  "فاز ۶",
+  "سایر",
+];
 
 export const NEIGHBORHOODS = [
   "فاز ۱",
@@ -76,7 +91,9 @@ export const emptyProperty: PropertyInput = {
   transaction_type: "sale",
   status: "active",
   city: "صدرا",
-  neighborhood: "فاز ۱",
+  phase: "فاز ۱",
+  neighborhood: "",
+  street: "",
   address: "",
   area: null,
   price: null,
@@ -84,6 +101,7 @@ export const emptyProperty: PropertyInput = {
   monthly_rent: null,
   bedrooms: null,
   floor: null,
+  total_floors: null,
   building_age: null,
   parking: false,
   elevator: false,
@@ -127,6 +145,11 @@ export async function createProperty(input: PropertyInput, userId: string) {
 
 export async function updateProperty(id: string, input: PropertyInput) {
   const { error } = await supabase.from("properties").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function updatePropertyStatus(id: string, status: PropertyStatus) {
+  const { error } = await supabase.from("properties").update({ status }).eq("id", id);
   if (error) throw error;
 }
 

@@ -13,14 +13,21 @@ import {
 function statusClass(status: Property["status"]) {
   if (status === "active") return "bg-success/15 text-success";
   if (status === "sold") return "bg-destructive/15 text-destructive";
+  if (status === "archived") return "bg-muted text-muted-foreground";
   return "bg-primary/15 text-primary";
 }
 
 export function PropertyCard({ property }: { property: Property }) {
   const priceText =
-    property.transaction_type === "rent"
-      ? `${faPrice(property.deposit)} رهن • ${faPrice(property.monthly_rent)} اجاره`
-      : faPrice(property.price);
+    property.transaction_type === "sale"
+      ? faPrice(property.price)
+      : `${faPrice(property.deposit)} رهن • ${faPrice(property.monthly_rent)} اجاره`;
+
+  const amenities = [
+    property.parking ? "پارکینگ" : null,
+    property.elevator ? "آسانسور" : null,
+    property.storage ? "انباری" : null,
+  ].filter(Boolean) as string[];
 
   return (
     <Link
@@ -43,7 +50,9 @@ export function PropertyCard({ property }: { property: Property }) {
             <MapPin className="size-3.5" />
             <span className="truncate">
               {property.city}
+              {property.phase ? ` — ${property.phase}` : ""}
               {property.neighborhood ? ` — ${property.neighborhood}` : ""}
+              {property.street ? ` — ${property.street}` : ""}
             </span>
           </p>
           <p className="mt-1.5 text-sm font-semibold text-primary">{priceText}</p>
@@ -65,6 +74,18 @@ export function PropertyCard({ property }: { property: Property }) {
             ) : null}
             <span>{faRelative(property.created_at)}</span>
           </div>
+          {amenities.length ? (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {amenities.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
     </Link>
