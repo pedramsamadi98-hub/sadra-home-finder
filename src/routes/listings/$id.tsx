@@ -205,6 +205,29 @@ function Detail({ userId }: { userId: string }) {
           ) : null}
         </section>
 
+        {broker ? (
+          <section className="surface-card space-y-3 p-4">
+            <h2 className="text-sm font-bold">دلال</h2>
+            <p className="flex items-center gap-2 text-sm">
+              <Users className="size-4 text-primary" />
+              {broker.name}
+              {broker.agency ? (
+                <span className="text-xs text-muted-foreground">({broker.agency})</span>
+              ) : null}
+            </p>
+            {broker.phone ? (
+              <a
+                href={`tel:${broker.phone}`}
+                className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-sm font-semibold text-primary"
+              >
+                <Phone className="size-4" />
+                <span dir="ltr">{faDigits(broker.phone)}</span>
+                <ArrowUpRightFromSquare className="ms-auto size-3.5" />
+              </a>
+            ) : null}
+          </section>
+        ) : null}
+
         {isOwn ? (
           <div className="flex gap-2">
             <Button asChild className="h-11 flex-1">
