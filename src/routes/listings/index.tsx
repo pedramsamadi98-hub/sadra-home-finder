@@ -8,6 +8,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { PropertyCard } from "@/components/PropertyCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fetchBrokers } from "@/lib/brokers";
 import { enDigits, faDigits, parseNumber } from "@/lib/fa";
 import {
   fetchProperties,
@@ -58,6 +59,9 @@ function Listings() {
   const [minArea, setMinArea] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [minBedrooms, setMinBedrooms] = useState("");
+  const [broker, setBroker] = useState<string>(ALL);
+
+  const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
 
   const results = useMemo(() => {
     const q = enDigits(query.trim().toLowerCase());
@@ -84,6 +88,9 @@ function Listings() {
       if (transaction !== ALL && item.transaction_type !== transaction) return false;
       if (status !== ALL && item.status !== status) return false;
       if (neighborhood !== ALL && item.neighborhood !== neighborhood) return false;
+      if (broker !== ALL) {
+        if (broker === "none" ? item.broker_id !== null : item.broker_id !== broker) return false;
+      }
       if (areaMin && (item.area ?? 0) < areaMin) return false;
       if (bedsMin && (item.bedrooms ?? 0) < bedsMin) return false;
       if (priceMax) {
@@ -93,13 +100,25 @@ function Listings() {
       }
       return true;
     });
-  }, [data, query, type, transaction, status, neighborhood, minArea, maxPrice, minBedrooms]);
+  }, [
+    data,
+    query,
+    type,
+    transaction,
+    status,
+    neighborhood,
+    broker,
+    minArea,
+    maxPrice,
+    minBedrooms,
+  ]);
 
   function reset() {
     setType(ALL);
     setTransaction(ALL);
     setStatus(ALL);
     setNeighborhood(ALL);
+    setBroker(ALL);
     setMinArea("");
     setMaxPrice("");
     setMinBedrooms("");
@@ -162,6 +181,22 @@ function Listings() {
                   {NEIGHBORHOODS.map((item) => (
                     <option key={item} value={item}>
                       {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">دلال</Label>
+                <select
+                  value={broker}
+                  onChange={(event) => setBroker(event.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value={ALL}>همه</option>
+                  <option value="none">بدون دلال</option>
+                  {(brokers ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
                     </option>
                   ))}
                 </select>

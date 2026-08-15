@@ -13,6 +13,7 @@ import {
   Ruler,
   Trash2,
   User,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +21,7 @@ import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Button } from "@/components/ui/button";
+import { fetchBrokers } from "@/lib/brokers";
 import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
 import {
   deleteProperty,
@@ -84,6 +86,9 @@ function Detail({ userId }: { userId: string }) {
     queryKey: ["property", id],
     queryFn: () => fetchProperty(id),
   });
+
+  const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
+  const broker = brokers?.find((item) => item.id === property?.broker_id) ?? null;
 
   const removal = useMutation({
     mutationFn: () => deleteProperty(id),
@@ -200,6 +205,29 @@ function Detail({ userId }: { userId: string }) {
             </a>
           ) : null}
         </section>
+
+        {broker ? (
+          <section className="surface-card space-y-3 p-4">
+            <h2 className="text-sm font-bold">دلال</h2>
+            <p className="flex items-center gap-2 text-sm">
+              <Users className="size-4 text-primary" />
+              {broker.name}
+              {broker.agency ? (
+                <span className="text-xs text-muted-foreground">({broker.agency})</span>
+              ) : null}
+            </p>
+            {broker.phone ? (
+              <a
+                href={`tel:${broker.phone}`}
+                className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-sm font-semibold text-primary"
+              >
+                <Phone className="size-4" />
+                <span dir="ltr">{faDigits(broker.phone)}</span>
+                <ArrowUpRightFromSquare className="ms-auto size-3.5" />
+              </a>
+            ) : null}
+          </section>
+        ) : null}
 
         {isOwn ? (
           <div className="flex gap-2">
