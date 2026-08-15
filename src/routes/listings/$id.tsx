@@ -20,6 +20,7 @@ import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Button } from "@/components/ui/button";
+import { fetchBrokers } from "@/lib/brokers";
 import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
 import {
   deleteProperty,
