@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, Home, KeyRound, Loader2, TrendingUp } from "lucide-react";
+import { Archive, CheckCircle2, Home, KeyRound, Loader2, TrendingUp } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
@@ -63,6 +63,7 @@ function Dashboard() {
   const active = items.filter((item) => item.status === "active");
   const sold = items.filter((item) => item.status === "sold");
   const rented = items.filter((item) => item.status === "rented");
+  const archived = items.filter((item) => item.status === "archived");
 
   const byType = (Object.keys(PROPERTY_TYPE_LABELS) as Array<keyof typeof PROPERTY_TYPE_LABELS>)
     .map((type) => ({
@@ -103,6 +104,12 @@ function Dashboard() {
               value={faDigits(rented.length)}
               icon={KeyRound}
               tone="bg-warning/15 text-warning"
+            />
+            <StatCard
+              label="بایگانی"
+              value={faDigits(archived.length)}
+              icon={Archive}
+              tone="bg-muted text-muted-foreground"
             />
           </div>
 

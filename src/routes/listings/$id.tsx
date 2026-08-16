@@ -6,6 +6,7 @@ import {
   Building,
   Calendar,
   Car,
+  Copy,
   Loader2,
   MapPin,
   MoveVertical,
@@ -29,6 +30,8 @@ import {
   PROPERTY_TYPE_LABELS,
   STATUS_LABELS,
   TRANSACTION_LABELS,
+  updatePropertyStatus,
+  type PropertyStatus,
 } from "@/lib/properties";
 
 export const Route = createFileRoute("/listings/$id")({
@@ -90,6 +93,16 @@ function Detail({ userId }: { userId: string }) {
   const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
   const broker = brokers?.find((item) => item.id === property?.broker_id) ?? null;
 
+  const statusChange = useMutation({
+    mutationFn: (status: PropertyStatus) => updatePropertyStatus(id, status),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["property", id] });
+      await queryClient.invalidateQueries({ queryKey: ["properties"] });
+      toast.success("وضعیت ملک به‌روزرسانی شد");
+    },
+    onError: () => toast.error("تغییر وضعیت ناموفق بود"),
+  });
+
   const removal = useMutation({
     mutationFn: () => deleteProperty(id),
     onSuccess: async () => {
@@ -119,11 +132,11 @@ function Detail({ userId }: { userId: string }) {
 
         <section className="surface-card space-y-2 p-4">
           <p className="text-lg font-bold text-primary">
-            {property.transaction_type === "rent"
-              ? `${faPrice(property.deposit)} رهن`
-              : faPrice(property.price)}
+            {property.transaction_type === "sale"
+              ? faPrice(property.price)
+              : `${faPrice(property.deposit)} رهن`}
           </p>
-          {property.transaction_type === "rent" ? (
+          {property.transaction_type !== "sale" ? (
             <p className="text-sm text-muted-foreground">
               اجاره ماهانه: {faPrice(property.monthly_rent)}
             </p>
@@ -131,7 +144,9 @@ function Detail({ userId }: { userId: string }) {
           <p className="flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin className="size-4" />
             {property.city}
+            {property.phase ? ` — ${property.phase}` : ""}
             {property.neighborhood ? ` — ${property.neighborhood}` : ""}
+            {property.street ? ` — ${property.street}` : ""}
             {property.address ? ` — ${property.address}` : ""}
           </p>
         </section>
@@ -148,6 +163,9 @@ function Detail({ userId }: { userId: string }) {
           ) : null}
           {property.floor !== null ? (
             <Row icon={MoveVertical} label="طبقه" value={faDigits(property.floor)} />
+          ) : null}
+          {property.total_floors !== null ? (
+            <Row icon={Building} label="کل طبقات" value={faDigits(property.total_floors)} />
           ) : null}
           {property.building_age !== null ? (
             <Row
@@ -204,6 +222,24 @@ function Detail({ userId }: { userId: string }) {
               <ArrowUpRightFromSquare className="ms-auto size-3.5" />
             </a>
           ) : null}
+          {property.owner_phone ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 w-full"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(property.owner_phone ?? "");
+                  toast.success("شماره کپی شد");
+                } catch {
+                  toast.error("کپی ناموفق بود");
+                }
+              }}
+            >
+              <Copy className="size-4" />
+              کپی شماره مالک
+            </Button>
+          ) : null}
         </section>
 
         {broker ? (
@@ -226,6 +262,29 @@ function Detail({ userId }: { userId: string }) {
                 <ArrowUpRightFromSquare className="ms-auto size-3.5" />
               </a>
             ) : null}
+          </section>
+        ) : null}
+
+        {isOwn ? (
+          <section className="surface-card space-y-3 p-4">
+            <h2 className="text-sm font-bold">تغییر وضعیت</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {(Object.keys(STATUS_LABELS) as PropertyStatus[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={statusChange.isPending}
+                  onClick={() => statusChange.mutate(key)}
+                  className={`h-10 rounded-xl border text-xs font-medium transition-colors ${
+                    property.status === key
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  {STATUS_LABELS[key]}
+                </button>
+              ))}
+            </div>
           </section>
         ) : null}
 

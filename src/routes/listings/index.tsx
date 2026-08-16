@@ -13,6 +13,7 @@ import { enDigits, faDigits, parseNumber } from "@/lib/fa";
 import {
   fetchProperties,
   NEIGHBORHOODS,
+  PHASES,
   PROPERTY_TYPE_LABELS,
   STATUS_LABELS,
   TRANSACTION_LABELS,
@@ -56,9 +57,15 @@ function Listings() {
   const [transaction, setTransaction] = useState<string>(ALL);
   const [status, setStatus] = useState<string>("active");
   const [neighborhood, setNeighborhood] = useState<string>(ALL);
+  const [phase, setPhase] = useState<string>(ALL);
   const [minArea, setMinArea] = useState("");
+  const [maxArea, setMaxArea] = useState("");
+  const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [minBedrooms, setMinBedrooms] = useState("");
+  const [parking, setParking] = useState(false);
+  const [elevator, setElevator] = useState(false);
+  const [storageOnly, setStorageOnly] = useState(false);
   const [broker, setBroker] = useState<string>(ALL);
 
   const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
@@ -66,38 +73,53 @@ function Listings() {
   const results = useMemo(() => {
     const q = enDigits(query.trim().toLowerCase());
     const areaMin = parseNumber(minArea);
+    const areaMax = parseNumber(maxArea);
+    const priceMin = parseNumber(minPrice);
     const priceMax = parseNumber(maxPrice);
     const bedsMin = parseNumber(minBedrooms);
 
     return (data ?? []).filter((item) => {
       if (q) {
-        const haystack = [
-          item.title,
-          item.neighborhood,
-          item.address,
-          item.owner_name,
-          item.owner_phone,
-          item.description,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
+        const haystack = enDigits(
+          [
+            item.title,
+            item.city,
+            item.phase,
+            item.neighborhood,
+            item.street,
+            item.address,
+            item.owner_name,
+            item.owner_phone,
+            item.description,
+            item.notes,
+            PROPERTY_TYPE_LABELS[item.property_type],
+            TRANSACTION_LABELS[item.transaction_type],
+            STATUS_LABELS[item.status],
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase(),
+        );
         if (!haystack.includes(q)) return false;
       }
       if (type !== ALL && item.property_type !== type) return false;
       if (transaction !== ALL && item.transaction_type !== transaction) return false;
       if (status !== ALL && item.status !== status) return false;
       if (neighborhood !== ALL && item.neighborhood !== neighborhood) return false;
+      if (phase !== ALL && item.phase !== phase) return false;
+      if (parking && !item.parking) return false;
+      if (elevator && !item.elevator) return false;
+      if (storageOnly && !item.storage) return false;
       if (broker !== ALL) {
         if (broker === "none" ? item.broker_id !== null : item.broker_id !== broker) return false;
       }
       if (areaMin && (item.area ?? 0) < areaMin) return false;
+      if (areaMax && (item.area ?? 0) > areaMax) return false;
       if (bedsMin && (item.bedrooms ?? 0) < bedsMin) return false;
-      if (priceMax) {
-        const value =
-          item.transaction_type === "rent" ? (item.deposit ?? 0) : (item.price ?? 0);
-        if (value > priceMax) return false;
-      }
+      const priceValue =
+        item.transaction_type === "sale" ? (item.price ?? 0) : (item.deposit ?? 0);
+      if (priceMin && priceValue < priceMin) return false;
+      if (priceMax && priceValue > priceMax) return false;
       return true;
     });
   }, [
@@ -107,10 +129,16 @@ function Listings() {
     transaction,
     status,
     neighborhood,
+    phase,
     broker,
     minArea,
+    maxArea,
+    minPrice,
     maxPrice,
     minBedrooms,
+    parking,
+    elevator,
+    storageOnly,
   ]);
 
   function reset() {
@@ -118,10 +146,16 @@ function Listings() {
     setTransaction(ALL);
     setStatus(ALL);
     setNeighborhood(ALL);
+    setPhase(ALL);
     setBroker(ALL);
     setMinArea("");
+    setMaxArea("");
+    setMinPrice("");
     setMaxPrice("");
     setMinBedrooms("");
+    setParking(false);
+    setElevator(false);
+    setStorageOnly(false);
   }
 
   return (
@@ -133,7 +167,7 @@ function Listings() {
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="جست‌وجو در عنوان، محله، مالک…"
+              placeholder="جست‌وجو در عنوان، فاز، محله، خیابان، مالک…"
               className="h-11 pe-9"
             />
           </div>
@@ -147,6 +181,29 @@ function Listings() {
           >
             {showFilters ? <X className="size-4" /> : <SlidersHorizontal className="size-4" />}
           </button>
+        </div>
+
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          {[
+            { key: "active", label: "فعال" },
+            { key: "sold", label: "فروش رفته" },
+            { key: "rented", label: "اجاره داده شده" },
+            { key: "archived", label: "بایگانی" },
+            { key: ALL, label: "همه" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setStatus(tab.key)}
+              className={`h-9 shrink-0 rounded-full border px-4 text-xs font-medium transition-colors ${
+                status === tab.key
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-border text-muted-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {showFilters ? (
@@ -170,6 +227,21 @@ function Listings() {
                 onChange={setStatus}
                 options={STATUS_LABELS}
               />
+              <div className="space-y-1.5">
+                <Label className="text-xs">فاز</Label>
+                <select
+                  value={phase}
+                  onChange={(event) => setPhase(event.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value={ALL}>همه</option>
+                  {PHASES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">محله</Label>
                 <select
@@ -202,10 +274,21 @@ function Listings() {
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <TextFilter label="حداقل متراژ" value={minArea} onChange={setMinArea} />
+              <TextFilter label="حداکثر متراژ" value={maxArea} onChange={setMaxArea} />
+              <TextFilter label="حداقل قیمت" value={minPrice} onChange={setMinPrice} />
               <TextFilter label="حداکثر قیمت" value={maxPrice} onChange={setMaxPrice} />
-              <TextFilter label="حداقل خواب" value={minBedrooms} onChange={setMinBedrooms} />
+            </div>
+            <TextFilter label="حداقل خواب" value={minBedrooms} onChange={setMinBedrooms} />
+            <div className="grid grid-cols-3 gap-2">
+              <ToggleChip label="پارکینگ" active={parking} onToggle={() => setParking((v) => !v)} />
+              <ToggleChip label="آسانسور" active={elevator} onToggle={() => setElevator((v) => !v)} />
+              <ToggleChip
+                label="انباری"
+                active={storageOnly}
+                onToggle={() => setStorageOnly((v) => !v)}
+              />
             </div>
             <button
               type="button"
@@ -288,5 +371,27 @@ function TextFilter({
         className="h-9 text-left"
       />
     </div>
+  );
+}
+
+function ToggleChip({
+  label,
+  active,
+  onToggle,
+}: {
+  label: string;
+  active: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`h-10 rounded-xl border text-xs font-medium transition-colors ${
+        active ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
