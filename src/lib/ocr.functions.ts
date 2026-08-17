@@ -44,6 +44,51 @@ const SYSTEM_PROMPT = `تو یک دستیار استخراج اطلاعات فا
 
 const JSON_SHAPE = `{"title":string|null,"property_type":string|null,"transaction_type":string|null,"city":string|null,"phase":string|null,"neighborhood":string|null,"street":string|null,"address":string|null,"area":number|null,"price":number|null,"deposit":number|null,"monthly_rent":number|null,"bedrooms":number|null,"floor":number|null,"total_floors":number|null,"building_age":number|null,"parking":boolean|null,"elevator":boolean|null,"storage":boolean|null,"owner_name":string|null,"owner_phone":string|null,"description":string|null,"notes":string|null}`;
 
+const ALIASES: Record<string, keyof OcrResult> = {
+  area_sqm: "area",
+  area_m2: "area",
+  size: "area",
+  phone: "owner_phone",
+  phone_number: "owner_phone",
+  owner_phone_number: "owner_phone",
+  owner: "owner_name",
+  rent: "monthly_rent",
+  rent_amount: "monthly_rent",
+  mortgage: "deposit",
+  mortgage_amount: "deposit",
+  internal_notes: "notes",
+  district: "neighborhood",
+};
+
+const NUMBER_KEYS = new Set([
+  "area",
+  "price",
+  "deposit",
+  "monthly_rent",
+  "bedrooms",
+  "floor",
+  "total_floors",
+  "building_age",
+]);
+const BOOL_KEYS = new Set(["parking", "elevator", "storage"]);
+
+function normalize(raw: Record<string, unknown>): OcrResult {
+  const out: Record<string, unknown> = {};
+  for (const [rawKey, value] of Object.entries(raw)) {
+    const key = (ALIASES[rawKey] ?? rawKey) as string;
+    if (value === null || value === undefined || value === "") continue;
+    if (NUMBER_KEYS.has(key)) {
+      const n = Number(String(value).replace(/[^\d.]/g, ""));
+      if (Number.isFinite(n) && n > 0) out[key] = n;
+    } else if (BOOL_KEYS.has(key)) {
+      out[key] = value === true || value === "true" || value === "دارد";
+    } else {
+      out[key] = typeof value === "string" ? value.trim() : value;
+    }
+  }
+  return out as OcrResult;
+}
+
 export const extractPropertyFromImage = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<OcrResult> => {
@@ -87,11 +132,13 @@ export const extractPropertyFromImage = createServerFn({ method: "POST" })
     const content = json.choices?.[0]?.message?.content ?? "{}";
     const cleaned = content.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
 
+    let parsed: Record<string, unknown>;
     try {
-      return JSON.parse(cleaned) as OcrResult;
+      parsed = JSON.parse(cleaned) as Record<string, unknown>;
     } catch {
       const match = cleaned.match(/\{[\s\S]*\}/);
-      if (match) return JSON.parse(match[0]) as OcrResult;
-      throw new Error("OCR returned invalid JSON");
+      if (!match) throw new Error("OCR returned invalid JSON");
+      parsed = JSON.parse(match[0]) as Record<string, unknown>;
     }
+    return normalize(parsed);
   });
