@@ -123,6 +123,10 @@ export function PropertyForm({
 }) {
   const [form, setForm] = useState<PropertyInput>(initial);
   const [uploading, setUploading] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
+  const [ocrOpen, setOcrOpen] = useState(false);
+  const runOcr = useServerFn(extractPropertyFromImage);
   const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
   const { data: photoUrls } = usePhotoUrls(form.photos);
 
