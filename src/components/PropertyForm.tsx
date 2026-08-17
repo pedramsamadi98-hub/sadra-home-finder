@@ -362,6 +362,32 @@ export function PropertyForm({
       </Section>
 
       <Section title="تصاویر ملک">
+        <label
+          className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary/10 py-3.5 text-sm font-bold text-primary ${
+            scanning ? "pointer-events-none opacity-70" : ""
+          }`}
+        >
+          {scanning ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <ScanText className="size-4" />
+          )}
+          {scanning ? "در حال خواندن عکس…" : "استخراج اطلاعات از عکس"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={scanning}
+            onChange={(event) => {
+              void handleOcrFile(event.target.files);
+              event.target.value = "";
+            }}
+          />
+        </label>
+        <p className="text-[11px] text-muted-foreground">
+          عکس برگه یا فایل ملکی (دست‌نویس یا تایپی) را انتخاب کنید؛ اطلاعات خوانده‌شده را
+          قبل از درج در فرم بازبینی می‌کنید و عکس هم به ملک پیوست می‌شود.
+        </p>
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border py-6 text-sm text-muted-foreground">
           {uploading ? (
             <Loader2 className="size-4 animate-spin" />
