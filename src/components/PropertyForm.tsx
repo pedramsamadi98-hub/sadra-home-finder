@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
+import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
 import {
   NEIGHBORHOODS,
   PHASES,
