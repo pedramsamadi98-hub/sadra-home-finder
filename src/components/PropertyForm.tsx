@@ -148,6 +148,46 @@ export function PropertyForm({
     }
   }
 
+  async function handleOcrFile(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setScanning(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("read failed"));
+        reader.readAsDataURL(file);
+      });
+
+      // Keep the original image attached to the property.
+      const [path] = await uploadPhotos([file], userId);
+      if (path) setForm((prev) => ({ ...prev, photos: [...prev.photos, path] }));
+
+      const result = await runOcr({ data: { image: dataUrl } });
+      setOcrResult(result);
+      setOcrOpen(true);
+    } catch (error) {
+      console.error(error);
+      toast.error("استخراج اطلاعات از عکس ناموفق بود");
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  function applyOcr(patch: Partial<PropertyInput>) {
+    let applied = 0;
+    setForm((prev) => {
+      const next = { ...prev };
+      for (const [key, value] of Object.entries(patch)) {
+        (next as Record<string, unknown>)[key] = value;
+        applied += 1;
+      }
+      return next;
+    });
+    toast.success(`${applied} فیلد از عکس پر شد`);
+  }
+
   function submit(event: FormEvent) {
     event.preventDefault();
     if (!form.title.trim()) {
