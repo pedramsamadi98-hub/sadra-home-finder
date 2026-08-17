@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { ImagePlus, Loader2, ScanText, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
+import { OcrReviewDialog } from "@/components/OcrReviewDialog";
 import { usePhotoUrls } from "@/components/PhotoGallery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
