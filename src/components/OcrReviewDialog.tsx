@@ -17,7 +17,6 @@ import { faDigits, parseNumber } from "@/lib/fa";
 import type { OcrResult } from "@/lib/ocr.functions";
 import {
   PROPERTY_TYPE_LABELS,
-  STATUS_LABELS,
   TRANSACTION_LABELS,
   type PropertyInput,
 } from "@/lib/properties";
@@ -273,5 +272,3 @@ export function OcrReviewDialog({
     </Dialog>
   );
 }
-
-export { STATUS_LABELS };

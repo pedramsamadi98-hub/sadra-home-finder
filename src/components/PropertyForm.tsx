@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { ImagePlus, Loader2, ScanText, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
+import { OcrReviewDialog } from "@/components/OcrReviewDialog";
 import { usePhotoUrls } from "@/components/PhotoGallery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
+import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
 import {
   NEIGHBORHOODS,
   PHASES,
@@ -120,6 +123,10 @@ export function PropertyForm({
 }) {
   const [form, setForm] = useState<PropertyInput>(initial);
   const [uploading, setUploading] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
+  const [ocrOpen, setOcrOpen] = useState(false);
+  const runOcr = useServerFn(extractPropertyFromImage);
   const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
   const { data: photoUrls } = usePhotoUrls(form.photos);
 
@@ -139,6 +146,46 @@ export function PropertyForm({
     } finally {
       setUploading(false);
     }
+  }
+
+  async function handleOcrFile(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    setScanning(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("read failed"));
+        reader.readAsDataURL(file);
+      });
+
+      // Keep the original image attached to the property.
+      const [path] = await uploadPhotos([file], userId);
+      if (path) setForm((prev) => ({ ...prev, photos: [...prev.photos, path] }));
+
+      const result = await runOcr({ data: { image: dataUrl } });
+      setOcrResult(result);
+      setOcrOpen(true);
+    } catch (error) {
+      console.error(error);
+      toast.error("استخراج اطلاعات از عکس ناموفق بود");
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  function applyOcr(patch: Partial<PropertyInput>) {
+    let applied = 0;
+    setForm((prev) => {
+      const next = { ...prev };
+      for (const [key, value] of Object.entries(patch)) {
+        (next as Record<string, unknown>)[key] = value;
+        applied += 1;
+      }
+      return next;
+    });
+    toast.success(`${applied} فیلد از عکس پر شد`);
   }
 
   function submit(event: FormEvent) {
@@ -315,6 +362,32 @@ export function PropertyForm({
       </Section>
 
       <Section title="تصاویر ملک">
+        <label
+          className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary/10 py-3.5 text-sm font-bold text-primary ${
+            scanning ? "pointer-events-none opacity-70" : ""
+          }`}
+        >
+          {scanning ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <ScanText className="size-4" />
+          )}
+          {scanning ? "در حال خواندن عکس…" : "استخراج اطلاعات از عکس"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={scanning}
+            onChange={(event) => {
+              void handleOcrFile(event.target.files);
+              event.target.value = "";
+            }}
+          />
+        </label>
+        <p className="text-[11px] text-muted-foreground">
+          عکس برگه یا فایل ملکی (دست‌نویس یا تایپی) را انتخاب کنید؛ اطلاعات خوانده‌شده را
+          قبل از درج در فرم بازبینی می‌کنید و عکس هم به ملک پیوست می‌شود.
+        </p>
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border py-6 text-sm text-muted-foreground">
           {uploading ? (
             <Loader2 className="size-4 animate-spin" />
@@ -425,6 +498,13 @@ export function PropertyForm({
       <Button type="submit" disabled={submitting} className="h-12 w-full text-base">
         {submitting ? <Loader2 className="size-4 animate-spin" /> : submitLabel}
       </Button>
+
+      <OcrReviewDialog
+        open={ocrOpen}
+        result={ocrResult}
+        onOpenChange={setOcrOpen}
+        onConfirm={applyOcr}
+      />
     </form>
   );
 }
