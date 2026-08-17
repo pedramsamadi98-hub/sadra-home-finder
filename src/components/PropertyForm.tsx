@@ -498,6 +498,13 @@ export function PropertyForm({
       <Button type="submit" disabled={submitting} className="h-12 w-full text-base">
         {submitting ? <Loader2 className="size-4 animate-spin" /> : submitLabel}
       </Button>
+
+      <OcrReviewDialog
+        open={ocrOpen}
+        result={ocrResult}
+        onOpenChange={setOcrOpen}
+        onConfirm={applyOcr}
+      />
     </form>
   );
 }
