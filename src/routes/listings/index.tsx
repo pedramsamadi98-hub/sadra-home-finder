@@ -350,10 +350,14 @@ function Listings() {
               <PropertyCard key={property.id} property={property} />
             ))}
             {!results.length ? (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                فایلی با این مشخصات پیدا نشد.
-              </p>
+              <div className="space-y-2 py-12 text-center">
+                <p className="text-sm text-muted-foreground">فایلی مطابق این جستجو پیدا نشد.</p>
+                <p className="text-xs text-muted-foreground">
+                  چند فیلتر را حذف کنید یا محدوده متراژ و قیمت را بازتر کنید.
+                </p>
+              </div>
             ) : null}
+
           </div>
         )}
       </div>
