@@ -186,8 +186,11 @@ function Listings() {
             <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="جست‌وجو در عنوان، فاز، محله، خیابان، مالک…"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setRemoved([]);
+              }}
+              placeholder="مثلاً: آپارتمان ۳ خواب فاز ۲ بین ۱۲۰ تا ۱۵۰ متر تا ۱۲ میلیارد"
               className="h-11 pe-9"
             />
           </div>
@@ -202,6 +205,23 @@ function Listings() {
             {showFilters ? <X className="size-4" /> : <SlidersHorizontal className="size-4" />}
           </button>
         </div>
+
+        {criteria.length ? (
+          <div className="flex flex-wrap gap-2">
+            {criteria.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setRemoved((prev) => [...prev, item.id])}
+                className="flex items-center gap-1 rounded-full border border-primary bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary"
+              >
+                {item.label}
+                <X className="size-3" />
+              </button>
+            ))}
+          </div>
+        ) : null}
+
 
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {[
