@@ -22,14 +22,18 @@ export const Route = createFileRoute("/listings/new")({
       },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    broker: typeof search.broker === "string" && search.broker ? search.broker : undefined,
+  }),
   component: NewRoute,
 });
 
 function NewRoute() {
-  return <AuthGate>{(userId) => <NewProperty userId={userId} />}</AuthGate>;
+  const { broker } = Route.useSearch();
+  return <AuthGate>{(userId) => <NewProperty userId={userId} brokerId={broker ?? null} />}</AuthGate>;
 }
 
-function NewProperty({ userId }: { userId: string }) {
+function NewProperty({ userId, brokerId }: { userId: string; brokerId: string | null }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -46,7 +50,7 @@ function NewProperty({ userId }: { userId: string }) {
   return (
     <AppShell title="ثبت ملک جدید" subtitle="اطلاعات فایل را کامل کنید">
       <PropertyForm
-        initial={emptyProperty}
+        initial={brokerId ? { ...emptyProperty, broker_id: brokerId } : emptyProperty}
         userId={userId}
         submitLabel="ثبت ملک"
         submitting={mutation.isPending}
