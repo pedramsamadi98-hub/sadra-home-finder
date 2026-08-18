@@ -19,6 +19,7 @@ import {
   TRANSACTION_LABELS,
   type Property,
 } from "@/lib/properties";
+import { matchesCriteria, parseSmartQuery, relevanceScore } from "@/lib/smart-search";
 
 export const Route = createFileRoute("/listings/")({
   head: () => ({
