@@ -70,15 +70,25 @@ function Listings() {
 
   const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
 
+  const [removed, setRemoved] = useState<string[]>([]);
+
+  const parsed = useMemo(() => parseSmartQuery(query), [query]);
+  const criteria = useMemo(
+    () => parsed.criteria.filter((item) => !removed.includes(item.id)),
+    [parsed, removed],
+  );
+
   const results = useMemo(() => {
-    const q = enDigits(query.trim().toLowerCase());
+    const textQuery = criteria.length ? parsed.rest : query.trim();
+    const q = enDigits(textQuery.toLowerCase());
     const areaMin = parseNumber(minArea);
     const areaMax = parseNumber(maxArea);
     const priceMin = parseNumber(minPrice);
     const priceMax = parseNumber(maxPrice);
     const bedsMin = parseNumber(minBedrooms);
 
-    return (data ?? []).filter((item) => {
+    const filtered = (data ?? []).filter((item) => {
+      if (!matchesCriteria(item, criteria)) return false;
       if (q) {
         const haystack = enDigits(
           [
@@ -122,9 +132,17 @@ function Listings() {
       if (priceMax && priceValue > priceMax) return false;
       return true;
     });
+
+    if (!criteria.length && !textQuery) return filtered;
+    return [...filtered].sort(
+      (a, b) =>
+        relevanceScore(b, criteria, textQuery) - relevanceScore(a, criteria, textQuery),
+    );
   }, [
     data,
     query,
+    parsed,
+    criteria,
     type,
     transaction,
     status,
@@ -140,6 +158,7 @@ function Listings() {
     elevator,
     storageOnly,
   ]);
+
 
   function reset() {
     setType(ALL);
