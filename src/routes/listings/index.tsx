@@ -19,6 +19,7 @@ import {
   TRANSACTION_LABELS,
   type Property,
 } from "@/lib/properties";
+import { matchesCriteria, parseSmartQuery, relevanceScore } from "@/lib/smart-search";
 
 export const Route = createFileRoute("/listings/")({
   head: () => ({
@@ -70,15 +71,25 @@ function Listings() {
 
   const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
 
+  const [removed, setRemoved] = useState<string[]>([]);
+
+  const parsed = useMemo(() => parseSmartQuery(query), [query]);
+  const criteria = useMemo(
+    () => parsed.criteria.filter((item) => !removed.includes(item.id)),
+    [parsed, removed],
+  );
+
   const results = useMemo(() => {
-    const q = enDigits(query.trim().toLowerCase());
+    const textQuery = criteria.length ? parsed.rest : query.trim();
+    const q = enDigits(textQuery.toLowerCase());
     const areaMin = parseNumber(minArea);
     const areaMax = parseNumber(maxArea);
     const priceMin = parseNumber(minPrice);
     const priceMax = parseNumber(maxPrice);
     const bedsMin = parseNumber(minBedrooms);
 
-    return (data ?? []).filter((item) => {
+    const filtered = (data ?? []).filter((item) => {
+      if (!matchesCriteria(item, criteria)) return false;
       if (q) {
         const haystack = enDigits(
           [
@@ -122,9 +133,17 @@ function Listings() {
       if (priceMax && priceValue > priceMax) return false;
       return true;
     });
+
+    if (!criteria.length && !textQuery) return filtered;
+    return [...filtered].sort(
+      (a, b) =>
+        relevanceScore(b, criteria, textQuery) - relevanceScore(a, criteria, textQuery),
+    );
   }, [
     data,
     query,
+    parsed,
+    criteria,
     type,
     transaction,
     status,
@@ -140,6 +159,7 @@ function Listings() {
     elevator,
     storageOnly,
   ]);
+
 
   function reset() {
     setType(ALL);
@@ -166,8 +186,11 @@ function Listings() {
             <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="جست‌وجو در عنوان، فاز، محله، خیابان، مالک…"
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setRemoved([]);
+              }}
+              placeholder="مثلاً: آپارتمان ۳ خواب فاز ۲ بین ۱۲۰ تا ۱۵۰ متر تا ۱۲ میلیارد"
               className="h-11 pe-9"
             />
           </div>
@@ -182,6 +205,23 @@ function Listings() {
             {showFilters ? <X className="size-4" /> : <SlidersHorizontal className="size-4" />}
           </button>
         </div>
+
+        {criteria.length ? (
+          <div className="flex flex-wrap gap-2">
+            {criteria.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setRemoved((prev) => [...prev, item.id])}
+                className="flex items-center gap-1 rounded-full border border-primary bg-primary/15 px-3 py-1.5 text-xs font-medium text-primary"
+              >
+                {item.label}
+                <X className="size-3" />
+              </button>
+            ))}
+          </div>
+        ) : null}
+
 
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {[
@@ -310,10 +350,14 @@ function Listings() {
               <PropertyCard key={property.id} property={property} />
             ))}
             {!results.length ? (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                فایلی با این مشخصات پیدا نشد.
-              </p>
+              <div className="space-y-2 py-12 text-center">
+                <p className="text-sm text-muted-foreground">فایلی مطابق این جستجو پیدا نشد.</p>
+                <p className="text-xs text-muted-foreground">
+                  چند فیلتر را حذف کنید یا محدوده متراژ و قیمت را بازتر کنید.
+                </p>
+              </div>
             ) : null}
+
           </div>
         )}
       </div>
