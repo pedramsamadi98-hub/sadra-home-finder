@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Pencil, Phone, Plus, Trash2, Users } from "lucide-react";
+import { Loader2, Pencil, Phone, Plus, Search, Trash2, Users, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -18,7 +18,7 @@ import {
   updateBroker,
   type BrokerInput,
 } from "@/lib/brokers";
-import { faDigits } from "@/lib/fa";
+import { enDigits, faDigits } from "@/lib/fa";
 import { fetchProperties } from "@/lib/properties";
 
 export const Route = createFileRoute("/brokers")({
@@ -48,6 +48,7 @@ function Brokers({ userId }: { userId: string }) {
   const [form, setForm] = useState<BrokerInput>(emptyBroker);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const { data: brokers, isLoading } = useQuery({
     queryKey: ["brokers"],
@@ -56,6 +57,16 @@ function Brokers({ userId }: { userId: string }) {
   const { data: properties } = useQuery({
     queryKey: ["properties"],
     queryFn: fetchProperties,
+  });
+
+  const query = enDigits(search).trim().toLowerCase();
+  const filtered = (brokers ?? []).filter((broker) => {
+    if (!query) return true;
+    const haystack = [broker.name, broker.agency, broker.notes, broker.phone, enDigits(broker.phone ?? "")]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return query.split(/\s+/).every((token) => haystack.includes(token));
   });
 
   function invalidate() {
@@ -107,6 +118,27 @@ function Brokers({ userId }: { userId: string }) {
       }
     >
       <div className="space-y-4">
+        <div className="relative">
+          <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="جستجوی دلال بر اساس نام، نام مستعار یا موبایل"
+            className="h-11 rounded-xl pr-10 text-sm"
+            aria-label="جستجوی دلال"
+          />
+          {search ? (
+            <button
+              type="button"
+              aria-label="پاک کردن جستجو"
+              onClick={() => setSearch("")}
+              className="absolute left-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          ) : null}
+        </div>
+
         {open ? (
           <form
             onSubmit={(event) => {
@@ -166,8 +198,8 @@ function Brokers({ userId }: { userId: string }) {
           <div className="flex justify-center py-16">
             <Loader2 className="size-6 animate-spin text-primary" />
           </div>
-        ) : brokers?.length ? (
-          brokers.map((broker) => {
+        ) : filtered.length ? (
+          filtered.map((broker) => {
             const own = (properties ?? []).filter((item) => item.broker_id === broker.id);
             return (
               <section key={broker.id} className="surface-card space-y-3 p-4">
@@ -245,14 +277,18 @@ function Brokers({ userId }: { userId: string }) {
                 ) : null}
 
                 <Button asChild variant="secondary" className="h-10 w-full">
-                  <Link to="/listings/new">افزودن فایل برای این دلال</Link>
+                  <Link to="/listings/new" search={{ broker: broker.id }}>
+                    افزودن فایل برای این دلال
+                  </Link>
                 </Button>
               </section>
             );
           })
         ) : (
           <p className="surface-card p-6 text-center text-sm text-muted-foreground">
-            هنوز دلالی ثبت نشده است. با دکمه + دلال جدید اضافه کنید.
+            {query
+              ? "دلالی با این مشخصات پیدا نشد."
+              : "هنوز دلالی ثبت نشده است. با دکمه + دلال جدید اضافه کنید."}
           </p>
         )}
       </div>
