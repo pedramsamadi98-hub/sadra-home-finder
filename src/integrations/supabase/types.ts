@@ -47,6 +47,59 @@ export type Database = {
         }
         Relationships: []
       }
+      follow_ups: {
+        Row: {
+          call_result: string | null
+          called_at: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          next_at: string | null
+          notes: string | null
+          priority: string
+          property_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          call_result?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          next_at?: string | null
+          notes?: string | null
+          priority?: string
+          property_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          call_result?: string | null
+          called_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          next_at?: string | null
+          notes?: string | null
+          priority?: string
+          property_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_ups_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       properties: {
         Row: {
           address: string | null
