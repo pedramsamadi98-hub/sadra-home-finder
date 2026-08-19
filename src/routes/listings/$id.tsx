@@ -242,28 +242,40 @@ function Detail({ userId }: { userId: string }) {
           ) : null}
         </section>
 
-        {broker ? (
-          <section className="surface-card space-y-3 p-4">
-            <h2 className="text-sm font-bold">دلال</h2>
-            <p className="flex items-center gap-2 text-sm">
-              <Users className="size-4 text-primary" />
-              {broker.name}
-              {broker.agency ? (
-                <span className="text-xs text-muted-foreground">({broker.agency})</span>
+        <section className="surface-card space-y-3 p-4">
+          <h2 className="text-sm font-bold">منبع فایل</h2>
+          {broker ? (
+            <>
+              <p className="flex items-center gap-2 text-sm">
+                <Users className="size-4 text-primary" />
+                {broker.name}
+                {broker.agency ? (
+                  <span className="text-xs text-muted-foreground">({broker.agency})</span>
+                ) : null}
+              </p>
+              {broker.phone ? (
+                <a
+                  href={`tel:${broker.phone}`}
+                  className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-sm font-semibold text-primary"
+                >
+                  <Phone className="size-4" />
+                  <span dir="ltr">{faDigits(broker.phone)}</span>
+                  <ArrowUpRightFromSquare className="ms-auto size-3.5" />
+                </a>
               ) : null}
+              <Button asChild variant="secondary" className="h-10 w-full">
+                <Link to="/brokers/$id" params={{ id: broker.id }}>
+                  مشاهده صفحه این دلال
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users className="size-4" />
+              فایل شخصی
             </p>
-            {broker.phone ? (
-              <a
-                href={`tel:${broker.phone}`}
-                className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-sm font-semibold text-primary"
-              >
-                <Phone className="size-4" />
-                <span dir="ltr">{faDigits(broker.phone)}</span>
-                <ArrowUpRightFromSquare className="ms-auto size-3.5" />
-              </a>
-            ) : null}
-          </section>
-        ) : null}
+          )}
+        </section>
 
         {isOwn ? (
           <section className="surface-card space-y-3 p-4">

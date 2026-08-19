@@ -19,7 +19,7 @@ import {
   type BrokerInput,
 } from "@/lib/brokers";
 import { enDigits, faDigits } from "@/lib/fa";
-import { fetchProperties } from "@/lib/properties";
+import { fetchProperties, STATUS_LABELS, type PropertyStatus } from "@/lib/properties";
 
 export const Route = createFileRoute("/brokers")({
   head: () => ({
@@ -256,13 +256,23 @@ function Brokers({ userId }: { userId: string }) {
                   <p className="text-xs leading-6 text-muted-foreground">{broker.notes}</p>
                 ) : null}
 
-                <p className="text-xs text-muted-foreground">
-                  {faDigits(own.length)} فایل از این دلال
-                </p>
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="rounded-full bg-primary/15 px-2 py-1 font-semibold text-primary">
+                    {faDigits(own.length)} فایل
+                  </span>
+                  {(Object.keys(STATUS_LABELS) as PropertyStatus[]).map((status) => (
+                    <span
+                      key={status}
+                      className="rounded-lg bg-secondary/70 px-2 py-1 text-muted-foreground"
+                    >
+                      {STATUS_LABELS[status]}: {faDigits(own.filter((i) => i.status === status).length)}
+                    </span>
+                  ))}
+                </div>
 
                 {own.length ? (
                   <ul className="grid gap-1.5">
-                    {own.map((item) => (
+                    {own.slice(0, 3).map((item) => (
                       <li key={item.id}>
                         <Link
                           to="/listings/$id"
@@ -276,11 +286,18 @@ function Brokers({ userId }: { userId: string }) {
                   </ul>
                 ) : null}
 
-                <Button asChild variant="secondary" className="h-10 w-full">
-                  <Link to="/listings/new" search={{ broker: broker.id }}>
-                    افزودن فایل برای این دلال
-                  </Link>
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button asChild className="h-10 w-full">
+                    <Link to="/brokers/$id" params={{ id: broker.id }}>
+                      فایل‌های این دلال
+                    </Link>
+                  </Button>
+                  <Button asChild variant="secondary" className="h-10 w-full">
+                    <Link to="/listings/new" search={{ broker: broker.id }}>
+                      افزودن فایل
+                    </Link>
+                  </Button>
+                </div>
               </section>
             );
           })
