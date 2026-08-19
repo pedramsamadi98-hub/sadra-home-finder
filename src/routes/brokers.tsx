@@ -19,7 +19,7 @@ import {
   type BrokerInput,
 } from "@/lib/brokers";
 import { enDigits, faDigits } from "@/lib/fa";
-import { fetchProperties } from "@/lib/properties";
+import { fetchProperties, STATUS_LABELS, type PropertyStatus } from "@/lib/properties";
 
 export const Route = createFileRoute("/brokers")({
   head: () => ({
@@ -288,7 +288,7 @@ function Brokers({ userId }: { userId: string }) {
 
                 <div className="grid grid-cols-2 gap-2">
                   <Button asChild className="h-10 w-full">
-                    <Link to="/brokers_/$id" params={{ id: broker.id }}>
+                    <Link to="/brokers/$id" params={{ id: broker.id }}>
                       فایل‌های این دلال
                     </Link>
                   </Button>
