@@ -23,7 +23,7 @@ export const Route = createFileRoute("/listings/new")({
     ],
   }),
   validateSearch: (search: Record<string, unknown>) => ({
-    broker: typeof search.broker === "string" && search.broker ? search.broker : undefined,
+    broker: typeof search["broker"] === "string" && search["broker"] ? (search["broker"] as string) : undefined,
   }),
   component: NewRoute,
 });
