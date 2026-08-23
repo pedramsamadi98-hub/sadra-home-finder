@@ -17,10 +17,12 @@ import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
 import {
   NEIGHBORHOODS,
   PHASES,
+  OWNERSHIP_LABELS,
   PROPERTY_TYPE_LABELS,
   STATUS_LABELS,
   TRANSACTION_LABELS,
   uploadPhotos,
+  type OwnershipType,
   type PropertyInput,
   type PropertyStatus,
   type PropertyType,
@@ -194,6 +196,10 @@ export function PropertyForm({
       toast.error("عنوان ملک را وارد کنید");
       return;
     }
+    if (!form.ownership_type) {
+      toast.error("نوع ملک (ملکی یا اوقاف) را انتخاب کنید");
+      return;
+    }
     onSubmit(form);
   }
 
@@ -211,7 +217,31 @@ export function PropertyForm({
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-xs">نوع ملک</Label>
+          <Label className="text-xs">نوع ملک (ملکی / اوقاف)</Label>
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(OWNERSHIP_LABELS) as OwnershipType[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => set("ownership_type", key)}
+                className={`h-9 rounded-xl border px-4 text-xs font-medium transition-colors ${
+                  form.ownership_type === key
+                    ? "border-primary bg-primary/15 text-primary"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                {OWNERSHIP_LABELS[key]}
+              </button>
+            ))}
+          </div>
+          {!form.ownership_type ? (
+            <p className="text-[11px] text-destructive">
+              انتخاب نوع ملک الزامی است.
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs">نوع کاربری ملک</Label>
           <Chips<PropertyType>
             value={form.property_type}
             options={PROPERTY_TYPE_LABELS}

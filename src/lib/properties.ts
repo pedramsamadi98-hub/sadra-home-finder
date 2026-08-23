@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type PropertyType = "apartment" | "villa" | "land" | "commercial";
 export type TransactionType = "sale" | "rent" | "mortgage";
 export type PropertyStatus = "active" | "sold" | "rented" | "archived";
+export type OwnershipType = "melki" | "owqaf";
 
 export interface Property {
   id: string;
@@ -10,6 +11,7 @@ export interface Property {
   broker_id: string | null;
   title: string;
   property_type: PropertyType;
+  ownership_type: OwnershipType | null;
   transaction_type: TransactionType;
   status: PropertyStatus;
   city: string;
@@ -55,6 +57,11 @@ export const TRANSACTION_LABELS: Record<TransactionType, string> = {
   mortgage: "رهن و اجاره",
 };
 
+export const OWNERSHIP_LABELS: Record<OwnershipType, string> = {
+  melki: "ملکی",
+  owqaf: "اوقاف",
+};
+
 export const STATUS_LABELS: Record<PropertyStatus, string> = {
   active: "فعال",
   sold: "فروش رفته",
@@ -88,6 +95,7 @@ export const emptyProperty: PropertyInput = {
   broker_id: null,
   title: "",
   property_type: "apartment",
+  ownership_type: null,
   transaction_type: "sale",
   status: "active",
   city: "صدرا",
@@ -145,6 +153,14 @@ export async function createProperty(input: PropertyInput, userId: string) {
 
 export async function updateProperty(id: string, input: PropertyInput) {
   const { error } = await supabase.from("properties").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function updatePropertyOwnership(id: string, ownership: OwnershipType) {
+  const { error } = await supabase
+    .from("properties")
+    .update({ ownership_type: ownership })
+    .eq("id", id);
   if (error) throw error;
 }
 

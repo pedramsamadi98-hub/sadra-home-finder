@@ -14,6 +14,7 @@ import {
   fetchProperties,
   NEIGHBORHOODS,
   PHASES,
+  OWNERSHIP_LABELS,
   PROPERTY_TYPE_LABELS,
   STATUS_LABELS,
   TRANSACTION_LABELS,
@@ -55,6 +56,7 @@ function Listings() {
   const [query, setQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [type, setType] = useState<string>(ALL);
+  const [ownership, setOwnership] = useState<string>(ALL);
   const [transaction, setTransaction] = useState<string>(ALL);
   const [status, setStatus] = useState<string>("active");
   const [neighborhood, setNeighborhood] = useState<string>(ALL);
@@ -106,6 +108,7 @@ function Listings() {
             PROPERTY_TYPE_LABELS[item.property_type],
             TRANSACTION_LABELS[item.transaction_type],
             STATUS_LABELS[item.status],
+            item.ownership_type ? OWNERSHIP_LABELS[item.ownership_type] : null,
           ]
             .filter(Boolean)
             .join(" ")
@@ -114,6 +117,7 @@ function Listings() {
         if (!haystack.includes(q)) return false;
       }
       if (type !== ALL && item.property_type !== type) return false;
+      if (ownership !== ALL && item.ownership_type !== ownership) return false;
       if (transaction !== ALL && item.transaction_type !== transaction) return false;
       if (status !== ALL && item.status !== status) return false;
       if (neighborhood !== ALL && item.neighborhood !== neighborhood) return false;
@@ -145,6 +149,7 @@ function Listings() {
     parsed,
     criteria,
     type,
+    ownership,
     transaction,
     status,
     neighborhood,
@@ -163,6 +168,7 @@ function Listings() {
 
   function reset() {
     setType(ALL);
+    setOwnership(ALL);
     setTransaction(ALL);
     setStatus(ALL);
     setNeighborhood(ALL);
@@ -251,6 +257,12 @@ function Listings() {
             <div className="grid grid-cols-2 gap-3">
               <Selector
                 label="نوع ملک"
+                value={ownership}
+                onChange={setOwnership}
+                options={OWNERSHIP_LABELS}
+              />
+              <Selector
+                label="کاربری"
                 value={type}
                 onChange={setType}
                 options={PROPERTY_TYPE_LABELS}
