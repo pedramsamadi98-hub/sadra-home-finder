@@ -315,7 +315,7 @@ function Detail({ userId }: { userId: string }) {
               className="h-11"
               disabled={removal.isPending}
               onClick={() => {
-                if (window.confirm("این ملک حذف شود؟")) removal.mutate();
+                if (window.confirm("این ملک همراه با تاریخچه پیگیری‌هایش حذف شود؟")) removal.mutate();
               }}
             >
               {removal.isPending ? (
