@@ -65,3 +65,19 @@ export function faRelative(value: string | null | undefined): string {
   if (days < 30) return `${faDigits(days)} روز پیش`;
   return faDate(value);
 }
+
+const jalaliTime = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+/** Jalali date + time, e.g. ۳ مهر ۱۴۰۴، ساعت ۱۴:۳۰ */
+export function faDateTime(value: string | Date | null | undefined): string {
+  if (!value) return "—";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "—";
+  return jalaliTime.format(date);
+}
