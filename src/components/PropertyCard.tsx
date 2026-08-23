@@ -4,6 +4,7 @@ import { BedDouble, Building, MapPin, Ruler } from "lucide-react";
 import { PhotoThumb } from "@/components/PhotoGallery";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
 import {
+  OWNERSHIP_LABELS,
   PROPERTY_TYPE_LABELS,
   STATUS_LABELS,
   TRANSACTION_LABELS,
@@ -40,6 +41,11 @@ export function PropertyCard({ property }: { property: Property }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-2">
             <h3 className="min-w-0 flex-1 truncate text-sm font-bold">{property.title}</h3>
+            {property.ownership_type ? (
+              <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning">
+                {OWNERSHIP_LABELS[property.ownership_type]}
+              </span>
+            ) : null}
             <span
               className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClass(property.status)}`}
             >
