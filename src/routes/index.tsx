@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
 });
 
 function DashboardRoute() {
-  return <AuthGate>{() => <Dashboard />}</AuthGate>;
+  return <AuthGate>{(userId) => <Dashboard userId={userId} />}</AuthGate>;
 }
 
 function StatCard({
