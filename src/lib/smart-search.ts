@@ -1,8 +1,14 @@
 import { enDigits, faDigits } from "@/lib/fa";
-import type { Property, PropertyType, TransactionType } from "@/lib/properties";
+import type {
+  OwnershipType,
+  Property,
+  PropertyType,
+  TransactionType,
+} from "@/lib/properties";
 
 export type CriterionKey =
   | "property_type"
+  | "ownership_type"
   | "transaction_type"
   | "bedrooms"
   | "phase"
@@ -203,6 +209,25 @@ export function parseSmartQuery(input: string): ParsedQuery {
     }
   }
 
+  // --- ownership type (ملکی / اوقاف) ---
+  const bothOwnership = text.match(
+    /(?:ملکی|اوقافی?)\s*(?:یا|و)\s*(?:ملکی|اوقافی?)|فرقی\s*نداره|فرقی\s*نمیکنه|مهم\s*نیست/,
+  );
+  if (bothOwnership) {
+    strip(bothOwnership[0]);
+    text = text.replace(/ملکی|اوقافی?/g, " ");
+  } else {
+    const owqaf = text.match(/اوقافی|اوقاف/);
+    const melki = text.match(/ملکی/);
+    if (owqaf) {
+      add("ownership_type", "اوقاف", "owqaf" satisfies OwnershipType);
+      strip(owqaf[0]);
+    } else if (melki) {
+      add("ownership_type", "ملکی", "melki" satisfies OwnershipType);
+      strip(melki[0]);
+    }
+  }
+
   // --- transaction type ---
   const mortgage = text.match(/رهن(?:\s*و\s*اجاره)?/);
   if (mortgage) {
@@ -228,6 +253,9 @@ export function parseSmartQuery(input: string): ParsedQuery {
     "ملکهای",
     "ملکها",
     "فایل",
+    "میخوام",
+    "می خوام",
+    "فقط",
     "فایلهای",
     "فایلها",
     "های",
@@ -269,6 +297,9 @@ export function matchesCriteria(property: Property, criteria: Criterion[]): bool
     switch (c.key) {
       case "property_type":
         if (property.property_type !== (c.value as PropertyType)) return false;
+        break;
+      case "ownership_type":
+        if (property.ownership_type !== (c.value as OwnershipType)) return false;
         break;
       case "transaction_type":
         if (property.transaction_type !== (c.value as TransactionType)) return false;
