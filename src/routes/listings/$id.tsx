@@ -7,6 +7,7 @@ import {
   Calendar,
   Car,
   Copy,
+  Landmark,
   Loader2,
   MapPin,
   MoveVertical,
@@ -28,10 +29,13 @@ import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
 import {
   deleteProperty,
   fetchProperty,
+  OWNERSHIP_LABELS,
   PROPERTY_TYPE_LABELS,
   STATUS_LABELS,
   TRANSACTION_LABELS,
+  updatePropertyOwnership,
   updatePropertyStatus,
+  type OwnershipType,
   type PropertyStatus,
 } from "@/lib/properties";
 
@@ -104,6 +108,16 @@ function Detail({ userId }: { userId: string }) {
     onError: () => toast.error("تغییر وضعیت ناموفق بود"),
   });
 
+  const ownershipChange = useMutation({
+    mutationFn: (ownership: OwnershipType) => updatePropertyOwnership(id, ownership),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["property", id] });
+      await queryClient.invalidateQueries({ queryKey: ["properties"] });
+      toast.success("نوع ملک به‌روزرسانی شد");
+    },
+    onError: () => toast.error("تغییر نوع ملک ناموفق بود"),
+  });
+
   const removal = useMutation({
     mutationFn: () => deleteProperty(id),
     onSuccess: async () => {
@@ -154,8 +168,17 @@ function Detail({ userId }: { userId: string }) {
 
         <section className="grid gap-2">
           <Row
-            icon={Building}
+            icon={Landmark}
             label="نوع ملک"
+            value={
+              property.ownership_type
+                ? OWNERSHIP_LABELS[property.ownership_type]
+                : "تعیین نشده"
+            }
+          />
+          <Row
+            icon={Building}
+            label="کاربری"
             value={`${PROPERTY_TYPE_LABELS[property.property_type]} • ${TRANSACTION_LABELS[property.transaction_type]}`}
           />
           <Row icon={Ruler} label="متراژ" value={faArea(property.area)} />
@@ -279,6 +302,29 @@ function Detail({ userId }: { userId: string }) {
         </section>
 
         <FollowUpSection propertyId={property.id} userId={userId} canEdit={isOwn} />
+
+        {isOwn ? (
+          <section className="surface-card space-y-3 p-4">
+            <h2 className="text-sm font-bold">نوع ملک (ملکی / اوقاف)</h2>
+            <div className="grid grid-cols-2 gap-2">
+              {(Object.keys(OWNERSHIP_LABELS) as OwnershipType[]).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={ownershipChange.isPending}
+                  onClick={() => ownershipChange.mutate(key)}
+                  className={`h-10 rounded-xl border text-xs font-medium transition-colors ${
+                    property.ownership_type === key
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  {OWNERSHIP_LABELS[key]}
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {isOwn ? (
           <section className="surface-card space-y-3 p-4">
