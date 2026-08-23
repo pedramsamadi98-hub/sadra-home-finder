@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
+import { FollowUpSection } from "@/components/FollowUpSection";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Button } from "@/components/ui/button";
 import { fetchBrokers } from "@/lib/brokers";
@@ -276,6 +277,8 @@ function Detail({ userId }: { userId: string }) {
             </p>
           )}
         </section>
+
+        <FollowUpSection propertyId={property.id} userId={userId} canEdit={isOwn} />
 
         {isOwn ? (
           <section className="surface-card space-y-3 p-4">

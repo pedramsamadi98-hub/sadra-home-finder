@@ -5,6 +5,7 @@ import { Archive, CheckCircle2, Home, KeyRound, Loader2, TrendingUp } from "luci
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { PropertyCard } from "@/components/PropertyCard";
+import { TodayFollowUps } from "@/components/TodayFollowUps";
 import { faDate, faDigits } from "@/lib/fa";
 import { fetchProperties, PROPERTY_TYPE_LABELS, type Property } from "@/lib/properties";
 
@@ -53,7 +54,7 @@ function StatCard({
   );
 }
 
-function Dashboard() {
+function Dashboard({ userId }: { userId: string }) {
   const { data, isLoading } = useQuery<Property[]>({
     queryKey: ["properties"],
     queryFn: fetchProperties,
@@ -136,6 +137,8 @@ function Dashboard() {
               </div>
             </section>
           ) : null}
+
+          <TodayFollowUps userId={userId} />
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
