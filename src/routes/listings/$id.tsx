@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
+import { FollowUpSection } from "@/components/FollowUpSection";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Button } from "@/components/ui/button";
 import { fetchBrokers } from "@/lib/brokers";
@@ -277,6 +278,8 @@ function Detail({ userId }: { userId: string }) {
           )}
         </section>
 
+        <FollowUpSection propertyId={property.id} userId={userId} canEdit={isOwn} />
+
         {isOwn ? (
           <section className="surface-card space-y-3 p-4">
             <h2 className="text-sm font-bold">تغییر وضعیت</h2>
@@ -312,7 +315,7 @@ function Detail({ userId }: { userId: string }) {
               className="h-11"
               disabled={removal.isPending}
               onClick={() => {
-                if (window.confirm("این ملک حذف شود؟")) removal.mutate();
+                if (window.confirm("این ملک همراه با تاریخچه پیگیری‌هایش حذف شود؟")) removal.mutate();
               }}
             >
               {removal.isPending ? (
