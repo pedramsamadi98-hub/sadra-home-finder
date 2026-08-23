@@ -119,6 +119,7 @@ export type Database = {
           notes: string | null
           owner_name: string | null
           owner_phone: string | null
+          ownership_type: string | null
           parking: boolean
           phase: string | null
           photos: string[]
@@ -151,6 +152,7 @@ export type Database = {
           notes?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          ownership_type?: string | null
           parking?: boolean
           phase?: string | null
           photos?: string[]
@@ -183,6 +185,7 @@ export type Database = {
           notes?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          ownership_type?: string | null
           parking?: boolean
           phase?: string | null
           photos?: string[]
