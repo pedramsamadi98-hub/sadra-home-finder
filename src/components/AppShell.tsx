@@ -43,6 +43,10 @@ export function AppShell({
 }) {
   const { theme, toggle } = useTheme();
   const router = useRouter();
+  const { isAdmin } = useRole();
+  const navItems: ReadonlyArray<{ to: string; label: string; icon: typeof List }> = isAdmin
+    ? adminNav
+    : collaboratorNav;
 
   async function signOut() {
     await supabase.auth.signOut();
