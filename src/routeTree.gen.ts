@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BrokersRouteImport } from './routes/brokers'
 import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as BrokersIdRouteImport } from './routes/brokers_.$id'
 import { Route as CustomersIdRouteImport } from './routes/customers_.$id'
@@ -40,6 +41,11 @@ const BrokersRoute = BrokersRouteImport.update({
 const CustomersRoute = CustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsersRoute = UsersRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/brokers': typeof BrokersRoute
   '/customers': typeof CustomersRoute
+  '/reports': typeof ReportsRoute
   '/users': typeof UsersRoute
   '/brokers/$id': typeof BrokersIdRoute
   '/customers/$id': typeof CustomersIdRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/brokers': typeof BrokersRoute
   '/customers': typeof CustomersRoute
+  '/reports': typeof ReportsRoute
   '/users': typeof UsersRoute
   '/brokers/$id': typeof BrokersIdRoute
   '/customers/$id': typeof CustomersIdRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/brokers': typeof BrokersRoute
   '/customers': typeof CustomersRoute
+  '/reports': typeof ReportsRoute
   '/users': typeof UsersRoute
   '/brokers_/$id': typeof BrokersIdRoute
   '/customers_/$id': typeof CustomersIdRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/brokers'
     | '/customers'
+    | '/reports'
     | '/users'
     | '/brokers/$id'
     | '/customers/$id'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/brokers'
     | '/customers'
+    | '/reports'
     | '/users'
     | '/brokers/$id'
     | '/customers/$id'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/brokers'
     | '/customers'
+    | '/reports'
     | '/users'
     | '/brokers_/$id'
     | '/customers_/$id'
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BrokersRoute: typeof BrokersRoute
   CustomersRoute: typeof CustomersRoute
+  ReportsRoute: typeof ReportsRoute
   UsersRoute: typeof UsersRoute
   BrokersIdRoute: typeof BrokersIdRoute
   CustomersIdRoute: typeof CustomersIdRoute
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/customers'
       preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/users': {
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BrokersRoute: BrokersRoute,
   CustomersRoute: CustomersRoute,
+  ReportsRoute: ReportsRoute,
   UsersRoute: UsersRoute,
   BrokersIdRoute: BrokersIdRoute,
   CustomersIdRoute: CustomersIdRoute,
