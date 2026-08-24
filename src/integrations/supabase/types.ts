@@ -98,13 +98,6 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "follow_ups_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties_shared"
-            referencedColumns: ["id"]
-          },
         ]
       }
       profiles: {
@@ -267,87 +260,7 @@ export type Database = {
       }
     }
     Views: {
-      properties_shared: {
-        Row: {
-          area: number | null
-          bedrooms: number | null
-          building_age: number | null
-          city: string | null
-          created_at: string | null
-          deposit: number | null
-          description: string | null
-          elevator: boolean | null
-          floor: number | null
-          id: string | null
-          monthly_rent: number | null
-          neighborhood: string | null
-          ownership_type: string | null
-          parking: boolean | null
-          phase: string | null
-          price: number | null
-          property_type: string | null
-          status: string | null
-          storage: boolean | null
-          street: string | null
-          title: string | null
-          total_floors: number | null
-          transaction_type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          area?: number | null
-          bedrooms?: number | null
-          building_age?: number | null
-          city?: string | null
-          created_at?: string | null
-          deposit?: number | null
-          description?: string | null
-          elevator?: boolean | null
-          floor?: number | null
-          id?: string | null
-          monthly_rent?: number | null
-          neighborhood?: string | null
-          ownership_type?: string | null
-          parking?: boolean | null
-          phase?: string | null
-          price?: number | null
-          property_type?: string | null
-          status?: string | null
-          storage?: boolean | null
-          street?: string | null
-          title?: string | null
-          total_floors?: number | null
-          transaction_type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          area?: number | null
-          bedrooms?: number | null
-          building_age?: number | null
-          city?: string | null
-          created_at?: string | null
-          deposit?: number | null
-          description?: string | null
-          elevator?: boolean | null
-          floor?: number | null
-          id?: string | null
-          monthly_rent?: number | null
-          neighborhood?: string | null
-          ownership_type?: string | null
-          parking?: boolean | null
-          phase?: string | null
-          price?: number | null
-          property_type?: string | null
-          status?: string | null
-          storage?: boolean | null
-          street?: string | null
-          title?: string | null
-          total_floors?: number | null
-          transaction_type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       can_view_shared: { Args: { _user_id: string }; Returns: boolean }
@@ -359,6 +272,35 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      shared_properties: {
+        Args: never
+        Returns: {
+          area: number
+          bedrooms: number
+          building_age: number
+          city: string
+          created_at: string
+          deposit: number
+          description: string
+          elevator: boolean
+          floor: number
+          id: string
+          monthly_rent: number
+          neighborhood: string
+          ownership_type: string
+          parking: boolean
+          phase: string
+          price: number
+          property_type: string
+          status: string
+          storage: boolean
+          street: string
+          title: string
+          total_floors: number
+          transaction_type: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "collaborator"
