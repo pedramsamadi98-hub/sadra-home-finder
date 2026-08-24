@@ -361,7 +361,7 @@ function Listings() {
           </div>
         ) : null}
 
-        {isLoading ? (
+        {isLoading || roleLoading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="size-6 animate-spin text-primary" />
           </div>

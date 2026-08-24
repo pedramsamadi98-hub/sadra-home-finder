@@ -26,9 +26,10 @@ import { PhotoGallery } from "@/components/PhotoGallery";
 import { Button } from "@/components/ui/button";
 import { fetchBrokers } from "@/lib/brokers";
 import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
+import { useRole } from "@/lib/roles";
 import {
   deleteProperty,
-  fetchProperty,
+  fetchPropertyFor,
   OWNERSHIP_LABELS,
   PROPERTY_TYPE_LABELS,
   STATUS_LABELS,
@@ -90,12 +91,19 @@ function Detail({ userId }: { userId: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const { isAdmin, loading: roleLoading } = useRole();
+
   const { data: property, isLoading } = useQuery({
-    queryKey: ["property", id],
-    queryFn: () => fetchProperty(id),
+    queryKey: ["property", id, isAdmin ? "admin" : "shared"],
+    queryFn: () => fetchPropertyFor(id, isAdmin),
+    enabled: !roleLoading,
   });
 
-  const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
+  const { data: brokers } = useQuery({
+    queryKey: ["brokers"],
+    queryFn: fetchBrokers,
+    enabled: isAdmin,
+  });
   const broker = brokers?.find((item) => item.id === property?.broker_id) ?? null;
 
   const statusChange = useMutation({
@@ -128,7 +136,7 @@ function Detail({ userId }: { userId: string }) {
     onError: () => toast.error("حذف ناموفق بود"),
   });
 
-  if (isLoading || !property) {
+  if (isLoading || roleLoading || !property) {
     return (
       <AppShell title="جزئیات ملک">
         <div className="flex justify-center py-16">
@@ -138,7 +146,7 @@ function Detail({ userId }: { userId: string }) {
     );
   }
 
-  const isOwn = property.user_id === userId;
+  const isOwn = isAdmin && (property.user_id === userId || property.user_id === null);
 
   return (
     <AppShell title={property.title} subtitle={STATUS_LABELS[property.status]}>
@@ -230,6 +238,7 @@ function Detail({ userId }: { userId: string }) {
           </section>
         ) : null}
 
+        {isAdmin ? (
         <section className="surface-card space-y-3 p-4">
           <h2 className="text-sm font-bold">مالک</h2>
           <p className="flex items-center gap-2 text-sm">
@@ -265,7 +274,9 @@ function Detail({ userId }: { userId: string }) {
             </Button>
           ) : null}
         </section>
+        ) : null}
 
+        {isAdmin ? (
         <section className="surface-card space-y-3 p-4">
           <h2 className="text-sm font-bold">منبع فایل</h2>
           {broker ? (
@@ -300,8 +311,11 @@ function Detail({ userId }: { userId: string }) {
             </p>
           )}
         </section>
+        ) : null}
 
-        <FollowUpSection propertyId={property.id} userId={userId} canEdit={isOwn} />
+        {isAdmin ? (
+          <FollowUpSection propertyId={property.id} userId={userId} canEdit={isOwn} />
+        ) : null}
 
         {isOwn ? (
           <section className="surface-card space-y-3 p-4">
@@ -373,7 +387,8 @@ function Detail({ userId }: { userId: string }) {
           </div>
         ) : (
           <p className="rounded-xl bg-secondary/60 p-3 text-center text-xs text-muted-foreground">
-            این یک فایل نمونه است و قابل ویرایش نیست.
+            شما به‌عنوان همکار این فایل را مشاهده می‌کنید؛ اطلاعات مالک، دلال و تصاویر خصوصی نمایش
+            داده نمی‌شود.
           </p>
         )}
       </div>
