@@ -100,6 +100,41 @@ export type Database = {
           },
         ]
       }
+      photo_visibility: {
+        Row: {
+          created_at: string
+          property_id: string | null
+          storage_path: string
+          updated_at: string
+          user_id: string
+          visibility: string
+        }
+        Insert: {
+          created_at?: string
+          property_id?: string | null
+          storage_path: string
+          updated_at?: string
+          user_id: string
+          visibility: string
+        }
+        Update: {
+          created_at?: string
+          property_id?: string | null
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_visibility_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -151,6 +186,7 @@ export type Database = {
           phase: string | null
           photos: string[]
           price: number | null
+          private_photos: string[]
           property_type: string
           status: string
           storage: boolean
@@ -184,6 +220,7 @@ export type Database = {
           phase?: string | null
           photos?: string[]
           price?: number | null
+          private_photos?: string[]
           property_type?: string
           status?: string
           storage?: boolean
@@ -217,6 +254,7 @@ export type Database = {
           phase?: string | null
           photos?: string[]
           price?: number | null
+          private_photos?: string[]
           property_type?: string
           status?: string
           storage?: boolean
@@ -272,6 +310,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      photo_is_public_listing: { Args: { _path: string }; Returns: boolean }
       shared_properties: {
         Args: never
         Returns: {
@@ -290,6 +329,7 @@ export type Database = {
           ownership_type: string
           parking: boolean
           phase: string
+          photos: string[]
           price: number
           property_type: string
           status: string
