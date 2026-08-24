@@ -1,18 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
+import { assertAdmin } from "@/lib/admin-guard.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-async function assertAdmin(supabaseClient: {
-  from: (table: "user_roles") => {
-    select: (cols: string) => { eq: (col: string, value: string) => Promise<{ data: unknown }> };
-  };
-}, userId: string) {
-  const { data } = await supabaseClient.from("user_roles").select("role").eq("user_id", userId);
-  const roles = (data ?? []) as Array<{ role: string }>;
-  if (!roles.some((row) => row.role === "admin")) {
-    throw new Error("دسترسی مدیر لازم است");
-  }
-}
 
 export const createCollaborator = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
