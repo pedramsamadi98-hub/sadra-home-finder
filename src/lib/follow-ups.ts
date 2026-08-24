@@ -6,7 +6,8 @@ export type FollowUpPriority = "normal" | "important" | "urgent";
 export interface FollowUp {
   id: string;
   user_id: string;
-  property_id: string;
+  property_id: string | null;
+  customer_id: string | null;
   called_at: string | null;
   call_result: string | null;
   next_at: string | null;
@@ -44,25 +45,35 @@ export const emptyFollowUp: FollowUpInput = {
   priority: "normal",
 };
 
-export async function fetchFollowUps(propertyId?: string): Promise<FollowUp[]> {
+/** A follow-up hangs off a property file or off a customer. */
+export interface FollowUpTarget {
+  propertyId?: string | null;
+  customerId?: string | null;
+}
+
+export async function fetchFollowUps(target?: FollowUpTarget): Promise<FollowUp[]> {
   let query = supabase
     .from("follow_ups")
     .select("*")
     .order("created_at", { ascending: false });
-  if (propertyId) query = query.eq("property_id", propertyId);
+  if (target?.propertyId) query = query.eq("property_id", target.propertyId);
+  if (target?.customerId) query = query.eq("customer_id", target.customerId);
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as unknown as FollowUp[];
 }
 
 export async function createFollowUp(
-  propertyId: string,
+  target: FollowUpTarget,
   input: FollowUpInput,
   userId: string,
 ) {
-  const { error } = await supabase
-    .from("follow_ups")
-    .insert({ ...input, property_id: propertyId, user_id: userId });
+  const { error } = await supabase.from("follow_ups").insert({
+    ...input,
+    property_id: target.propertyId ?? null,
+    customer_id: target.customerId ?? null,
+    user_id: userId,
+  });
   if (error) throw error;
 }
 
