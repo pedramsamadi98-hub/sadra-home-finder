@@ -7,7 +7,8 @@ import { AuthGate } from "@/components/AuthGate";
 import { PropertyCard } from "@/components/PropertyCard";
 import { TodayFollowUps } from "@/components/TodayFollowUps";
 import { faDate, faDigits } from "@/lib/fa";
-import { fetchProperties, PROPERTY_TYPE_LABELS, type Property } from "@/lib/properties";
+import { fetchPropertiesFor, PROPERTY_TYPE_LABELS, type Property } from "@/lib/properties";
+import { useRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -140,7 +141,7 @@ function Dashboard({ userId }: { userId: string }) {
             </section>
           ) : null}
 
-          <TodayFollowUps userId={userId} />
+          {isAdmin ? <TodayFollowUps userId={userId} /> : null}
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
