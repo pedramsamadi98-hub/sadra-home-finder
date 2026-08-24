@@ -130,6 +130,30 @@ export async function fetchProperties(): Promise<Property[]> {
   return (data ?? []) as unknown as Property[];
 }
 
+/**
+ * Collaborator-safe read: goes through the server-side `shared_properties`
+ * function, which never returns owner contact info, broker links, private
+ * notes, address or photos.
+ */
+export async function fetchSharedProperties(): Promise<Property[]> {
+  const { data, error } = await supabase.rpc("shared_properties");
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    ...(row as Record<string, unknown>),
+    user_id: null,
+    broker_id: null,
+    address: null,
+    owner_name: null,
+    owner_phone: null,
+    notes: null,
+    photos: [],
+  })) as unknown as Property[];
+}
+
+export async function fetchPropertiesFor(isAdmin: boolean): Promise<Property[]> {
+  return isAdmin ? fetchProperties() : fetchSharedProperties();
+}
+
 export async function fetchProperty(id: string): Promise<Property> {
   const { data, error } = await supabase
     .from("properties")
@@ -139,6 +163,14 @@ export async function fetchProperty(id: string): Promise<Property> {
   if (error) throw error;
   if (!data) throw new Error("ملک پیدا نشد");
   return data as unknown as Property;
+}
+
+export async function fetchPropertyFor(id: string, isAdmin: boolean): Promise<Property> {
+  if (isAdmin) return fetchProperty(id);
+  const shared = await fetchSharedProperties();
+  const found = shared.find((item) => item.id === id);
+  if (!found) throw new Error("ملک پیدا نشد");
+  return found;
 }
 
 export async function createProperty(input: PropertyInput, userId: string) {

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { fetchBrokers } from "@/lib/brokers";
 import { enDigits, faDigits, parseNumber } from "@/lib/fa";
 import {
-  fetchProperties,
+  fetchPropertiesFor,
   NEIGHBORHOODS,
   PHASES,
   OWNERSHIP_LABELS,
@@ -20,6 +20,7 @@ import {
   TRANSACTION_LABELS,
   type Property,
 } from "@/lib/properties";
+import { useRole } from "@/lib/roles";
 import { matchesCriteria, parseSmartQuery, relevanceScore } from "@/lib/smart-search";
 
 export const Route = createFileRoute("/listings/")({
@@ -48,9 +49,11 @@ function ListingsRoute() {
 const ALL = "all";
 
 function Listings() {
+  const { isAdmin, loading: roleLoading } = useRole();
   const { data, isLoading } = useQuery<Property[]>({
-    queryKey: ["properties"],
-    queryFn: fetchProperties,
+    queryKey: ["properties", isAdmin ? "admin" : "shared"],
+    queryFn: () => fetchPropertiesFor(isAdmin),
+    enabled: !roleLoading,
   });
 
   const [query, setQuery] = useState("");
@@ -71,7 +74,11 @@ function Listings() {
   const [storageOnly, setStorageOnly] = useState(false);
   const [broker, setBroker] = useState<string>(ALL);
 
-  const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
+  const { data: brokers } = useQuery({
+    queryKey: ["brokers"],
+    queryFn: fetchBrokers,
+    enabled: isAdmin,
+  });
 
   const [removed, setRemoved] = useState<string[]>([]);
 
@@ -309,22 +316,24 @@ function Listings() {
                   ))}
                 </select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">دلال</Label>
-                <select
-                  value={broker}
-                  onChange={(event) => setBroker(event.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                >
-                  <option value={ALL}>همه</option>
-                  <option value="none">بدون دلال</option>
-                  {(brokers ?? []).map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {isAdmin ? (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">دلال</Label>
+                  <select
+                    value={broker}
+                    onChange={(event) => setBroker(event.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                  >
+                    <option value={ALL}>همه</option>
+                    <option value="none">بدون دلال</option>
+                    {(brokers ?? []).map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <TextFilter label="حداقل متراژ" value={minArea} onChange={setMinArea} />
@@ -352,7 +361,7 @@ function Listings() {
           </div>
         ) : null}
 
-        {isLoading ? (
+        {isLoading || roleLoading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="size-6 animate-spin text-primary" />
           </div>

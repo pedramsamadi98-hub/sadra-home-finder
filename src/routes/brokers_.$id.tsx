@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Loader2, Phone, Plus, Users } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
-import { AuthGate } from "@/components/AuthGate";
+import { AdminOnly } from "@/components/AdminOnly";
 import { Button } from "@/components/ui/button";
 import { PropertyCard } from "@/components/PropertyCard";
 import { fetchBrokers } from "@/lib/brokers";
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/brokers_/$id")({
       },
     ],
   }),
-  component: () => <AuthGate>{() => <BrokerDetail />}</AuthGate>,
+  component: () => <AdminOnly>{() => <BrokerDetail />}</AdminOnly>,
 });
 
 function BrokerDetail() {

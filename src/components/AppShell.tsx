@@ -1,16 +1,33 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Building2, LayoutDashboard, List, Moon, Plus, Sun, LogOut, Users } from "lucide-react";
+import {
+  Building2,
+  LayoutDashboard,
+  List,
+  Moon,
+  Plus,
+  ShieldCheck,
+  Sun,
+  LogOut,
+  Users,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/integrations/supabase/client";
+import { useRole } from "@/lib/roles";
 
-const navItems = [
+const adminNav = [
   { to: "/", label: "داشبورد", icon: LayoutDashboard },
   { to: "/listings", label: "املاک", icon: List },
   { to: "/brokers", label: "دلال‌ها", icon: Users },
   { to: "/listings/new", label: "ثبت ملک", icon: Plus },
+  { to: "/users", label: "همکارها", icon: ShieldCheck },
+] as const;
+
+const collaboratorNav = [
+  { to: "/", label: "داشبورد", icon: LayoutDashboard },
+  { to: "/listings", label: "املاک", icon: List },
 ] as const;
 
 export function AppShell({
@@ -26,6 +43,10 @@ export function AppShell({
 }) {
   const { theme, toggle } = useTheme();
   const router = useRouter();
+  const { isAdmin } = useRole();
+  const navItems: ReadonlyArray<{ to: string; label: string; icon: typeof List }> = isAdmin
+    ? adminNav
+    : collaboratorNav;
 
   async function signOut() {
     await supabase.auth.signOut();

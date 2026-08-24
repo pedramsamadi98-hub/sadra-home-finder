@@ -7,7 +7,8 @@ import { AuthGate } from "@/components/AuthGate";
 import { PropertyCard } from "@/components/PropertyCard";
 import { TodayFollowUps } from "@/components/TodayFollowUps";
 import { faDate, faDigits } from "@/lib/fa";
-import { fetchProperties, PROPERTY_TYPE_LABELS, type Property } from "@/lib/properties";
+import { fetchPropertiesFor, PROPERTY_TYPE_LABELS, type Property } from "@/lib/properties";
+import { useRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -55,9 +56,11 @@ function StatCard({
 }
 
 function Dashboard({ userId }: { userId: string }) {
+  const { isAdmin, loading: roleLoading } = useRole();
   const { data, isLoading } = useQuery<Property[]>({
-    queryKey: ["properties"],
-    queryFn: fetchProperties,
+    queryKey: ["properties", isAdmin ? "admin" : "shared"],
+    queryFn: () => fetchPropertiesFor(isAdmin),
+    enabled: !roleLoading,
   });
 
   const items = data ?? [];
@@ -75,7 +78,7 @@ function Dashboard({ userId }: { userId: string }) {
 
   return (
     <AppShell title="داشبورد" subtitle={`امروز ${faDate(new Date())}`}>
-      {isLoading ? (
+      {isLoading || roleLoading ? (
         <div className="flex justify-center py-16">
           <Loader2 className="size-6 animate-spin text-primary" />
         </div>
@@ -138,7 +141,7 @@ function Dashboard({ userId }: { userId: string }) {
             </section>
           ) : null}
 
-          <TodayFollowUps userId={userId} />
+          {isAdmin ? <TodayFollowUps userId={userId} /> : null}
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
