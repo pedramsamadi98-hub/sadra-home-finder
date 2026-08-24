@@ -87,8 +87,10 @@ function Customers({ userId }: { userId: string }) {
   }
 
   const save = useMutation({
-    mutationFn: () =>
-      editingId ? updateCustomer(editingId, form) : createCustomer(form, userId),
+    mutationFn: async () => {
+      if (editingId) await updateCustomer(editingId, form);
+      else await createCustomer(form, userId);
+    },
     onSuccess: async () => {
       await invalidate();
       toast.success(editingId ? "مشتری ویرایش شد" : "مشتری اضافه شد");
