@@ -131,6 +131,7 @@ export function PropertyForm({
   const runOcr = useServerFn(extractPropertyFromImage);
   const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
   const { data: photoUrls } = usePhotoUrls(form.photos);
+  const { data: privateUrls } = usePhotoUrls(form.private_photos);
 
   function set<K extends keyof PropertyInput>(key: K, value: PropertyInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -140,7 +141,7 @@ export function PropertyForm({
     if (!files?.length) return;
     setUploading(true);
     try {
-      const paths = await uploadPhotos(Array.from(files), userId);
+      const paths = await uploadPhotos(Array.from(files), userId, "public_listing");
       setForm((prev) => ({ ...prev, photos: [...prev.photos, ...paths] }));
       toast.success("عکس‌ها بارگذاری شد");
     } catch {
@@ -162,9 +163,11 @@ export function PropertyForm({
         reader.readAsDataURL(file);
       });
 
-      // Keep the original image attached to the property.
-      const [path] = await uploadPhotos([file], userId);
-      if (path) setForm((prev) => ({ ...prev, photos: [...prev.photos, path] }));
+      // Keep the source image attached, but as a PRIVATE OCR image (admin only).
+      const [path] = await uploadPhotos([file], userId, "private_ocr");
+      if (path) {
+        setForm((prev) => ({ ...prev, private_photos: [...prev.private_photos, path] }));
+      }
 
       const result = await runOcr({ data: { image: dataUrl } });
       setOcrResult(result);
@@ -416,7 +419,8 @@ export function PropertyForm({
         </label>
         <p className="text-[11px] text-muted-foreground">
           عکس برگه یا فایل ملکی (دست‌نویس یا تایپی) را انتخاب کنید؛ اطلاعات خوانده‌شده را
-          قبل از درج در فرم بازبینی می‌کنید و عکس هم به ملک پیوست می‌شود.
+          قبل از درج در فرم بازبینی می‌کنید. این عکس به‌عنوان «تصویر خصوصی / OCR» ذخیره
+          می‌شود و فقط برای مدیر قابل مشاهده است.
         </p>
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border py-6 text-sm text-muted-foreground">
           {uploading ? (
@@ -461,6 +465,44 @@ export function PropertyForm({
                 </button>
               </div>
             ))}
+          </div>
+        ) : null}
+        {form.private_photos.length ? (
+          <div className="space-y-2 rounded-xl border border-destructive/40 bg-destructive/5 p-3">
+            <p className="text-xs font-bold text-destructive">
+              تصاویر خصوصی / OCR — فقط مدیر
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {form.private_photos.map((path, index) => (
+                <div key={path} className="relative overflow-hidden rounded-xl">
+                  {privateUrls?.[index] ? (
+                    <img
+                      src={privateUrls[index]}
+                      alt={`تصویر خصوصی ${index + 1}`}
+                      className="h-24 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-24 w-full animate-pulse bg-secondary" />
+                  )}
+                  <span className="absolute bottom-1 start-1 rounded-md bg-background/85 px-1.5 py-0.5 text-[10px] font-bold text-destructive">
+                    خصوصی
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      set(
+                        "private_photos",
+                        form.private_photos.filter((item) => item !== path),
+                      )
+                    }
+                    className="absolute end-1 top-1 rounded-md bg-background/85 p-1 text-destructive"
+                    aria-label="حذف تصویر خصوصی"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
       </Section>
