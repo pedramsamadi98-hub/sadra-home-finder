@@ -23,6 +23,7 @@ import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { FollowUpSection } from "@/components/FollowUpSection";
 import { PhotoGallery } from "@/components/PhotoGallery";
+import { PrivatePhotoSection } from "@/components/PrivatePhotoSection";
 import { Button } from "@/components/ui/button";
 import { fetchBrokers } from "@/lib/brokers";
 import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
@@ -151,7 +152,11 @@ function Detail({ userId }: { userId: string }) {
   return (
     <AppShell title={property.title} subtitle={STATUS_LABELS[property.status]}>
       <div className="space-y-4">
-        <PhotoGallery paths={property.photos} alt={property.title} />
+        <PhotoGallery
+          paths={isAdmin ? property.photos : property.photos}
+          alt={property.title}
+        />
+        {isAdmin ? <PrivatePhotoSection property={property} /> : null}
 
         <section className="surface-card space-y-2 p-4">
           <p className="text-lg font-bold text-primary">
