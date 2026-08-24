@@ -152,10 +152,7 @@ function Detail({ userId }: { userId: string }) {
   return (
     <AppShell title={property.title} subtitle={STATUS_LABELS[property.status]}>
       <div className="space-y-4">
-        <PhotoGallery
-          paths={isAdmin ? property.photos : property.photos}
-          alt={property.title}
-        />
+        <PhotoGallery paths={property.photos} alt={property.title} />
         {isAdmin ? <PrivatePhotoSection property={property} /> : null}
 
         <section className="surface-card space-y-2 p-4">
