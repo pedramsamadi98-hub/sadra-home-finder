@@ -1,5 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import {
+  BarChart3,
   Building2,
   LayoutDashboard,
   List,
@@ -23,6 +24,7 @@ const adminNav = [
   { to: "/listings", label: "املاک", icon: List },
   { to: "/brokers", label: "دلال‌ها", icon: Users },
   { to: "/customers", label: "مشتری‌ها", icon: UserRound },
+  { to: "/reports", label: "آمار", icon: BarChart3 },
   { to: "/listings/new", label: "ثبت ملک", icon: Plus },
   { to: "/users", label: "همکارها", icon: ShieldCheck },
 ] as const;
