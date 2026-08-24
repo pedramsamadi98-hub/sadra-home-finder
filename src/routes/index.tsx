@@ -55,9 +55,11 @@ function StatCard({
 }
 
 function Dashboard({ userId }: { userId: string }) {
+  const { isAdmin, loading: roleLoading } = useRole();
   const { data, isLoading } = useQuery<Property[]>({
-    queryKey: ["properties"],
-    queryFn: fetchProperties,
+    queryKey: ["properties", isAdmin ? "admin" : "shared"],
+    queryFn: () => fetchPropertiesFor(isAdmin),
+    enabled: !roleLoading,
   });
 
   const items = data ?? [];
