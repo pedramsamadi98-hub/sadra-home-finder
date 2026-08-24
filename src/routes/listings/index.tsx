@@ -316,22 +316,24 @@ function Listings() {
                   ))}
                 </select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">دلال</Label>
-                <select
-                  value={broker}
-                  onChange={(event) => setBroker(event.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                >
-                  <option value={ALL}>همه</option>
-                  <option value="none">بدون دلال</option>
-                  {(brokers ?? []).map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {isAdmin ? (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">دلال</Label>
+                  <select
+                    value={broker}
+                    onChange={(event) => setBroker(event.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                  >
+                    <option value={ALL}>همه</option>
+                    <option value="none">بدون دلال</option>
+                    {(brokers ?? []).map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <TextFilter label="حداقل متراژ" value={minArea} onChange={setMinArea} />
