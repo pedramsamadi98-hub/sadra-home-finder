@@ -316,6 +316,8 @@ function Detail({ userId }: { userId: string }) {
         </section>
         ) : null}
 
+        {isAdmin ? <ShareSection propertyId={property.id} /> : null}
+
         {isAdmin ? <MatchingCustomers property={property} /> : null}
 
         {isAdmin ? (
