@@ -6,6 +6,7 @@ import {
   Moon,
   Plus,
   ShieldCheck,
+  UserRound,
   Sun,
   LogOut,
   Users,
@@ -21,6 +22,7 @@ const adminNav = [
   { to: "/", label: "داشبورد", icon: LayoutDashboard },
   { to: "/listings", label: "املاک", icon: List },
   { to: "/brokers", label: "دلال‌ها", icon: Users },
+  { to: "/customers", label: "مشتری‌ها", icon: UserRound },
   { to: "/listings/new", label: "ثبت ملک", icon: Plus },
   { to: "/users", label: "همکارها", icon: ShieldCheck },
 ] as const;

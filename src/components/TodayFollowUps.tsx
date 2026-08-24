@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { PRIORITY_TONE, STATUS_TONE } from "@/components/FollowUpSection";
 import { Button } from "@/components/ui/button";
 import { fetchBrokers } from "@/lib/brokers";
+import { fetchCustomers } from "@/lib/customers";
 import { faDateTime, faDigits } from "@/lib/fa";
 import {
   completeFollowUp,
@@ -37,6 +38,7 @@ export function TodayFollowUps({ userId }: { userId: string }) {
     queryFn: fetchProperties,
   });
   const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
+  const { data: customers } = useQuery({ queryKey: ["customers"], queryFn: fetchCustomers });
 
   const complete = useMutation({
     mutationFn: (id: string) => completeFollowUp(id),
@@ -98,6 +100,8 @@ export function TodayFollowUps({ userId }: { userId: string }) {
             </p>
             {list.map((item) => {
               const property = properties?.find((p) => p.id === item.property_id) ?? null;
+              const customer =
+                customers?.find((c) => c.id === item.customer_id) ?? null;
               const isOwner = !!property && property.user_id === userId;
               const broker =
                 brokers?.find((b) => b.id === property?.broker_id) ?? null;
@@ -114,6 +118,14 @@ export function TodayFollowUps({ userId }: { userId: string }) {
                         className="text-sm font-bold text-primary"
                       >
                         {property.title}
+                      </Link>
+                    ) : customer ? (
+                      <Link
+                        to="/customers/$id"
+                        params={{ id: customer.id }}
+                        className="text-sm font-bold text-primary"
+                      >
+                        مشتری: {customer.full_name}
                       </Link>
                     ) : (
                       <span className="text-sm font-bold">فایل نامشخص</span>

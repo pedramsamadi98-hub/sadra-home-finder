@@ -66,20 +66,25 @@ function Chips<T extends string>({
 
 export function FollowUpSection({
   propertyId,
+  customerId,
   userId,
   canEdit,
+  title = "پیگیری فایل",
 }: {
-  propertyId: string;
+  propertyId?: string;
+  customerId?: string;
   userId: string;
   canEdit: boolean;
+  title?: string;
 }) {
+  const target = { propertyId: propertyId ?? null, customerId: customerId ?? null };
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FollowUpInput>({ ...emptyFollowUp });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["follow_ups", propertyId],
-    queryFn: () => fetchFollowUps(propertyId),
+    queryKey: ["follow_ups", propertyId ?? null, customerId ?? null],
+    queryFn: () => fetchFollowUps(target),
   });
 
   const refresh = async () => {
@@ -87,7 +92,7 @@ export function FollowUpSection({
   };
 
   const create = useMutation({
-    mutationFn: () => createFollowUp(propertyId, form, userId),
+    mutationFn: () => createFollowUp(target, form, userId),
     onSuccess: async () => {
       await refresh();
       setForm({ ...emptyFollowUp });
@@ -128,7 +133,7 @@ export function FollowUpSection({
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-sm font-bold">
           <CalendarClock className="size-4 text-primary" />
-          پیگیری فایل
+          {title}
         </h2>
         {canEdit ? (
           <Button

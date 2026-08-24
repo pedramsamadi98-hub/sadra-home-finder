@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { FollowUpSection } from "@/components/FollowUpSection";
+import { MatchingCustomers } from "@/components/MatchingCustomers";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { PrivatePhotoSection } from "@/components/PrivatePhotoSection";
 import { Button } from "@/components/ui/button";
@@ -314,6 +315,8 @@ function Detail({ userId }: { userId: string }) {
           )}
         </section>
         ) : null}
+
+        {isAdmin ? <MatchingCustomers property={property} /> : null}
 
         {isAdmin ? (
           <FollowUpSection propertyId={property.id} userId={userId} canEdit={isOwn} />

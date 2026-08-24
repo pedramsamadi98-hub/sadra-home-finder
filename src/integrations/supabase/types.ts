@@ -47,17 +47,125 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_requirements: {
+        Row: {
+          bedrooms: number | null
+          city: string | null
+          created_at: string
+          customer_id: string
+          description: string | null
+          id: string
+          max_area: number | null
+          max_budget: number | null
+          min_area: number | null
+          min_budget: number | null
+          needs_elevator: boolean
+          needs_parking: boolean
+          needs_storage: boolean
+          neighborhood: string | null
+          ownership_type: string
+          phase: string | null
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bedrooms?: number | null
+          city?: string | null
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          id?: string
+          max_area?: number | null
+          max_budget?: number | null
+          min_area?: number | null
+          min_budget?: number | null
+          needs_elevator?: boolean
+          needs_parking?: boolean
+          needs_storage?: boolean
+          neighborhood?: string | null
+          ownership_type?: string
+          phase?: string | null
+          transaction_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bedrooms?: number | null
+          city?: string | null
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          id?: string
+          max_area?: number | null
+          max_budget?: number | null
+          min_area?: number | null
+          min_budget?: number | null
+          needs_elevator?: boolean
+          needs_parking?: boolean
+          needs_storage?: boolean
+          neighborhood?: string | null
+          ownership_type?: string
+          phase?: string | null
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_requirements_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       follow_ups: {
         Row: {
           call_result: string | null
           called_at: string | null
           completed_at: string | null
           created_at: string
+          customer_id: string | null
           id: string
           next_at: string | null
           notes: string | null
           priority: string
-          property_id: string
+          property_id: string | null
           status: string
           updated_at: string
           user_id: string
@@ -67,11 +175,12 @@ export type Database = {
           called_at?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_id?: string | null
           id?: string
           next_at?: string | null
           notes?: string | null
           priority?: string
-          property_id: string
+          property_id?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -81,16 +190,24 @@ export type Database = {
           called_at?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_id?: string | null
           id?: string
           next_at?: string | null
           notes?: string | null
           priority?: string
-          property_id?: string
+          property_id?: string | null
           status?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "follow_ups_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "follow_ups_property_id_fkey"
             columns: ["property_id"]
