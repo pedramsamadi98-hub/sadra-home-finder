@@ -218,11 +218,8 @@ function Reports() {
         {items.slice(0, 3).map((item) => {
           const title =
             propertyTitle(item.property_id) ?? customerName(item.customer_id) ?? "بدون عنوان";
-          const to = item.property_id
-            ? `/listings/${item.property_id}`
-            : item.customer_id
-              ? `/customers/${item.customer_id}`
-              : null;
+          const rowClass =
+            "flex items-center justify-between gap-2 rounded-lg bg-secondary/40 px-3 py-2 text-[11px]";
           const body = (
             <>
               <span className="truncate">{title}</span>
@@ -231,15 +228,31 @@ function Reports() {
               </span>
             </>
           );
-          return to ? (
-            <Link
-              key={item.id}
-              to={to}
-              className="flex items-center justify-between gap-2 rounded-lg bg-secondary/40 px-3 py-2 text-[11px]"
-            >
-              {body}
-            </Link>
-          ) : (
+          if (item.property_id) {
+            return (
+              <Link
+                key={item.id}
+                to="/listings/$id"
+                params={{ id: item.property_id }}
+                className={rowClass}
+              >
+                {body}
+              </Link>
+            );
+          }
+          if (item.customer_id) {
+            return (
+              <Link
+                key={item.id}
+                to="/customers/$id"
+                params={{ id: item.customer_id }}
+                className={rowClass}
+              >
+                {body}
+              </Link>
+            );
+          }
+          return (
             <div
               key={item.id}
               className="flex items-center justify-between gap-2 rounded-lg bg-secondary/40 px-3 py-2 text-[11px]"
@@ -334,7 +347,8 @@ function Reports() {
               {matchedCustomers.slice(0, 3).map((customer) => (
                 <Link
                   key={customer.id}
-                  to={`/customers/${customer.id}`}
+                  to="/customers/$id"
+                  params={{ id: customer.id }}
                   className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2 text-[11px]"
                 >
                   <span className="truncate">{customer.full_name}</span>
