@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
-import { AuthGate } from "@/components/AuthGate";
+import { AdminOnly } from "@/components/AdminOnly";
 import { PropertyForm } from "@/components/PropertyForm";
 import { fetchProperty, updateProperty, type PropertyInput } from "@/lib/properties";
 
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/listings/$id_/edit")({
 });
 
 function EditRoute() {
-  return <AuthGate>{(userId) => <EditProperty userId={userId} />}</AuthGate>;
+  return <AdminOnly>{(userId) => <EditProperty userId={userId} />}</AdminOnly>;
 }
 
 function EditProperty({ userId }: { userId: string }) {

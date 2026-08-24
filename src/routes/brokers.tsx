@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
-import { AuthGate } from "@/components/AuthGate";
+import { AdminOnly } from "@/components/AdminOnly";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/brokers")({
 });
 
 function BrokersRoute() {
-  return <AuthGate>{(userId) => <Brokers userId={userId} />}</AuthGate>;
+  return <AdminOnly>{(userId) => <Brokers userId={userId} />}</AdminOnly>;
 }
 
 function Brokers({ userId }: { userId: string }) {

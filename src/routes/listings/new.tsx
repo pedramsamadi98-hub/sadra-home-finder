@@ -3,7 +3,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
-import { AuthGate } from "@/components/AuthGate";
+import { AdminOnly } from "@/components/AdminOnly";
 import { PropertyForm } from "@/components/PropertyForm";
 import { createProperty, emptyProperty, type PropertyInput } from "@/lib/properties";
 
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/listings/new")({
 
 function NewRoute() {
   const { broker } = Route.useSearch();
-  return <AuthGate>{(userId) => <NewProperty userId={userId} brokerId={broker ?? null} />}</AuthGate>;
+  return <AdminOnly>{(userId) => <NewProperty userId={userId} brokerId={broker ?? null} />}</AdminOnly>;
 }
 
 function NewProperty({ userId, brokerId }: { userId: string; brokerId: string | null }) {
