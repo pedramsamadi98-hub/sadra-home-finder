@@ -35,6 +35,8 @@ export interface Property {
   description: string | null;
   notes: string | null;
   photos: string[];
+  /** Private OCR source images. Admin-only, never returned to collaborators. */
+  private_photos: string[];
   created_at: string;
   updated_at: string;
 }
@@ -119,6 +121,7 @@ export const emptyProperty: PropertyInput = {
   description: "",
   notes: "",
   photos: [],
+  private_photos: [],
 };
 
 export async function fetchProperties(): Promise<Property[]> {
@@ -146,7 +149,8 @@ export async function fetchSharedProperties(): Promise<Property[]> {
     owner_name: null,
     owner_phone: null,
     notes: null,
-    photos: [],
+    photos: ((row as { photos?: string[] | null }).photos ?? []) as string[],
+    private_photos: [],
   })) as unknown as Property[];
 }
 
@@ -206,17 +210,111 @@ export async function deleteProperty(id: string) {
   if (error) throw error;
 }
 
-export async function uploadPhotos(files: File[], userId: string): Promise<string[]> {
+export type PhotoVisibility = "public_listing" | "private_ocr";
+
+export const PHOTO_VISIBILITY_LABELS: Record<PhotoVisibility, string> = {
+  public_listing: "قابل نمایش",
+  private_ocr: "خصوصی / OCR",
+};
+
+/** Records the access class of an uploaded image (drives the storage policies). */
+async function registerPhotoVisibility(
+  paths: string[],
+  userId: string,
+  visibility: PhotoVisibility,
+  propertyId?: string | null,
+) {
+  if (!paths.length) return;
+  const { error } = await supabase.from("photo_visibility").upsert(
+    paths.map((storage_path) => ({
+      storage_path,
+      user_id: userId,
+      visibility,
+      property_id: propertyId ?? null,
+    })),
+    { onConflict: "storage_path" },
+  );
+  if (error) throw error;
+}
+
+export async function fetchPhotoVisibility(
+  paths: string[],
+): Promise<Record<string, PhotoVisibility>> {
+  if (!paths.length) return {};
+  const { data, error } = await supabase
+    .from("photo_visibility")
+    .select("storage_path, visibility")
+    .in("storage_path", paths);
+  if (error) throw error;
+  const map: Record<string, PhotoVisibility> = {};
+  for (const row of data ?? []) {
+    map[row.storage_path] = row.visibility as PhotoVisibility;
+  }
+  return map;
+}
+
+/** Marks an existing (legacy/unclassified) image as displayable or private. */
+export async function setPhotoVisibility(
+  path: string,
+  userId: string,
+  visibility: PhotoVisibility,
+  propertyId?: string | null,
+) {
+  await registerPhotoVisibility([path], userId, visibility, propertyId);
+}
+
+export async function movePhotoToPrivate(property: Property, path: string) {
+  const { error } = await supabase
+    .from("properties")
+    .update({
+      photos: property.photos.filter((item) => item !== path),
+      private_photos: [...property.private_photos, path],
+    })
+    .eq("id", property.id);
+  if (error) throw error;
+  await setPhotoVisibility(path, property.user_id ?? "", "private_ocr", property.id);
+}
+
+export async function movePhotoToPublic(property: Property, path: string) {
+  const { error } = await supabase
+    .from("properties")
+    .update({
+      private_photos: property.private_photos.filter((item) => item !== path),
+      photos: property.photos.includes(path) ? property.photos : [...property.photos, path],
+    })
+    .eq("id", property.id);
+  if (error) throw error;
+  await setPhotoVisibility(path, property.user_id ?? "", "public_listing", property.id);
+}
+
+/** Permanently removes a private OCR image (storage object + metadata). */
+export async function deletePrivatePhoto(property: Property, path: string) {
+  const { error } = await supabase
+    .from("properties")
+    .update({ private_photos: property.private_photos.filter((item) => item !== path) })
+    .eq("id", property.id);
+  if (error) throw error;
+  await supabase.from("photo_visibility").delete().eq("storage_path", path);
+  await supabase.storage.from("property-photos").remove([path]);
+}
+
+export async function uploadPhotos(
+  files: File[],
+  userId: string,
+  visibility: PhotoVisibility = "public_listing",
+): Promise<string[]> {
   const paths: string[] = [];
+  const folder = visibility === "private_ocr" ? "private" : "public";
   for (const file of files) {
     const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+    const path = `${userId}/${folder}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage
       .from("property-photos")
       .upload(path, file, { contentType: file.type || "image/jpeg" });
     if (error) throw error;
     paths.push(path);
   }
+  await registerPhotoVisibility(paths, userId, visibility);
   return paths;
 }
 
