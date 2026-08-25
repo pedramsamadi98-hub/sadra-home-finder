@@ -367,6 +367,18 @@ export function matchesCriteria(property: Property, criteria: Criterion[]): bool
       case "city":
         if (!normalize(property.city ?? "").includes(normalize(String(c.value)))) return false;
         break;
+      case "land_category":
+        if (property.land_category !== String(c.value)) return false;
+        break;
+      case "land_zone":
+        if (normalizeFa(property.land_zone ?? "") !== normalizeFa(String(c.value))) return false;
+        break;
+      case "plot_number":
+        if (
+          !normalizeFa(property.plot_number ?? "").includes(normalizeFa(String(c.value)))
+        )
+          return false;
+        break;
       case "minArea":
         if ((property.area ?? 0) < Number(c.value)) return false;
         break;
@@ -405,6 +417,13 @@ export function relevanceScore(property: Property, criteria: Criterion[], text: 
     if (normalize(property.neighborhood ?? "").toLowerCase().includes(q)) score += 3;
     if (normalize(property.phase ?? "").toLowerCase().includes(q)) score += 2;
     if (normalize(property.street ?? "").toLowerCase().includes(q)) score += 1;
+    if (normalizeFa(property.land_zone ?? "").toLowerCase().includes(q)) score += 3;
+    if (normalizeFa(property.plot_number ?? "").toLowerCase().includes(q)) score += 3;
+    if (
+      LAND_CATEGORY_LABELS[property.land_category ?? ""] &&
+      normalizeFa(LAND_CATEGORY_LABELS[property.land_category ?? ""]!).toLowerCase().includes(q)
+    )
+      score += 2;
   }
   if (property.photos.length) score += 1;
   return score;
