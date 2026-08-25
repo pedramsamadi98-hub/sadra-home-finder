@@ -67,6 +67,11 @@ const ALIASES: Record<string, keyof OcrResult> = {
   mortgage_amount: "deposit",
   internal_notes: "notes",
   district: "neighborhood",
+  plot: "plot_number",
+  plaque: "plot_number",
+  plaque_number: "plot_number",
+  land_category_text: "land_text",
+  zone: "land_text",
 };
 
 const NUMBER_KEYS = new Set([
