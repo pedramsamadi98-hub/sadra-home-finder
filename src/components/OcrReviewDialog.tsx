@@ -127,6 +127,10 @@ export function OcrReviewDialog({
         if (row.value in PROPERTY_TYPE_LABELS) patch[row.key] = row.value;
       } else if (row.kind === "transaction") {
         if (row.value in TRANSACTION_LABELS) patch[row.key] = row.value;
+      } else if (row.kind === "land_category") {
+        if (row.value in LAND_CATEGORY_LABELS) patch[row.key] = row.value;
+      } else if (row.kind === "land_zone") {
+        if (categoryOfZone(row.value)) patch[row.key] = row.value;
       } else if (row.value.trim()) {
         patch[row.key] = row.value.trim();
       }
