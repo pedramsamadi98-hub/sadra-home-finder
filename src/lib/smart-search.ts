@@ -109,6 +109,41 @@ export function parseSmartQuery(input: string): ParsedQuery {
     }
   };
 
+  // --- land category / zone / plot (official taxonomy) ---
+  const land = detectLand(text);
+  const stripAliases = (aliases: string[]) => {
+    for (const alias of aliases) {
+      text = text.replace(aliasRegex(alias, "g"), " ");
+    }
+    text = ` ${text.replace(/\s+/g, " ").trim()} `;
+  };
+  if (land.land_category) {
+    const category = landCategory(land.land_category);
+    if (category) {
+      add("land_category", category.label, category.id);
+      stripAliases([category.label, ...(category.aliases ?? [])]);
+    }
+  }
+  if (land.land_zone) {
+    const zone = landCategory(land.land_category)?.zones.find(
+      (item) => item.label === land.land_zone,
+    );
+    if (zone) {
+      add("land_zone", zone.label, zone.label);
+      stripAliases(aliasesOf(zone));
+    }
+  }
+  if (land.plot_number) {
+    add("plot_number", `پلاک ${faDigits(land.plot_number)}`, land.plot_number);
+    text = text.replace(
+      new RegExp(`پلاک\\s*${land.plot_number.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}`, "g"),
+      " ",
+    );
+    text = text.replace(/\s*پلاک\s*/g, " ");
+  }
+
+
+
   // --- price (with units) ---
   const unit = "(میلیارد|میلیون)";
   const unitFactor = (u: string) => (u === "میلیارد" ? 1_000_000_000 : 1_000_000);
