@@ -24,22 +24,17 @@ jobs:
           npm init -y
 
           npm install @capacitor/core@7.4.3 @capacitor/cli@7.4.3 @capacitor/android@7.4.3
-          npm install -D typescript
 
-          cat > capacitor.config.ts <<'EOF'
-          import type { CapacitorConfig } from '@capacitor/cli';
-
-          const config: CapacitorConfig = {
-            appId: 'ir.sadrahome.app',
-            appName: 'صدرا ملک',
-            webDir: 'www',
-            server: {
-              url: 'https://sadra-home-finder.lovable.app',
-              cleartext: false
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "ir.sadrahome.app",
+            "appName": "صدرا ملک",
+            "webDir": "www",
+            "server": {
+              "url": "https://sadra-home-finder.lovable.app",
+              "cleartext": false
             }
-          };
-
-          export default config;
+          }
           EOF
 
           mkdir www
