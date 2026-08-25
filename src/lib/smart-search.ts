@@ -122,6 +122,11 @@ export function parseSmartQuery(input: string): ParsedQuery {
     if (category) {
       add("land_category", category.label, category.id);
       stripAliases([category.label, ...(category.aliases ?? [])]);
+      // «فاز ۱/۲» is already part of the category — don't also filter by phase.
+      const phaseInLabel = normalizeFa(category.label).match(/فاز\s*(\d)/);
+      if (phaseInLabel) {
+        text = text.replace(new RegExp(`فاز\\s*${phaseInLabel[1]}`, "g"), " ");
+      }
     }
   }
   if (land.land_zone) {
