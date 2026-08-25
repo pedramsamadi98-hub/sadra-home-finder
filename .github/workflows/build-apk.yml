@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK - Sadra Melk
 
 on:
   workflow_dispatch:
@@ -6,35 +6,64 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      # --------------------------------------------------
+      # 1. دریافت آخرین نسخه پروژه
+      # --------------------------------------------------
+      - name: Checkout latest project
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
+      # --------------------------------------------------
+      # 2. Java
+      # --------------------------------------------------
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # --------------------------------------------------
+      # 3. Node
+      # --------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build real TanStack Start project
-        run: npm run build
-
-      - name: Create Capacitor wrapper
+      # --------------------------------------------------
+      # 4. ساخت Capacitor wrapper
+      #
+      # مهم:
+      # APK مستقیماً به آخرین سایت منتشرشده Lovable وصل می‌شود.
+      # بنابراین APK نسخه قدیمی dist یا .output را بسته‌بندی نمی‌کند.
+      # --------------------------------------------------
+      - name: Create Capacitor Android wrapper
+        shell: bash
         run: |
+          set -e
+
           rm -rf apk-wrapper
-          mkdir apk-wrapper
+
+          mkdir -p apk-wrapper
           cd apk-wrapper
 
           npm init -y
 
-          npm install @capacitor/core@7.4.3 @capacitor/cli@7.4.3 @capacitor/android@7.4.3
-          npm install -D typescript@5.9.2
+          npm install \
+            @capacitor/core@7.4.3 \
+            @capacitor/cli@7.4.3 \
+            @capacitor/android@7.4.3
 
           cat > capacitor.config.ts <<'EOF'
           import type { CapacitorConfig } from '@capacitor/cli';
@@ -42,103 +71,140 @@ jobs:
           const config: CapacitorConfig = {
             appId: 'ir.sadrahome.app',
             appName: 'صدرا ملک',
-            webDir: 'www'
+            webDir: 'www',
+
+            server: {
+              url: 'https://sadra-home-finder.lovable.app',
+              cleartext: false
+            },
+
+            android: {
+              backgroundColor: '#071A2B'
+            }
           };
 
           export default config;
           EOF
 
-          mkdir www
+          # Capacitor هنگام sync به index.html نیاز دارد.
+          # چون برنامه واقعی از server.url لود می‌شود،
+          # این فایل فقط برای bootstrap اولیه Capacitor است.
+          mkdir -p www
 
-          cp -r ../.output/public/* www/
-
-          echo "========================================"
-          echo "REAL PROJECT BUILD"
-          echo "========================================"
-
-          find www -maxdepth 3 -type f | sort | head -200
+          cat > www/index.html <<'EOF'
+          <!doctype html>
+          <html lang="fa" dir="rtl">
+            <head>
+              <meta charset="UTF-8" />
+              <meta
+                name="viewport"
+                content="width=device-width, initial-scale=1.0"
+              />
+              <title>صدرا ملک</title>
+            </head>
+            <body>
+              <div id="root">صدرا ملک</div>
+            </body>
+          </html>
+          EOF
 
           npx cap add android
           npx cap sync android
 
-      - name: Configure Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Fix Android Java compatibility
+      # --------------------------------------------------
+      # 5. نصب ابزارهای لازم برای ساخت آیکون
+      # --------------------------------------------------
+      - name: Install image tools
         run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
+      # --------------------------------------------------
+      # 6. اعمال نام و آیکون برند «صدرا ملک»
+      # --------------------------------------------------
+      - name: Apply Sadra Melk branding
+        shell: bash
+        run: |
+          set -e
+
+          ICON="src/assets/sadra-icon.png"
+
+          if [ ! -f "$ICON" ]; then
+            echo "ERROR: $ICON not found"
+            exit 1
+          fi
+
+          ANDROID_RES="apk-wrapper/android/app/src/main/res"
+
+          mkdir -p "$ANDROID_RES/mipmap-mdpi"
+          mkdir -p "$ANDROID_RES/mipmap-hdpi"
+          mkdir -p "$ANDROID_RES/mipmap-xhdpi"
+          mkdir -p "$ANDROID_RES/mipmap-xxhdpi"
+          mkdir -p "$ANDROID_RES/mipmap-xxxhdpi"
+
+          convert "$ICON" -resize 48x48 \
+            "$ANDROID_RES/mipmap-mdpi/ic_launcher.png"
+
+          convert "$ICON" -resize 72x72 \
+            "$ANDROID_RES/mipmap-hdpi/ic_launcher.png"
+
+          convert "$ICON" -resize 96x96 \
+            "$ANDROID_RES/mipmap-xhdpi/ic_launcher.png"
+
+          convert "$ICON" -resize 144x144 \
+            "$ANDROID_RES/mipmap-xxhdpi/ic_launcher.png"
+
+          convert "$ICON" -resize 192x192 \
+            "$ANDROID_RES/mipmap-xxxhdpi/ic_launcher.png"
+
+          # Android label
+          MANIFEST="$ANDROID_RES/values/strings.xml"
+
+          if [ -f "$MANIFEST" ]; then
+            sed -i 's#<string name="app_name">.*</string>#<string name="app_name">صدرا ملک</string>#' "$MANIFEST"
+          fi
+
+          echo "Branding applied:"
+          find "$ANDROID_RES" \
+            -type f \
+            \( -name "ic_launcher.png" -o -name "strings.xml" \) \
+            -print
+
+      # --------------------------------------------------
+      # 7. ساخت APK
+      # --------------------------------------------------
+      - name: Build Debug APK
+        shell: bash
+        run: |
+          set -e
+
           cd apk-wrapper/android
 
-          sed -i 's/sourceCompatibility JavaVersion.VERSION_21/sourceCompatibility JavaVersion.VERSION_17/g' app/build.gradle || true
-          sed -i 's/targetCompatibility JavaVersion.VERSION_21/targetCompatibility JavaVersion.VERSION_17/g' app/build.gradle || true
-          sed -i 's/JavaVersion.VERSION_21/JavaVersion.VERSION_17/g' build.gradle || true
-
-      - name: Apply Sadra Melk branding (icon + splash)
-        run: |
-          RES=apk-wrapper/android/app/src/main/res
-
-          for D in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
-            mkdir -p "$RES/mipmap-$D"
-            cp "android-branding/icons/$D-ic_launcher.png" "$RES/mipmap-$D/ic_launcher.png"
-            cp "android-branding/icons/$D-ic_launcher_round.png" "$RES/mipmap-$D/ic_launcher_round.png"
-            cp "android-branding/icons/foreground.png" "$RES/mipmap-$D/ic_launcher_foreground.png"
-          done
-
-          mkdir -p "$RES/drawable" "$RES/values"
-          cp android-branding/splash/splash.png "$RES/drawable/splash.png"
-
-          # adaptive icon background color (dark navy)
-          cat > "$RES/values/ic_launcher_background.xml" <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="ic_launcher_background">#0A162B</color>
-          </resources>
-          EOF
-
-          # splash screen theme colors
-          cat > "$RES/values/styles.xml" <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-                  <item name="android:windowBackground">@color/splash_background</item>
-              </style>
-              <style name="AppTheme.NoActionBarLaunch" parent="Theme.AppCompat.DayNight.NoActionBar">
-                  <item name="android:windowBackground">@drawable/splash</item>
-              </style>
-              <color name="splash_background">#0A162B</color>
-          </resources>
-          EOF
-
-          # app display name
-          cat > "$RES/values/strings.xml" <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="app_name">صدرا ملک</string>
-              <string name="title_activity_main">صدرا ملک</string>
-              <string name="package_name">ir.sadrahome.app</string>
-              <string name="custom_url_scheme">ir.sadrahome.app</string>
-          </resources>
-          EOF
-
-      - name: Build APK
-        run: |
-          cd apk-wrapper/android
           chmod +x gradlew
+
           ./gradlew assembleDebug --no-daemon
 
-      - name: Find APK
+      # --------------------------------------------------
+      # 8. پیدا کردن APK
+      # --------------------------------------------------
+      - name: Find generated APK
+        shell: bash
         run: |
-          echo "========================================"
-          echo "APK FILES"
-          echo "========================================"
+          echo "======================================"
+          echo "GENERATED APK FILES"
+          echo "======================================"
 
-          find apk-wrapper/android -type f -name "*.apk" -print
+          find apk-wrapper/android \
+            -type f \
+            -name "*.apk" \
+            -print
 
-      - name: Upload APK
+      # --------------------------------------------------
+      # 9. آپلود APK
+      # --------------------------------------------------
+      - name: Upload Sadra Melk APK
         uses: actions/upload-artifact@v4
         with:
-          name: sadra-melk-apk
+          name: sadra-melk-final
           path: apk-wrapper/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
