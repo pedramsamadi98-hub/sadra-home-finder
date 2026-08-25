@@ -1,7 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import {
   BarChart3,
-  Building2,
   LayoutDashboard,
   List,
   Moon,
@@ -15,6 +14,7 @@ import {
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
+import logoIcon from "@/assets/sadra-icon.png";
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/lib/roles";
@@ -62,9 +62,13 @@ export function AppShell({
     <div className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-            <Building2 className="size-5" />
-          </div>
+          <img
+            src={logoIcon}
+            alt="لوگوی صدرا ملک"
+            width={512}
+            height={512}
+            className="size-10 shrink-0 rounded-xl"
+          />
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-base font-bold">{title}</h1>
             {subtitle ? (

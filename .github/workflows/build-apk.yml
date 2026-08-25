@@ -75,6 +75,53 @@ jobs:
           sed -i 's/targetCompatibility JavaVersion.VERSION_21/targetCompatibility JavaVersion.VERSION_17/g' app/build.gradle || true
           sed -i 's/JavaVersion.VERSION_21/JavaVersion.VERSION_17/g' build.gradle || true
 
+      - name: Apply Sadra Melk branding (icon + splash)
+        run: |
+          RES=apk-wrapper/android/app/src/main/res
+
+          for D in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            mkdir -p "$RES/mipmap-$D"
+            cp "android-branding/icons/$D-ic_launcher.png" "$RES/mipmap-$D/ic_launcher.png"
+            cp "android-branding/icons/$D-ic_launcher_round.png" "$RES/mipmap-$D/ic_launcher_round.png"
+            cp "android-branding/icons/foreground.png" "$RES/mipmap-$D/ic_launcher_foreground.png"
+          done
+
+          mkdir -p "$RES/drawable" "$RES/values"
+          cp android-branding/splash/splash.png "$RES/drawable/splash.png"
+
+          # adaptive icon background color (dark navy)
+          cat > "$RES/values/ic_launcher_background.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="ic_launcher_background">#0A162B</color>
+          </resources>
+          EOF
+
+          # splash screen theme colors
+          cat > "$RES/values/styles.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+                  <item name="android:windowBackground">@color/splash_background</item>
+              </style>
+              <style name="AppTheme.NoActionBarLaunch" parent="Theme.AppCompat.DayNight.NoActionBar">
+                  <item name="android:windowBackground">@drawable/splash</item>
+              </style>
+              <color name="splash_background">#0A162B</color>
+          </resources>
+          EOF
+
+          # app display name
+          cat > "$RES/values/strings.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">صدرا ملک</string>
+              <string name="title_activity_main">صدرا ملک</string>
+              <string name="package_name">ir.sadrahome.app</string>
+              <string name="custom_url_scheme">ir.sadrahome.app</string>
+          </resources>
+          EOF
+
       - name: Build APK
         run: |
           cd apk-wrapper/android

@@ -1,8 +1,9 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Building2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import logoFull from "@/assets/sadra-logo-full.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,14 +57,23 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="surface-card w-full max-w-sm space-y-5 p-6">
-        <div className="space-y-2 text-center">
-          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
-            <Building2 className="size-6" />
+        <div className="space-y-3 text-center">
+          <img
+            src={logoFull}
+            alt="لوگوی صدرا ملک — املاک پاشا | پدرام صمدی"
+            width={1024}
+            height={1024}
+            className="mx-auto w-44 rounded-2xl"
+          />
+          <div className="space-y-1">
+            <h1 className="text-lg font-bold">صدرا ملک</h1>
+            <p className="text-[11px] font-medium text-primary">
+              املاک پاشا | پدرام صمدی
+            </p>
+            <p className="text-xs text-muted-foreground">
+              دسترسی خصوصی — تنها برای مشاور این مجموعه
+            </p>
           </div>
-          <h1 className="text-lg font-bold">سامانه املاک صدرا</h1>
-          <p className="text-xs text-muted-foreground">
-            دسترسی خصوصی — تنها برای مشاور این مجموعه
-          </p>
         </div>
 
         <form onSubmit={submit} className="space-y-3">
