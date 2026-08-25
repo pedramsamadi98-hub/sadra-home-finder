@@ -144,16 +144,16 @@ export function normalizeFa(text: string): string {
     .trim();
 }
 
-function aliasRegex(alias: string): RegExp {
+export function aliasRegex(alias: string, flags = ""): RegExp {
   const tokens = normalizeFa(alias)
     .split(" ")
     .filter(Boolean)
     .map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (!tokens.length) return /$^/;
-  return new RegExp(`(?:^|[\\s،.,/\\-])${tokens.join("\\s*")}(?:$|[\\s،.,/\\-])`);
+  return new RegExp(`(?:^|[\\s،.,/\\-])${tokens.join("\\s*")}(?:$|[\\s،.,/\\-])`, flags);
 }
 
-function aliasesOf(zone: LandZone): string[] {
+export function aliasesOf(zone: LandZone): string[] {
   return [zone.label, ...(zone.aliases ?? [])];
 }
 
