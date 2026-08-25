@@ -14,6 +14,7 @@ import {
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
+import logoIcon from "@/assets/sadra-icon.png";
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/lib/roles";
