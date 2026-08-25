@@ -37,11 +37,13 @@ const collaboratorNav = [
 export function AppShell({
   title,
   subtitle,
+  brand,
   children,
   action,
 }: {
   title: string;
   subtitle?: string;
+  brand?: { title: string; subtitle?: string };
   children: ReactNode;
   action?: ReactNode;
 }) {
@@ -69,6 +71,14 @@ export function AppShell({
             height={512}
             className="size-10 shrink-0 rounded-xl"
           />
+          {brand ? (
+            <div className="shrink-0 leading-tight">
+              <p className="text-lg font-bold text-primary">{brand.title}</p>
+              {brand.subtitle ? (
+                <p className="text-[11px] font-light text-foreground/80">{brand.subtitle}</p>
+              ) : null}
+            </div>
+          ) : null}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-base font-bold">{title}</h1>
             {subtitle ? (
