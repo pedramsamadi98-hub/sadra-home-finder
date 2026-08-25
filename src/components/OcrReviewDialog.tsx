@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { faDigits, parseNumber } from "@/lib/fa";
+import { LAND_CATEGORIES, LAND_CATEGORY_LABELS, categoryOfZone, zonesFor } from "@/lib/land";
 import type { OcrResult } from "@/lib/ocr.functions";
 import {
   PROPERTY_TYPE_LABELS,
@@ -21,7 +22,15 @@ import {
   type PropertyInput,
 } from "@/lib/properties";
 
-type Kind = "text" | "long" | "number" | "bool" | "type" | "transaction";
+type Kind =
+  | "text"
+  | "long"
+  | "number"
+  | "bool"
+  | "type"
+  | "transaction"
+  | "land_category"
+  | "land_zone";
 
 const FIELDS: { key: keyof OcrResult; label: string; kind: Kind }[] = [
   { key: "title", label: "عنوان ملک", kind: "text" },
@@ -32,6 +41,9 @@ const FIELDS: { key: keyof OcrResult; label: string; kind: Kind }[] = [
   { key: "neighborhood", label: "محله", kind: "text" },
   { key: "street", label: "خیابان", kind: "text" },
   { key: "address", label: "آدرس", kind: "text" },
+  { key: "land_category", label: "دسته زمین", kind: "land_category" },
+  { key: "land_zone", label: "محدوده", kind: "land_zone" },
+  { key: "plot_number", label: "پلاک", kind: "text" },
   { key: "area", label: "متراژ", kind: "number" },
   { key: "price", label: "قیمت", kind: "number" },
   { key: "deposit", label: "مبلغ رهن", kind: "number" },
