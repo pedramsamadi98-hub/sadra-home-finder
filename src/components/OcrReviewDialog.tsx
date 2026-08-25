@@ -228,6 +228,36 @@ export function OcrReviewDialog({
                       </option>
                     ))}
                   </select>
+                ) : row.kind === "land_category" ? (
+                  <select
+                    value={row.value}
+                    onChange={(event) => update(row.key, { value: event.target.value })}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">بدون دسته</option>
+                    {LAND_CATEGORIES.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : row.kind === "land_zone" ? (
+                  <select
+                    value={row.value}
+                    onChange={(event) => update(row.key, { value: event.target.value })}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">بدون محدوده</option>
+                    {zonesFor(
+                      rows.find((item) => item.key === "land_category")?.value ??
+                        categoryOfZone(row.value)?.id ??
+                        null,
+                    ).map((zone) => (
+                      <option key={zone.label} value={zone.label}>
+                        {zone.label}
+                      </option>
+                    ))}
+                  </select>
                 ) : row.kind === "long" ? (
                   <Textarea
                     rows={2}
