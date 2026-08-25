@@ -1,4 +1,12 @@
 import { enDigits, faDigits } from "@/lib/fa";
+import {
+  LAND_CATEGORY_LABELS,
+  aliasRegex,
+  aliasesOf,
+  detectLand,
+  landCategory,
+  normalizeFa,
+} from "@/lib/land";
 import type {
   OwnershipType,
   Property,
@@ -13,6 +21,9 @@ export type CriterionKey =
   | "bedrooms"
   | "phase"
   | "city"
+  | "land_category"
+  | "land_zone"
+  | "plot_number"
   | "minArea"
   | "maxArea"
   | "minPrice"
