@@ -19,6 +19,12 @@ export interface Property {
   neighborhood: string | null;
   street: string | null;
   address: string | null;
+  /** Land category id from `LAND_CATEGORIES` (src/lib/land.ts). */
+  land_category: string | null;
+  /** Canonical zone label belonging to the selected land category. */
+  land_zone: string | null;
+  /** Free-text plot number, e.g. «۲۲/الف» or «۱۳۲ فرعی». */
+  plot_number: string | null;
   area: number | null;
   price: number | null;
   deposit: number | null;
@@ -105,6 +111,9 @@ export const emptyProperty: PropertyInput = {
   neighborhood: "",
   street: "",
   address: "",
+  land_category: null,
+  land_zone: null,
+  plot_number: "",
   area: null,
   price: null,
   deposit: null,
