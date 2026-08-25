@@ -1,10 +1,10 @@
-name: Build Android APK
+name: Inspect Android Build
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  inspect-android:
     runs-on: ubuntu-latest
 
     steps:
@@ -47,37 +47,43 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
-      - name: Verify Capacitor Android files
+      - name: Inspect Android files
         run: |
-          echo "Checking Android project..."
-          ls -la android
-          echo "Checking capacitor.settings.gradle..."
-          if [ -f android/capacitor.settings.gradle ]; then
-            echo "capacitor.settings.gradle exists"
+          echo "========================================"
+          echo "ANDROID DIRECTORY"
+          echo "========================================"
+          find android -maxdepth 3 -type f | sort
+
+          echo ""
+          echo "========================================"
+          echo "android/settings.gradle"
+          echo "========================================"
+
+          if [ -f android/settings.gradle ]; then
+            cat android/settings.gradle
           else
-            echo "ERROR: capacitor.settings.gradle was NOT created"
-            echo "Capacitor CLI version:"
-            npx cap --version
-            echo "Installed Capacitor packages:"
-            npm ls @capacitor/core @capacitor/cli @capacitor/android
-            exit 1
+            echo "settings.gradle NOT FOUND"
           fi
 
-      - name: Sync Capacitor
-        run: npx cap sync android
+          echo ""
+          echo "========================================"
+          echo "capacitor.settings.gradle"
+          echo "========================================"
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
+          if [ -f android/capacitor.settings.gradle ]; then
+            cat android/capacitor.settings.gradle
+          else
+            echo "capacitor.settings.gradle NOT FOUND"
+          fi
 
-      - name: Build APK
-        working-directory: android
-        run: ./gradlew assembleDebug
+          echo ""
+          echo "========================================"
+          echo "CAPACITOR VERSION"
+          echo "========================================"
+          npx cap --version
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: sadra-melk-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          echo ""
+          echo "========================================"
+          echo "CAPACITOR PACKAGES"
+          echo "========================================"
+          npm ls @capacitor/core @capacitor/cli @capacitor/android
