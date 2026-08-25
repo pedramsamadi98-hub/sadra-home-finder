@@ -3,6 +3,7 @@ import { BedDouble, Building, MapPin, Ruler } from "lucide-react";
 
 import { PhotoThumb } from "@/components/PhotoGallery";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
+import { LAND_CATEGORY_LABELS } from "@/lib/land";
 import {
   OWNERSHIP_LABELS,
   PROPERTY_TYPE_LABELS,
@@ -61,6 +62,17 @@ export function PropertyCard({ property }: { property: Property }) {
               {property.street ? ` — ${property.street}` : ""}
             </span>
           </p>
+          {property.land_category || property.land_zone || property.plot_number ? (
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {[
+                property.land_category ? LAND_CATEGORY_LABELS[property.land_category] : null,
+                property.land_zone,
+                property.plot_number ? `پلاک ${faDigits(property.plot_number)}` : null,
+              ]
+                .filter(Boolean)
+                .join(" — ")}
+            </p>
+          ) : null}
           <p className="mt-1.5 text-sm font-semibold text-primary">{priceText}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1">
