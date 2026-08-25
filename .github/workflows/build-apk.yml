@@ -1,10 +1,10 @@
-name: Inspect Android Build
+name: Build Android APK
 
 on:
   workflow_dispatch:
 
 jobs:
-  inspect-android:
+  build-apk:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,22 +16,22 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Install Capacitor
+      - name: Create temporary Capacitor app
         run: |
+          mkdir apk-wrapper
+          cd apk-wrapper
+
+          npm init -y
+
           npm install @capacitor/core@7.4.3 @capacitor/cli@7.4.3 @capacitor/android@7.4.3
 
-      - name: Create Capacitor config
-        run: |
           cat > capacitor.config.ts <<'EOF'
           import type { CapacitorConfig } from '@capacitor/cli';
 
           const config: CapacitorConfig = {
             appId: 'ir.sadrahome.app',
             appName: 'صدرا ملک',
-            webDir: 'dist',
+            webDir: 'www',
             server: {
               url: 'https://sadra-home-finder.lovable.app',
               cleartext: false
@@ -41,49 +41,30 @@ jobs:
           export default config;
           EOF
 
-      - name: Build web app
-        run: npm run build
+          mkdir www
 
-      - name: Add Android platform
-        run: npx cap add android
+          cat > www/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="fa" dir="rtl">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>صدرا ملک</title>
+          </head>
+          <body>
+            <h1>صدرا ملک</h1>
+          </body>
+          </html>
+          EOF
 
-      - name: Inspect Android files
-        run: |
-          echo "========================================"
-          echo "ANDROID DIRECTORY"
-          echo "========================================"
-          find android -maxdepth 3 -type f | sort
+          npx cap add android
 
-          echo ""
-          echo "========================================"
-          echo "android/settings.gradle"
-          echo "========================================"
+      - name: Build Android APK
+        working-directory: apk-wrapper/android
+        run: ./gradlew assembleDebug
 
-          if [ -f android/settings.gradle ]; then
-            cat android/settings.gradle
-          else
-            echo "settings.gradle NOT FOUND"
-          fi
-
-          echo ""
-          echo "========================================"
-          echo "capacitor.settings.gradle"
-          echo "========================================"
-
-          if [ -f android/capacitor.settings.gradle ]; then
-            cat android/capacitor.settings.gradle
-          else
-            echo "capacitor.settings.gradle NOT FOUND"
-          fi
-
-          echo ""
-          echo "========================================"
-          echo "CAPACITOR VERSION"
-          echo "========================================"
-          npx cap --version
-
-          echo ""
-          echo "========================================"
-          echo "CAPACITOR PACKAGES"
-          echo "========================================"
-          npm ls @capacitor/core @capacitor/cli @capacitor/android
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sadra-melk-apk
+          path: apk-wrapper/android/app/build/outputs/apk/debug/app-debug.apk
