@@ -15,7 +15,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -38,6 +37,7 @@ jobs:
           find . -maxdepth 3 -type d \( -name ".output" -o -name "dist" -o -name "build" \) -print
 
           echo "===== OUTPUT FILES ====="
+
           if [ -d ".output" ]; then
             find .output -maxdepth 4 -type f | sort | head -300
           fi
@@ -73,7 +73,10 @@ jobs:
           <html lang="fa" dir="rtl">
           <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta
+              name="viewport"
+              content="width=device-width, initial-scale=1.0"
+            >
             <title>صدرا ملک</title>
           </head>
           <body>
