@@ -14,6 +14,13 @@ export interface OcrResult {
   neighborhood?: string | null;
   street?: string | null;
   address?: string | null;
+  /** Raw land category/zone phrase read from the sheet (matched on the client). */
+  land_text?: string | null;
+  /** Canonical land category id (filled by client-side matching). */
+  land_category?: string | null;
+  /** Canonical land zone label (filled by client-side matching). */
+  land_zone?: string | null;
+  plot_number?: string | null;
   area?: number | null;
   price?: number | null;
   deposit?: number | null;
@@ -40,9 +47,11 @@ const SYSTEM_PROMPT = `تو یک دستیار استخراج اطلاعات فا
 - property_type فقط یکی از: apartment, villa, land, commercial
 - transaction_type فقط یکی از: sale (فروش), rent (اجاره), mortgage (رهن و اجاره)
 - parking/elevator/storage مقدار boolean یا null.
-- متن‌های فارسی را همان‌گونه که نوشته شده برگردان.`;
+- متن‌های فارسی را همان‌گونه که نوشته شده برگردان.
+- land_text: اگر در برگه نام دسته یا محدوده زمین آمده (مثل «باغشهر پردیس»، «زمین البرز ۳»، «زون»، «نیروانتظامی فاز ۲») همان عبارت را عیناً بنویس، در غیر این صورت null.
+- plot_number: اگر «پلاک» نوشته شده، مقدار آن را به صورت متن بنویس (مثل «۲۲» یا «۲۲/الف» یا «۱۳۲ فرعی»)، در غیر این صورت null.`;
 
-const JSON_SHAPE = `{"title":string|null,"property_type":string|null,"transaction_type":string|null,"city":string|null,"phase":string|null,"neighborhood":string|null,"street":string|null,"address":string|null,"area":number|null,"price":number|null,"deposit":number|null,"monthly_rent":number|null,"bedrooms":number|null,"floor":number|null,"total_floors":number|null,"building_age":number|null,"parking":boolean|null,"elevator":boolean|null,"storage":boolean|null,"owner_name":string|null,"owner_phone":string|null,"description":string|null,"notes":string|null}`;
+const JSON_SHAPE = `{"title":string|null,"property_type":string|null,"transaction_type":string|null,"city":string|null,"phase":string|null,"neighborhood":string|null,"street":string|null,"address":string|null,"land_text":string|null,"plot_number":string|null,"area":number|null,"price":number|null,"deposit":number|null,"monthly_rent":number|null,"bedrooms":number|null,"floor":number|null,"total_floors":number|null,"building_age":number|null,"parking":boolean|null,"elevator":boolean|null,"storage":boolean|null,"owner_name":string|null,"owner_phone":string|null,"description":string|null,"notes":string|null}`;
 
 const ALIASES: Record<string, keyof OcrResult> = {
   area_sqm: "area",
