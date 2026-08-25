@@ -171,7 +171,29 @@ export function PropertyForm({
       }
 
       const result = await runOcr({ data: { image: dataUrl } });
-      setOcrResult(result);
+
+      // Match the read text against the official category/zone list. Anything
+      // that is not a confident match stays empty for manual entry.
+      const haystack = [
+        result.land_text,
+        result.title,
+        result.neighborhood,
+        result.street,
+        result.address,
+        result.description,
+        result.notes,
+        result.plot_number ? `پلاک ${result.plot_number}` : null,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const detected = detectLand(haystack);
+
+      setOcrResult({
+        ...result,
+        land_category: detected.land_category,
+        land_zone: detected.land_zone,
+        plot_number: result.plot_number ?? detected.plot_number,
+      });
       setOcrOpen(true);
     } catch (error) {
       console.error(error);
@@ -188,6 +210,16 @@ export function PropertyForm({
       for (const [key, value] of Object.entries(patch)) {
         (next as Record<string, unknown>)[key] = value;
         applied += 1;
+      }
+      // Never keep a zone that does not belong to the selected category.
+      if (next.land_zone && !next.land_category) {
+        next.land_category = categoryOfZone(next.land_zone)?.id ?? null;
+      }
+      if (
+        next.land_zone &&
+        !zonesFor(next.land_category).some((zone) => zone.label === next.land_zone)
+      ) {
+        next.land_zone = null;
       }
       return next;
     });
