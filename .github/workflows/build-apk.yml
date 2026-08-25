@@ -14,24 +14,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ---------------------------------------------
+      # 1. آخرین نسخه پروژه
+      # ---------------------------------------------
       - name: Checkout latest project
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
+      # ---------------------------------------------
+      # 2. Java
+      # ---------------------------------------------
       - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
+      # ---------------------------------------------
+      # 3. Node
+      # ---------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: package.json
 
+      # ---------------------------------------------
+      # 4. ساخت Capacitor
+      # ---------------------------------------------
       - name: Create Capacitor Android wrapper
         shell: bash
         run: |
@@ -93,53 +103,178 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Apply Sadra Melk branding
+      # ---------------------------------------------
+      # 5. نصب ImageMagick
+      # ---------------------------------------------
+      - name: Install ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
+      # ---------------------------------------------
+      # 6. اعمال هویت بصری و آیکون واقعی
+      # ---------------------------------------------
+      - name: Apply final Sadra Melk branding
         shell: bash
         run: |
           set -e
 
-          ICON="src/assets/sadra-icon.png"
+          echo "========================================"
+          echo "APPLYING SADRA MELK ICON"
+          echo "========================================"
+
+          ICON="$GITHUB_WORKSPACE/src/assets/sadra-icon.png"
 
           if [ ! -f "$ICON" ]; then
-            echo "ERROR: $ICON not found"
+            echo "ERROR: sadra-icon.png not found!"
+            echo "Expected:"
+            echo "$ICON"
             exit 1
           fi
 
-          ANDROID_RES="apk-wrapper/android/app/src/main/res"
+          RES="$GITHUB_WORKSPACE/apk-wrapper/android/app/src/main/res"
 
-          mkdir -p "$ANDROID_RES/mipmap-mdpi"
-          mkdir -p "$ANDROID_RES/mipmap-hdpi"
-          mkdir -p "$ANDROID_RES/mipmap-xhdpi"
-          mkdir -p "$ANDROID_RES/mipmap-xxhdpi"
-          mkdir -p "$ANDROID_RES/mipmap-xxxhdpi"
+          # -----------------------------------------
+          # پاک کردن آیکون‌های پیش‌فرض Capacitor
+          # -----------------------------------------
+          rm -rf "$RES/mipmap-anydpi-v26"
+          rm -rf "$RES/mipmap-mdpi"
+          rm -rf "$RES/mipmap-hdpi"
+          rm -rf "$RES/mipmap-xhdpi"
+          rm -rf "$RES/mipmap-xxhdpi"
+          rm -rf "$RES/mipmap-xxxhdpi"
 
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
+          mkdir -p "$RES/mipmap-mdpi"
+          mkdir -p "$RES/mipmap-hdpi"
+          mkdir -p "$RES/mipmap-xhdpi"
+          mkdir -p "$RES/mipmap-xxhdpi"
+          mkdir -p "$RES/mipmap-xxxhdpi"
+          mkdir -p "$RES/mipmap-anydpi-v26"
 
+          mkdir -p "$RES/drawable"
+          mkdir -p "$RES/values"
+
+          # -----------------------------------------
+          # PNGهای اصلی Launcher
+          # -----------------------------------------
           convert "$ICON" -resize 48x48 \
-            "$ANDROID_RES/mipmap-mdpi/ic_launcher.png"
+            "$RES/mipmap-mdpi/ic_launcher.png"
 
           convert "$ICON" -resize 72x72 \
-            "$ANDROID_RES/mipmap-hdpi/ic_launcher.png"
+            "$RES/mipmap-hdpi/ic_launcher.png"
 
           convert "$ICON" -resize 96x96 \
-            "$ANDROID_RES/mipmap-xhdpi/ic_launcher.png"
+            "$RES/mipmap-xhdpi/ic_launcher.png"
 
           convert "$ICON" -resize 144x144 \
-            "$ANDROID_RES/mipmap-xxhdpi/ic_launcher.png"
+            "$RES/mipmap-xxhdpi/ic_launcher.png"
 
           convert "$ICON" -resize 192x192 \
-            "$ANDROID_RES/mipmap-xxxhdpi/ic_launcher.png"
+            "$RES/mipmap-xxxhdpi/ic_launcher.png"
 
-          STRINGS="$ANDROID_RES/values/strings.xml"
+          # -----------------------------------------
+          # Round icon
+          # -----------------------------------------
+          cp "$RES/mipmap-mdpi/ic_launcher.png" \
+            "$RES/mipmap-mdpi/ic_launcher_round.png"
 
-          if [ -f "$STRINGS" ]; then
-            sed -i 's#<string name="app_name">.*</string>#<string name="app_name">صدرا ملک</string>#' "$STRINGS"
-          fi
+          cp "$RES/mipmap-hdpi/ic_launcher.png" \
+            "$RES/mipmap-hdpi/ic_launcher_round.png"
 
-          echo "Branding applied successfully."
+          cp "$RES/mipmap-xhdpi/ic_launcher.png" \
+            "$RES/mipmap-xhdpi/ic_launcher_round.png"
 
-      - name: Build APK
+          cp "$RES/mipmap-xxhdpi/ic_launcher.png" \
+            "$RES/mipmap-xxhdpi/ic_launcher_round.png"
+
+          cp "$RES/mipmap-xxxhdpi/ic_launcher.png" \
+            "$RES/mipmap-xxxhdpi/ic_launcher_round.png"
+
+          # -----------------------------------------
+          # Adaptive Icon
+          # -----------------------------------------
+          cp "$ICON" \
+            "$RES/drawable/sadra_icon_foreground.png"
+
+          cat > "$RES/values/colors.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="sadra_icon_background">#071A2B</color>
+          </resources>
+          EOF
+
+          cat > "$RES/mipmap-anydpi-v26/ic_launcher.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/sadra_icon_background" />
+              <foreground android:drawable="@drawable/sadra_icon_foreground" />
+          </adaptive-icon>
+          EOF
+
+          cat > "$RES/mipmap-anydpi-v26/ic_launcher_round.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/sadra_icon_background" />
+              <foreground android:drawable="@drawable/sadra_icon_foreground" />
+          </adaptive-icon>
+          EOF
+
+          # -----------------------------------------
+          # نام برنامه
+          # -----------------------------------------
+          cat > "$RES/values/strings.xml" <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">صدرا ملک</string>
+              <string name="title_activity_main">صدرا ملک</string>
+              <string name="package_name">ir.sadrahome.app</string>
+              <string name="custom_url_scheme">ir.sadrahome.app</string>
+          </resources>
+          EOF
+
+          echo "========================================"
+          echo "ICON FILES"
+          echo "========================================"
+
+          find "$RES" \
+            -type f \
+            \( \
+              -name "ic_launcher.png" \
+              -o -name "ic_launcher_round.png" \
+              -o -name "ic_launcher.xml" \
+              -o -name "ic_launcher_round.xml" \
+              -o -name "sadra_icon_foreground.png" \
+            \) \
+            -print
+
+      # ---------------------------------------------
+      # 7. اطمینان از نام و آیکون در AndroidManifest
+      # ---------------------------------------------
+      - name: Verify Android branding
+        shell: bash
+        run: |
+          set -e
+
+          MANIFEST="$GITHUB_WORKSPACE/apk-wrapper/android/app/src/main/AndroidManifest.xml"
+
+          echo "========================================"
+          echo "ANDROID MANIFEST"
+          echo "========================================"
+
+          grep -n "android:icon\|android:roundIcon\|android:label" "$MANIFEST" || true
+
+          echo "========================================"
+          echo "APP NAME"
+          echo "========================================"
+
+          grep -R "صدرا ملک" \
+            "$GITHUB_WORKSPACE/apk-wrapper/android/app/src/main/res/values" \
+            || true
+
+      # ---------------------------------------------
+      # 8. ساخت APK
+      # ---------------------------------------------
+      - name: Build Debug APK
         shell: bash
         run: |
           set -e
@@ -148,23 +283,29 @@ jobs:
 
           chmod +x gradlew
 
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew clean assembleDebug --no-daemon
 
+      # ---------------------------------------------
+      # 9. پیدا کردن APK
+      # ---------------------------------------------
       - name: Find APK
         shell: bash
         run: |
-          echo "======================================"
-          echo "GENERATED APK"
-          echo "======================================"
+          echo "========================================"
+          echo "FINAL APK"
+          echo "========================================"
 
           find apk-wrapper/android \
             -type f \
             -name "*.apk" \
             -print
 
-      - name: Upload APK
+      # ---------------------------------------------
+      # 10. آپلود
+      # ---------------------------------------------
+      - name: Upload Final APK
         uses: actions/upload-artifact@v4
         with:
-          name: sadra-melk-final
+          name: sadra-melk-final-icon
           path: apk-wrapper/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
