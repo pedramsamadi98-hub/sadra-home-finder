@@ -29,6 +29,7 @@ import { ShareSection } from "@/components/ShareSection";
 import { Button } from "@/components/ui/button";
 import { fetchBrokers } from "@/lib/brokers";
 import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
+import { LAND_CATEGORY_LABELS } from "@/lib/land";
 import { useRole } from "@/lib/roles";
 import {
   deleteProperty,
@@ -193,6 +194,19 @@ function Detail({ userId }: { userId: string }) {
             label="کاربری"
             value={`${PROPERTY_TYPE_LABELS[property.property_type]} • ${TRANSACTION_LABELS[property.transaction_type]}`}
           />
+          {property.land_category ? (
+            <Row
+              icon={MapPin}
+              label="دسته زمین"
+              value={LAND_CATEGORY_LABELS[property.land_category] ?? property.land_category}
+            />
+          ) : null}
+          {property.land_zone ? (
+            <Row icon={MapPin} label="محدوده" value={property.land_zone} />
+          ) : null}
+          {property.plot_number ? (
+            <Row icon={Landmark} label="پلاک" value={faDigits(property.plot_number)} />
+          ) : null}
           <Row icon={Ruler} label="متراژ" value={faArea(property.area)} />
           {property.bedrooms !== null ? (
             <Row icon={Boxes} label="اتاق خواب" value={faDigits(property.bedrooms)} />
