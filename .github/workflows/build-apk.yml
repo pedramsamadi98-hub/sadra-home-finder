@@ -40,11 +40,14 @@ jobs:
           export default config;
           EOF
 
+      - name: Build web app
+        run: npm run build
+
       - name: Add Android platform
         run: npx cap add android
 
       - name: Sync Capacitor
-        run: npx cap copy android
+        run: npx cap sync android
 
       - name: Setup Java
         uses: actions/setup-java@v4
