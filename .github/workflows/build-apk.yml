@@ -15,6 +15,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -22,72 +23,66 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Create Android wrapper
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Show build output
+        run: |
+          echo "===== PROJECT ====="
+          git log -1 --oneline
+
+          echo "===== OUTPUT DIRECTORIES ====="
+          find . -maxdepth 3 -type d \( -name ".output" -o -name "dist" -o -name "build" \) -print
+
+          echo "===== OUTPUT FILES ====="
+          if [ -d ".output" ]; then
+            find .output -maxdepth 4 -type f | sort | head -300
+          fi
+
+          if [ -d "dist" ]; then
+            find dist -maxdepth 4 -type f | sort | head -300
+          fi
+
+      - name: Create Capacitor project
         run: |
           mkdir apk-wrapper
           cd apk-wrapper
 
           npm init -y
 
-          npm install @capacitor/core@7.4.3 @capacitor/cli@7.4.3 @capacitor/android@7.4.3
+          npm install \
+            @capacitor/core@7.4.3 \
+            @capacitor/cli@7.4.3 \
+            @capacitor/android@7.4.3
+
+          mkdir www
 
           cat > capacitor.config.json <<'EOF'
           {
             "appId": "ir.sadrahome.app",
             "appName": "صدرا ملک",
-            "webDir": "www",
-            "server": {
-              "url": "https://sadra-home-finder.lovable.app",
-              "cleartext": false
-            }
+            "webDir": "www"
           }
           EOF
-
-          mkdir www
 
           cat > www/index.html <<'EOF'
           <!DOCTYPE html>
           <html lang="fa" dir="rtl">
           <head>
             <meta charset="UTF-8">
-            <meta name="viewport"
-                  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <meta name="theme-color" content="#111827">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>صدرا ملک</title>
           </head>
           <body>
-            <div id="loading"
-                 style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:sans-serif;">
-              در حال بارگذاری صدرا ملک...
-            </div>
-
-            <script>
-              window.location.href = "https://sadra-home-finder.lovable.app";
-            </script>
+            <h1>صدرا ملک</h1>
           </body>
           </html>
           EOF
 
           npx cap add android
-
-      - name: Configure Android app
-        working-directory: apk-wrapper/android
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          manifest = Path("app/src/main/AndroidManifest.xml")
-
-          if manifest.exists():
-              text = manifest.read_text()
-
-              text = text.replace(
-                  'android:theme="@style/AppTheme"',
-                  'android:theme="@style/AppTheme" android:usesCleartextTraffic="false"'
-              )
-
-              manifest.write_text(text)
-          PY
 
       - name: Sync Capacitor
         working-directory: apk-wrapper
@@ -100,5 +95,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: sadra-melk-full-apk
+          name: sadra-melk-apk
           path: apk-wrapper/android/app/build/outputs/apk/debug/app-debug.apk
