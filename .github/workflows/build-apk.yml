@@ -20,7 +20,8 @@ jobs:
         run: npm install
 
       - name: Install Capacitor
-        run: npm install @capacitor/core @capacitor/cli @capacitor/android
+        run: |
+          npm install @capacitor/core@7.4.3 @capacitor/cli@7.4.3 @capacitor/android@7.4.3
 
       - name: Create Capacitor config
         run: |
@@ -40,13 +41,30 @@ jobs:
           export default config;
           EOF
 
-      - name: Create Android project
+      - name: Build web app
+        run: npm run build
+
+      - name: Add Android platform
         run: npx cap add android
 
-      - name: Prepare Capacitor
+      - name: Verify Capacitor Android files
         run: |
-          npx cap copy android || true
-          npx cap update android || true
+          echo "Checking Android project..."
+          ls -la android
+          echo "Checking capacitor.settings.gradle..."
+          if [ -f android/capacitor.settings.gradle ]; then
+            echo "capacitor.settings.gradle exists"
+          else
+            echo "ERROR: capacitor.settings.gradle was NOT created"
+            echo "Capacitor CLI version:"
+            npx cap --version
+            echo "Installed Capacitor packages:"
+            npm ls @capacitor/core @capacitor/cli @capacitor/android
+            exit 1
+          fi
+
+      - name: Sync Capacitor
+        run: npx cap sync android
 
       - name: Setup Java
         uses: actions/setup-java@v4
