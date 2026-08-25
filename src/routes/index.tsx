@@ -77,7 +77,11 @@ function Dashboard({ userId }: { userId: string }) {
     .filter((row) => row.count > 0);
 
   return (
-    <AppShell title="داشبورد" subtitle={`امروز ${faDate(new Date())}`}>
+    <AppShell
+      title="داشبورد"
+      subtitle={`امروز ${faDate(new Date())}`}
+      brand={{ title: "صدرا ملک", subtitle: "پدرام صمدی" }}
+    >
       {isLoading || roleLoading ? (
         <div className="flex justify-center py-16">
           <Loader2 className="size-6 animate-spin text-primary" />
