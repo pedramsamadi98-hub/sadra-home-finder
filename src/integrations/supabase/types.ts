@@ -293,6 +293,8 @@ export type Database = {
           elevator: boolean
           floor: number | null
           id: string
+          land_category: string | null
+          land_zone: string | null
           monthly_rent: number | null
           neighborhood: string | null
           notes: string | null
@@ -302,6 +304,7 @@ export type Database = {
           parking: boolean
           phase: string | null
           photos: string[]
+          plot_number: string | null
           price: number | null
           private_photos: string[]
           property_type: string
@@ -327,6 +330,8 @@ export type Database = {
           elevator?: boolean
           floor?: number | null
           id?: string
+          land_category?: string | null
+          land_zone?: string | null
           monthly_rent?: number | null
           neighborhood?: string | null
           notes?: string | null
@@ -336,6 +341,7 @@ export type Database = {
           parking?: boolean
           phase?: string | null
           photos?: string[]
+          plot_number?: string | null
           price?: number | null
           private_photos?: string[]
           property_type?: string
@@ -361,6 +367,8 @@ export type Database = {
           elevator?: boolean
           floor?: number | null
           id?: string
+          land_category?: string | null
+          land_zone?: string | null
           monthly_rent?: number | null
           neighborhood?: string | null
           notes?: string | null
@@ -370,6 +378,7 @@ export type Database = {
           parking?: boolean
           phase?: string | null
           photos?: string[]
+          plot_number?: string | null
           price?: number | null
           private_photos?: string[]
           property_type?: string
@@ -492,12 +501,15 @@ export type Database = {
           elevator: boolean
           floor: number
           id: string
+          land_category: string
+          land_zone: string
           monthly_rent: number
           neighborhood: string
           ownership_type: string
           parking: boolean
           phase: string
           photos: string[]
+          plot_number: string
           price: number
           property_type: string
           status: string
