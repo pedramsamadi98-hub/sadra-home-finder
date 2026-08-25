@@ -20,53 +20,63 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
 
-      - name: Create temporary Capacitor app
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build real project
+        run: npm run build
+
+      - name: Install Capacitor
         run: |
           mkdir apk-wrapper
           cd apk-wrapper
-
           npm init -y
-
           npm install @capacitor/core@7.4.3 @capacitor/cli@7.4.3 @capacitor/android@7.4.3
 
+      - name: Prepare web files
+        run: |
+          cd apk-wrapper
+          mkdir www
+
+          cp -r ../dist/* www/ || true
+
+          if [ ! -f www/index.html ]; then
+            echo "ERROR: The real project build did not produce dist/index.html"
+            echo "Contents of dist:"
+            find ../dist -maxdepth 3 -type f | sort || true
+            exit 1
+          fi
+
+      - name: Create Capacitor config
+        working-directory: apk-wrapper
+        run: |
           cat > capacitor.config.json <<'EOF'
           {
             "appId": "ir.sadrahome.app",
             "appName": "صدرا ملک",
             "webDir": "www",
             "server": {
-              "url": "https://sadra-home-finder.lovable.app",
               "cleartext": false
             }
           }
           EOF
 
-          mkdir www
+      - name: Add Android platform
+        working-directory: apk-wrapper
+        run: npx cap add android
 
-          cat > www/index.html <<'EOF'
-          <!DOCTYPE html>
-          <html lang="fa" dir="rtl">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>صدرا ملک</title>
-          </head>
-          <body>
-            <h1>صدرا ملک</h1>
-          </body>
-          </html>
-          EOF
+      - name: Sync Capacitor
+        working-directory: apk-wrapper
+        run: npx cap sync android
 
-          npx cap add android
-
-      - name: Build Android APK
+      - name: Build APK
         working-directory: apk-wrapper/android
         run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: sadra-melk-apk
+          name: sadra-melk-full-apk
           path: apk-wrapper/android/app/build/outputs/apk/debug/app-debug.apk
