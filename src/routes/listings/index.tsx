@@ -20,6 +20,7 @@ import {
   TRANSACTION_LABELS,
   type Property,
 } from "@/lib/properties";
+import { LAND_CATEGORIES, LAND_CATEGORY_LABELS, zonesFor } from "@/lib/land";
 import { useRole } from "@/lib/roles";
 import { matchesCriteria, parseSmartQuery, relevanceScore } from "@/lib/smart-search";
 
@@ -64,6 +65,8 @@ function Listings() {
   const [status, setStatus] = useState<string>("active");
   const [neighborhood, setNeighborhood] = useState<string>(ALL);
   const [phase, setPhase] = useState<string>(ALL);
+  const [landCategoryId, setLandCategoryId] = useState<string>(ALL);
+  const [landZone, setLandZone] = useState<string>(ALL);
   const [minArea, setMinArea] = useState("");
   const [maxArea, setMaxArea] = useState("");
   const [minPrice, setMinPrice] = useState("");
@@ -108,6 +111,9 @@ function Listings() {
             item.neighborhood,
             item.street,
             item.address,
+            item.land_zone,
+            item.plot_number,
+            item.land_category ? LAND_CATEGORY_LABELS[item.land_category] : null,
             item.owner_name,
             item.owner_phone,
             item.description,
@@ -129,6 +135,8 @@ function Listings() {
       if (status !== ALL && item.status !== status) return false;
       if (neighborhood !== ALL && item.neighborhood !== neighborhood) return false;
       if (phase !== ALL && item.phase !== phase) return false;
+      if (landCategoryId !== ALL && item.land_category !== landCategoryId) return false;
+      if (landZone !== ALL && item.land_zone !== landZone) return false;
       if (parking && !item.parking) return false;
       if (elevator && !item.elevator) return false;
       if (storageOnly && !item.storage) return false;
@@ -161,6 +169,8 @@ function Listings() {
     status,
     neighborhood,
     phase,
+    landCategoryId,
+    landZone,
     broker,
     minArea,
     maxArea,
@@ -180,6 +190,8 @@ function Listings() {
     setStatus(ALL);
     setNeighborhood(ALL);
     setPhase(ALL);
+    setLandCategoryId(ALL);
+    setLandZone(ALL);
     setBroker(ALL);
     setMinArea("");
     setMaxArea("");
@@ -312,6 +324,40 @@ function Listings() {
                   {NEIGHBORHOODS.map((item) => (
                     <option key={item} value={item}>
                       {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">دسته زمین</Label>
+                <select
+                  value={landCategoryId}
+                  onChange={(event) => {
+                    setLandCategoryId(event.target.value);
+                    setLandZone(ALL);
+                  }}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                >
+                  <option value={ALL}>همه</option>
+                  {LAND_CATEGORIES.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">محدوده</Label>
+                <select
+                  value={landZone}
+                  onChange={(event) => setLandZone(event.target.value)}
+                  disabled={landCategoryId === ALL || !zonesFor(landCategoryId).length}
+                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm disabled:opacity-60"
+                >
+                  <option value={ALL}>همه</option>
+                  {(landCategoryId === ALL ? [] : zonesFor(landCategoryId)).map((zone) => (
+                    <option key={zone.label} value={zone.label}>
+                      {zone.label}
                     </option>
                   ))}
                 </select>

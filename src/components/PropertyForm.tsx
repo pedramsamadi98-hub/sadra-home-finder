@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
+import { LAND_CATEGORIES, categoryOfZone, detectLand, zonesFor } from "@/lib/land";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
 import {
   NEIGHBORHOODS,
@@ -170,7 +171,29 @@ export function PropertyForm({
       }
 
       const result = await runOcr({ data: { image: dataUrl } });
-      setOcrResult(result);
+
+      // Match the read text against the official category/zone list. Anything
+      // that is not a confident match stays empty for manual entry.
+      const haystack = [
+        result.land_text,
+        result.title,
+        result.neighborhood,
+        result.street,
+        result.address,
+        result.description,
+        result.notes,
+        result.plot_number ? `پلاک ${result.plot_number}` : null,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const detected = detectLand(haystack);
+
+      setOcrResult({
+        ...result,
+        land_category: detected.land_category,
+        land_zone: detected.land_zone,
+        plot_number: result.plot_number ?? detected.plot_number,
+      });
       setOcrOpen(true);
     } catch (error) {
       console.error(error);
@@ -187,6 +210,16 @@ export function PropertyForm({
       for (const [key, value] of Object.entries(patch)) {
         (next as Record<string, unknown>)[key] = value;
         applied += 1;
+      }
+      // Never keep a zone that does not belong to the selected category.
+      if (next.land_zone && !next.land_category) {
+        next.land_category = categoryOfZone(next.land_zone)?.id ?? null;
+      }
+      if (
+        next.land_zone &&
+        !zonesFor(next.land_category).some((zone) => zone.label === next.land_zone)
+      ) {
+        next.land_zone = null;
       }
       return next;
     });
@@ -321,6 +354,68 @@ export function PropertyForm({
             value={form.address ?? ""}
             onChange={(event) => set("address", event.target.value)}
             placeholder="بلوار، کوچه، پلاک"
+          />
+        </div>
+      </Section>
+
+      <Section title="دسته، محدوده و پلاک">
+        <div className="space-y-1.5">
+          <Label className="text-xs">دسته زمین</Label>
+          <select
+            value={form.land_category ?? ""}
+            onChange={(event) => {
+              const next = event.target.value || null;
+              setForm((prev) => {
+                const allowed = zonesFor(next).map((zone) => zone.label);
+                return {
+                  ...prev,
+                  land_category: next,
+                  land_zone:
+                    prev.land_zone && allowed.includes(prev.land_zone) ? prev.land_zone : null,
+                };
+              });
+            }}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">بدون دسته</option>
+            {LAND_CATEGORIES.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">محدوده</Label>
+          <select
+            value={form.land_zone ?? ""}
+            onChange={(event) => set("land_zone", event.target.value || null)}
+            disabled={!zonesFor(form.land_category).length}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
+          >
+            <option value="">بدون محدوده</option>
+            {zonesFor(form.land_category).map((zone) => (
+              <option key={zone.label} value={zone.label}>
+                {zone.label}
+              </option>
+            ))}
+          </select>
+          {!form.land_category ? (
+            <p className="text-[11px] text-muted-foreground">
+              اول دسته زمین را انتخاب کنید تا محدوده‌های مربوط به آن نمایش داده شود.
+            </p>
+          ) : !zonesFor(form.land_category).length ? (
+            <p className="text-[11px] text-muted-foreground">
+              برای این دسته فعلاً محدوده‌ای تعریف نشده است.
+            </p>
+          ) : null}
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">پلاک (اختیاری)</Label>
+          <Input
+            value={form.plot_number ?? ""}
+            onChange={(event) => set("plot_number", event.target.value)}
+            placeholder="مثلاً ۲۲ یا ۲۲/الف یا ۱۳۲ فرعی"
           />
         </div>
       </Section>

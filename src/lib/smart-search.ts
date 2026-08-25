@@ -1,4 +1,12 @@
 import { enDigits, faDigits } from "@/lib/fa";
+import {
+  LAND_CATEGORY_LABELS,
+  aliasRegex,
+  aliasesOf,
+  detectLand,
+  landCategory,
+  normalizeFa,
+} from "@/lib/land";
 import type {
   OwnershipType,
   Property,
@@ -13,6 +21,9 @@ export type CriterionKey =
   | "bedrooms"
   | "phase"
   | "city"
+  | "land_category"
+  | "land_zone"
+  | "plot_number"
   | "minArea"
   | "maxArea"
   | "minPrice"
@@ -97,6 +108,46 @@ export function parseSmartQuery(input: string): ParsedQuery {
       strip(m[0]);
     }
   };
+
+  // --- land category / zone / plot (official taxonomy) ---
+  const land = detectLand(text);
+  const stripAliases = (aliases: string[]) => {
+    for (const alias of aliases) {
+      text = text.replace(aliasRegex(alias, "g"), " ");
+    }
+    text = ` ${text.replace(/\s+/g, " ").trim()} `;
+  };
+  if (land.land_category) {
+    const category = landCategory(land.land_category);
+    if (category) {
+      add("land_category", category.label, category.id);
+      stripAliases([category.label, ...(category.aliases ?? [])]);
+      // «فاز ۱/۲» is already part of the category — don't also filter by phase.
+      const phaseInLabel = normalizeFa(category.label).match(/فاز\s*(\d)/);
+      if (phaseInLabel) {
+        text = text.replace(new RegExp(`فاز\\s*${phaseInLabel[1]}`, "g"), " ");
+      }
+    }
+  }
+  if (land.land_zone) {
+    const zone = landCategory(land.land_category)?.zones.find(
+      (item) => item.label === land.land_zone,
+    );
+    if (zone) {
+      add("land_zone", zone.label, zone.label);
+      stripAliases(aliasesOf(zone));
+    }
+  }
+  if (land.plot_number) {
+    add("plot_number", `پلاک ${faDigits(land.plot_number)}`, land.plot_number);
+    text = text.replace(
+      new RegExp(`پلاک\\s*${land.plot_number.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}`, "g"),
+      " ",
+    );
+    text = text.replace(/\s*پلاک\s*/g, " ");
+  }
+
+
 
   // --- price (with units) ---
   const unit = "(میلیارد|میلیون)";
@@ -321,6 +372,18 @@ export function matchesCriteria(property: Property, criteria: Criterion[]): bool
       case "city":
         if (!normalize(property.city ?? "").includes(normalize(String(c.value)))) return false;
         break;
+      case "land_category":
+        if (property.land_category !== String(c.value)) return false;
+        break;
+      case "land_zone":
+        if (normalizeFa(property.land_zone ?? "") !== normalizeFa(String(c.value))) return false;
+        break;
+      case "plot_number":
+        if (
+          !normalizeFa(property.plot_number ?? "").includes(normalizeFa(String(c.value)))
+        )
+          return false;
+        break;
       case "minArea":
         if ((property.area ?? 0) < Number(c.value)) return false;
         break;
@@ -359,6 +422,13 @@ export function relevanceScore(property: Property, criteria: Criterion[], text: 
     if (normalize(property.neighborhood ?? "").toLowerCase().includes(q)) score += 3;
     if (normalize(property.phase ?? "").toLowerCase().includes(q)) score += 2;
     if (normalize(property.street ?? "").toLowerCase().includes(q)) score += 1;
+    if (normalizeFa(property.land_zone ?? "").toLowerCase().includes(q)) score += 3;
+    if (normalizeFa(property.plot_number ?? "").toLowerCase().includes(q)) score += 3;
+    if (
+      LAND_CATEGORY_LABELS[property.land_category ?? ""] &&
+      normalizeFa(LAND_CATEGORY_LABELS[property.land_category ?? ""]!).toLowerCase().includes(q)
+    )
+      score += 2;
   }
   if (property.photos.length) score += 1;
   return score;

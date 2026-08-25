@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { faDigits, parseNumber } from "@/lib/fa";
+import { LAND_CATEGORIES, LAND_CATEGORY_LABELS, categoryOfZone, zonesFor } from "@/lib/land";
 import type { OcrResult } from "@/lib/ocr.functions";
 import {
   PROPERTY_TYPE_LABELS,
@@ -21,7 +22,15 @@ import {
   type PropertyInput,
 } from "@/lib/properties";
 
-type Kind = "text" | "long" | "number" | "bool" | "type" | "transaction";
+type Kind =
+  | "text"
+  | "long"
+  | "number"
+  | "bool"
+  | "type"
+  | "transaction"
+  | "land_category"
+  | "land_zone";
 
 const FIELDS: { key: keyof OcrResult; label: string; kind: Kind }[] = [
   { key: "title", label: "عنوان ملک", kind: "text" },
@@ -32,6 +41,9 @@ const FIELDS: { key: keyof OcrResult; label: string; kind: Kind }[] = [
   { key: "neighborhood", label: "محله", kind: "text" },
   { key: "street", label: "خیابان", kind: "text" },
   { key: "address", label: "آدرس", kind: "text" },
+  { key: "land_category", label: "دسته زمین", kind: "land_category" },
+  { key: "land_zone", label: "محدوده", kind: "land_zone" },
+  { key: "plot_number", label: "پلاک", kind: "text" },
   { key: "area", label: "متراژ", kind: "number" },
   { key: "price", label: "قیمت", kind: "number" },
   { key: "deposit", label: "مبلغ رهن", kind: "number" },
@@ -115,6 +127,10 @@ export function OcrReviewDialog({
         if (row.value in PROPERTY_TYPE_LABELS) patch[row.key] = row.value;
       } else if (row.kind === "transaction") {
         if (row.value in TRANSACTION_LABELS) patch[row.key] = row.value;
+      } else if (row.kind === "land_category") {
+        if (row.value in LAND_CATEGORY_LABELS) patch[row.key] = row.value;
+      } else if (row.kind === "land_zone") {
+        if (categoryOfZone(row.value)) patch[row.key] = row.value;
       } else if (row.value.trim()) {
         patch[row.key] = row.value.trim();
       }
@@ -209,6 +225,36 @@ export function OcrReviewDialog({
                     ).map(([key, label]) => (
                       <option key={key} value={key}>
                         {label}
+                      </option>
+                    ))}
+                  </select>
+                ) : row.kind === "land_category" ? (
+                  <select
+                    value={row.value}
+                    onChange={(event) => update(row.key, { value: event.target.value })}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">بدون دسته</option>
+                    {LAND_CATEGORIES.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : row.kind === "land_zone" ? (
+                  <select
+                    value={row.value}
+                    onChange={(event) => update(row.key, { value: event.target.value })}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">بدون محدوده</option>
+                    {zonesFor(
+                      rows.find((item) => item.key === "land_category")?.value ??
+                        categoryOfZone(row.value)?.id ??
+                        null,
+                    ).map((zone) => (
+                      <option key={zone.label} value={zone.label}>
+                        {zone.label}
                       </option>
                     ))}
                   </select>
