@@ -14,26 +14,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # --------------------------------------------------
-      # 1. دریافت آخرین نسخه پروژه
-      # --------------------------------------------------
       - name: Checkout latest project
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      # --------------------------------------------------
-      # 2. Java
-      # --------------------------------------------------
       - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      # --------------------------------------------------
-      # 3. Node
-      # --------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -41,13 +32,6 @@ jobs:
           cache: npm
           cache-dependency-path: package.json
 
-      # --------------------------------------------------
-      # 4. ساخت Capacitor wrapper
-      #
-      # مهم:
-      # APK مستقیماً به آخرین سایت منتشرشده Lovable وصل می‌شود.
-      # بنابراین APK نسخه قدیمی dist یا .output را بسته‌بندی نمی‌کند.
-      # --------------------------------------------------
       - name: Create Capacitor Android wrapper
         shell: bash
         run: |
@@ -63,7 +47,8 @@ jobs:
           npm install \
             @capacitor/core@7.4.3 \
             @capacitor/cli@7.4.3 \
-            @capacitor/android@7.4.3
+            @capacitor/android@7.4.3 \
+            typescript@5.9.2
 
           cat > capacitor.config.ts <<'EOF'
           import type { CapacitorConfig } from '@capacitor/cli';
@@ -86,9 +71,6 @@ jobs:
           export default config;
           EOF
 
-          # Capacitor هنگام sync به index.html نیاز دارد.
-          # چون برنامه واقعی از server.url لود می‌شود،
-          # این فایل فقط برای bootstrap اولیه Capacitor است.
           mkdir -p www
 
           cat > www/index.html <<'EOF'
@@ -111,17 +93,6 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      # --------------------------------------------------
-      # 5. نصب ابزارهای لازم برای ساخت آیکون
-      # --------------------------------------------------
-      - name: Install image tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y imagemagick
-
-      # --------------------------------------------------
-      # 6. اعمال نام و آیکون برند «صدرا ملک»
-      # --------------------------------------------------
       - name: Apply Sadra Melk branding
         shell: bash
         run: |
@@ -142,6 +113,9 @@ jobs:
           mkdir -p "$ANDROID_RES/mipmap-xxhdpi"
           mkdir -p "$ANDROID_RES/mipmap-xxxhdpi"
 
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+
           convert "$ICON" -resize 48x48 \
             "$ANDROID_RES/mipmap-mdpi/ic_launcher.png"
 
@@ -157,23 +131,15 @@ jobs:
           convert "$ICON" -resize 192x192 \
             "$ANDROID_RES/mipmap-xxxhdpi/ic_launcher.png"
 
-          # Android label
-          MANIFEST="$ANDROID_RES/values/strings.xml"
+          STRINGS="$ANDROID_RES/values/strings.xml"
 
-          if [ -f "$MANIFEST" ]; then
-            sed -i 's#<string name="app_name">.*</string>#<string name="app_name">صدرا ملک</string>#' "$MANIFEST"
+          if [ -f "$STRINGS" ]; then
+            sed -i 's#<string name="app_name">.*</string>#<string name="app_name">صدرا ملک</string>#' "$STRINGS"
           fi
 
-          echo "Branding applied:"
-          find "$ANDROID_RES" \
-            -type f \
-            \( -name "ic_launcher.png" -o -name "strings.xml" \) \
-            -print
+          echo "Branding applied successfully."
 
-      # --------------------------------------------------
-      # 7. ساخت APK
-      # --------------------------------------------------
-      - name: Build Debug APK
+      - name: Build APK
         shell: bash
         run: |
           set -e
@@ -184,14 +150,11 @@ jobs:
 
           ./gradlew assembleDebug --no-daemon
 
-      # --------------------------------------------------
-      # 8. پیدا کردن APK
-      # --------------------------------------------------
-      - name: Find generated APK
+      - name: Find APK
         shell: bash
         run: |
           echo "======================================"
-          echo "GENERATED APK FILES"
+          echo "GENERATED APK"
           echo "======================================"
 
           find apk-wrapper/android \
@@ -199,10 +162,7 @@ jobs:
             -name "*.apk" \
             -print
 
-      # --------------------------------------------------
-      # 9. آپلود APK
-      # --------------------------------------------------
-      - name: Upload Sadra Melk APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: sadra-melk-final
