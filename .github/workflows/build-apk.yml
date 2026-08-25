@@ -42,11 +42,7 @@ jobs:
           const config: CapacitorConfig = {
             appId: 'ir.sadrahome.app',
             appName: 'صدرا ملک',
-            webDir: 'www',
-            server: {
-              url: 'https://sadra-home-finder.lovable.app',
-              cleartext: false
-            }
+            webDir: 'www'
           };
 
           export default config;
@@ -57,8 +53,9 @@ jobs:
           cp -r ../.output/public/* www/
 
           echo "========================================"
-          echo "REAL PROJECT FILES"
+          echo "REAL PROJECT BUILD"
           echo "========================================"
+
           find www -maxdepth 3 -type f | sort | head -200
 
           npx cap add android
@@ -86,6 +83,10 @@ jobs:
 
       - name: Find APK
         run: |
+          echo "========================================"
+          echo "APK FILES"
+          echo "========================================"
+
           find apk-wrapper/android -type f -name "*.apk" -print
 
       - name: Upload APK
