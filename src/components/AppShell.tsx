@@ -37,11 +37,13 @@ const collaboratorNav = [
 export function AppShell({
   title,
   subtitle,
+  brand,
   children,
   action,
 }: {
   title: string;
   subtitle?: string;
+  brand?: { title: string; subtitle?: string };
   children: ReactNode;
   action?: ReactNode;
 }) {
