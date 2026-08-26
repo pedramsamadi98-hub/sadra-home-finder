@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+
 const inputSchema = z.object({
   image: z.string().min(32), // data:image/...;base64,...
 });
