@@ -107,6 +107,7 @@ function normalize(raw: Record<string, unknown>): OcrResult {
 }
 
 export const extractPropertyFromImage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<OcrResult> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
