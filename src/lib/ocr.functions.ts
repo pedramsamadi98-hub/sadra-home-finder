@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+
 const inputSchema = z.object({
   image: z.string().min(32), // data:image/...;base64,...
 });
@@ -104,6 +107,7 @@ function normalize(raw: Record<string, unknown>): OcrResult {
 }
 
 export const extractPropertyFromImage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<OcrResult> => {
     const apiKey = process.env["LOVABLE_API_KEY"];
