@@ -160,3 +160,9 @@
     display: none;
   }
 }
+
+/* Hide the Lovable "Edit with Lovable" badge across every page/route */
+#lovable-badge {
+  display: none !important;
+}
+
