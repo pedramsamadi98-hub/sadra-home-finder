@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ImagePlus, Loader2, ScanText, Trash2 } from "lucide-react";
+import { ImagePlus, Loader2, ScanText, Trash2, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -15,10 +15,12 @@ import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
 import { categoryOfZone, detectLand, zonesFor } from "@/lib/land";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
+import { PROPERTY_TYPE_ICONS } from "@/lib/property-type-icons";
 import {
   ALL_PROPERTY_TYPE_LABELS,
   CITIES,
-  neighborhoodsFor,
+  isBaghshahriType,
+  neighborhoodsForType,
   PHASES,
   OWNERSHIP_LABELS,
   PROPERTY_TYPE_LABELS,
@@ -47,27 +49,33 @@ function Chips<T extends string>({
   value,
   options,
   onChange,
+  icons,
 }: {
   value: T;
   options: Record<T, string>;
   onChange: (next: T) => void;
+  icons?: Partial<Record<T, LucideIcon>>;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {(Object.keys(options) as T[]).map((key) => (
-        <button
-          key={key}
-          type="button"
-          onClick={() => onChange(key)}
-          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-            value === key
-              ? "border-primary bg-primary/15 text-primary"
-              : "border-border text-muted-foreground"
-          }`}
-        >
-          {options[key]}
-        </button>
-      ))}
+      {(Object.keys(options) as T[]).map((key) => {
+        const Icon = icons?.[key] as LucideIcon | undefined;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              value === key
+                ? "border-primary bg-primary/15 text-primary"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            {Icon ? <Icon className="size-3.5" /> : null}
+            {options[key]}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -257,11 +265,12 @@ export function PropertyForm({
   ) as Record<PropertyType, string>;
   const cityOptions = CITIES.includes(form.city) ? CITIES : [...CITIES, form.city];
   const phaseOptions = form.phase && !PHASES.includes(form.phase) ? [...PHASES, form.phase] : PHASES;
-  const phaseNeighborhoods = neighborhoodsFor(form.phase);
+  const baghshahri = isBaghshahriType(form.property_type);
+  const typeNeighborhoods = neighborhoodsForType(form.property_type, form.phase);
   const neighborhoodOptions =
-    form.neighborhood && !phaseNeighborhoods.some((item) => item.value === form.neighborhood)
-      ? [...phaseNeighborhoods, { value: form.neighborhood, label: form.neighborhood }]
-      : phaseNeighborhoods;
+    form.neighborhood && !typeNeighborhoods.some((item) => item.value === form.neighborhood)
+      ? [...typeNeighborhoods, { value: form.neighborhood, label: form.neighborhood }]
+      : typeNeighborhoods;
   const showPlot = showsPlotNumber(form.property_type, form.land_category);
 
   return (
@@ -305,7 +314,20 @@ export function PropertyForm({
           <Chips<PropertyType>
             value={form.property_type}
             options={typeOptions}
-            onChange={(next) => set("property_type", next)}
+            icons={PROPERTY_TYPE_ICONS}
+            onChange={(next) =>
+              setForm((prev) => {
+                const allowed = neighborhoodsForType(next, prev.phase).map((item) => item.value);
+                return {
+                  ...prev,
+                  property_type: next,
+                  neighborhood:
+                    prev.neighborhood && allowed.includes(prev.neighborhood)
+                      ? prev.neighborhood
+                      : "",
+                };
+              })
+            }
           />
         </div>
         <div className="space-y-2">
@@ -349,7 +371,9 @@ export function PropertyForm({
               onChange={(event) => {
                 const nextPhase = event.target.value;
                 setForm((prev) => {
-                  const allowed = neighborhoodsFor(nextPhase).map((item) => item.value);
+                  const allowed = neighborhoodsForType(prev.property_type, nextPhase).map(
+                    (item) => item.value,
+                  );
                   return {
                     ...prev,
                     phase: nextPhase,
@@ -386,11 +410,11 @@ export function PropertyForm({
               </option>
             ))}
           </select>
-          {!form.phase ? (
+          {baghshahri ? null : !form.phase ? (
             <p className="text-[11px] text-muted-foreground">
               اول فاز را انتخاب کنید تا محله‌های همان فاز نمایش داده شود.
             </p>
-          ) : !neighborhoodsFor(form.phase).length ? (
+          ) : !typeNeighborhoods.length ? (
             <p className="text-[11px] text-muted-foreground">
               برای این فاز فعلاً محله‌ای تعریف نشده است.
             </p>

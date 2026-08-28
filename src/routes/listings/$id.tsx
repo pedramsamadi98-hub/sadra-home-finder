@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { propertyTypeIcon } from "@/lib/property-type-icons";
+
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { FollowUpSection } from "@/components/FollowUpSection";
@@ -203,7 +205,7 @@ function Detail({ userId }: { userId: string }) {
             }
           />
           <Row
-            icon={Building}
+            icon={propertyTypeIcon(property.property_type)}
             label="کاربری"
             value={`${propertyTypeLabel(property.property_type)} • ${TRANSACTION_LABELS[property.transaction_type]}`}
           />

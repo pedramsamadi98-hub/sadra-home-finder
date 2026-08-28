@@ -8,6 +8,7 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { TodayFollowUps } from "@/components/TodayFollowUps";
 import { faDate, faDigits } from "@/lib/fa";
 import { fetchPropertiesFor, PROPERTY_TYPE_LABELS, type Property } from "@/lib/properties";
+import { propertyTypeIcon } from "@/lib/property-type-icons";
 import { useRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/")({
@@ -127,8 +128,12 @@ function Dashboard({ userId }: { userId: string }) {
               <div className="mt-3 space-y-2">
                 {byType.map((row) => (
                   <div key={row.type} className="flex items-center gap-3">
-                    <span className="w-20 shrink-0 text-xs text-muted-foreground">
-                      {PROPERTY_TYPE_LABELS[row.type]}
+                    <span className="flex w-24 shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      {(() => {
+                        const Icon = propertyTypeIcon(row.type);
+                        return <Icon className="size-3.5 shrink-0" />;
+                      })()}
+                      <span className="truncate">{PROPERTY_TYPE_LABELS[row.type]}</span>
                     </span>
                     <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
                       <div

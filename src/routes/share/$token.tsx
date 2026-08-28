@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Boxes, Building, Calendar, Car, Landmark, MapPin, Ruler, ShieldCheck } from "lucide-react";
+import { Boxes, Calendar, Car, Landmark, MapPin, Ruler, ShieldCheck } from "lucide-react";
 
 import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
+import { propertyTypeIcon } from "@/lib/property-type-icons";
 import { getSharedProperty } from "@/lib/shares.functions";
 import {
   OWNERSHIP_LABELS,
@@ -122,7 +123,7 @@ function SharePage() {
 
       <section className="grid gap-2">
         <Row
-          icon={Building}
+          icon={propertyTypeIcon(p.property_type)}
           label="کاربری"
           value={`${propertyTypeLabel(p.property_type)} • ${
             TRANSACTION_LABELS[p.transaction_type as TransactionType]
