@@ -263,11 +263,12 @@ export function PropertyForm({
   ) as Record<PropertyType, string>;
   const cityOptions = CITIES.includes(form.city) ? CITIES : [...CITIES, form.city];
   const phaseOptions = form.phase && !PHASES.includes(form.phase) ? [...PHASES, form.phase] : PHASES;
-  const phaseNeighborhoods = neighborhoodsFor(form.phase);
+  const baghshahri = isBaghshahriType(form.property_type);
+  const typeNeighborhoods = neighborhoodsForType(form.property_type, form.phase);
   const neighborhoodOptions =
-    form.neighborhood && !phaseNeighborhoods.some((item) => item.value === form.neighborhood)
-      ? [...phaseNeighborhoods, { value: form.neighborhood, label: form.neighborhood }]
-      : phaseNeighborhoods;
+    form.neighborhood && !typeNeighborhoods.some((item) => item.value === form.neighborhood)
+      ? [...typeNeighborhoods, { value: form.neighborhood, label: form.neighborhood }]
+      : typeNeighborhoods;
   const showPlot = showsPlotNumber(form.property_type, form.land_category);
 
   return (
@@ -311,7 +312,20 @@ export function PropertyForm({
           <Chips<PropertyType>
             value={form.property_type}
             options={typeOptions}
-            onChange={(next) => set("property_type", next)}
+            icons={PROPERTY_TYPE_ICONS}
+            onChange={(next) =>
+              setForm((prev) => {
+                const allowed = neighborhoodsForType(next, prev.phase).map((item) => item.value);
+                return {
+                  ...prev,
+                  property_type: next,
+                  neighborhood:
+                    prev.neighborhood && allowed.includes(prev.neighborhood)
+                      ? prev.neighborhood
+                      : "",
+                };
+              })
+            }
           />
         </div>
         <div className="space-y-2">
@@ -355,7 +369,9 @@ export function PropertyForm({
               onChange={(event) => {
                 const nextPhase = event.target.value;
                 setForm((prev) => {
-                  const allowed = neighborhoodsFor(nextPhase).map((item) => item.value);
+                  const allowed = neighborhoodsForType(prev.property_type, nextPhase).map(
+                    (item) => item.value,
+                  );
                   return {
                     ...prev,
                     phase: nextPhase,
@@ -392,11 +408,11 @@ export function PropertyForm({
               </option>
             ))}
           </select>
-          {!form.phase ? (
+          {baghshahri ? null : !form.phase ? (
             <p className="text-[11px] text-muted-foreground">
               اول فاز را انتخاب کنید تا محله‌های همان فاز نمایش داده شود.
             </p>
-          ) : !neighborhoodsFor(form.phase).length ? (
+          ) : !typeNeighborhoods.length ? (
             <p className="text-[11px] text-muted-foreground">
               برای این فاز فعلاً محله‌ای تعریف نشده است.
             </p>
