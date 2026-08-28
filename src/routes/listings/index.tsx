@@ -243,36 +243,48 @@ function Listings() {
     }
   }, [JSON.stringify(view)]);
 
-  // Track scroll position while browsing the list.
-  useEffect(() => {
-    const onScroll = () => {
-      try {
-        const prev = readSaved();
-        window.sessionStorage.setItem(
-          STATE_KEY,
-          JSON.stringify({ ...prev, scrollY: window.scrollY }),
-        );
-      } catch {
-        /* ignore */
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Restore scroll once the remembered list is on screen again.
+  // Restore scroll once the remembered list is on screen again, then start
+  // tracking the position so the next visit returns to the same place.
   const restored = useRef(false);
   useEffect(() => {
     if (restored.current || isLoading || roleLoading || !results.length) return;
     restored.current = true;
-    const y = Number(saved["scrollY"] ?? 0);
-    if (y <= 0) return;
-    // Nudge a few times: the router also restores scroll right after mount.
-    const timers = [0, 60, 180, 360].map((delay) =>
-      window.setTimeout(() => window.scrollTo({ top: y }), delay),
+    const target = Number(saved["scrollY"] ?? 0);
+
+    const save = () => {
+      try {
+        window.sessionStorage.setItem(
+          STATE_KEY,
+          JSON.stringify({ ...readSaved(), scrollY: window.scrollY }),
+        );
+      } catch {
+        /* storage unavailable — position simply won't persist */
+      }
+    };
+
+    let done = target <= 0;
+    // Retry: the list grows as images/cards render, and the router resets scroll.
+    const timers = [0, 80, 200, 400, 700, 1000].map((delay) =>
+      window.setTimeout(() => {
+        if (done) return;
+        window.scrollTo({ top: target });
+        if (Math.abs(window.scrollY - target) < 4) done = true;
+      }, delay),
     );
-    return () => timers.forEach((t) => window.clearTimeout(t));
+    const settle = window.setTimeout(() => {
+      done = true;
+      window.addEventListener("scroll", save, { passive: true });
+    }, 1100);
+    if (done) window.addEventListener("scroll", save, { passive: true });
+
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      window.clearTimeout(settle);
+      window.removeEventListener("scroll", save);
+      save();
+    };
   }, [isLoading, roleLoading, results.length, saved]);
+
 
 
 
