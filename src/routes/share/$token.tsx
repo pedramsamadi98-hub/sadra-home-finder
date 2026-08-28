@@ -5,10 +5,9 @@ import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
 import { getSharedProperty } from "@/lib/shares.functions";
 import {
   OWNERSHIP_LABELS,
-  PROPERTY_TYPE_LABELS,
+  propertyTypeLabel,
   TRANSACTION_LABELS,
   type OwnershipType,
-  type PropertyType,
   type TransactionType,
 } from "@/lib/properties";
 
@@ -125,7 +124,7 @@ function SharePage() {
         <Row
           icon={Building}
           label="کاربری"
-          value={`${PROPERTY_TYPE_LABELS[p.property_type as PropertyType]} • ${
+          value={`${propertyTypeLabel(p.property_type)} • ${
             TRANSACTION_LABELS[p.transaction_type as TransactionType]
           }`}
         />

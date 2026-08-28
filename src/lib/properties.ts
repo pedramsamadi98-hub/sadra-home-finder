@@ -1,9 +1,24 @@
 import { supabase } from "@/integrations/supabase/client";
+import { LAND_CATEGORIES } from "@/lib/land";
 
-export type PropertyType = "apartment" | "villa" | "land" | "commercial";
+/** Legacy values kept for existing rows. */
+export type LegacyPropertyType = "apartment" | "villa" | "land" | "commercial";
+/** New usage types (نوع کاربری ملک). */
+export type NewPropertyType =
+  | "complex"
+  | "land_phase_1"
+  | "land_phase_2"
+  | "single_block"
+  | "tabaq_villaei"
+  | "villa_package"
+  | "villa_darbast"
+  | "apartment_land_phase_1"
+  | "apartment_land_phase_2";
+export type PropertyType = NewPropertyType | LegacyPropertyType;
 export type TransactionType = "sale" | "rent" | "mortgage";
 export type PropertyStatus = "active" | "sold" | "rented" | "archived";
 export type OwnershipType = "melki" | "owqaf";
+
 
 export interface Property {
   id: string;
@@ -52,12 +67,57 @@ export type PropertyInput = Omit<
   "id" | "user_id" | "created_at" | "updated_at"
 >;
 
-export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+/** Selectable usage types in the form (نوع کاربری ملک). */
+export const PROPERTY_TYPE_LABELS: Record<NewPropertyType, string> = {
+  complex: "مجتمع",
+  land_phase_1: "زمین فاز ۱",
+  land_phase_2: "زمین فاز ۲",
+  single_block: "تک‌بلوک شخصی‌ساز",
+  tabaq_villaei: "طبق ویلایی",
+  villa_package: "ویلایی پکیج",
+  villa_darbast: "ویلایی دربست",
+  apartment_land_phase_1: "زمین آپارتمانی فاز ۱",
+  apartment_land_phase_2: "زمین آپارتمانی فاز ۲",
+};
+
+/** Older values still present in saved rows — display only, never lost. */
+export const LEGACY_PROPERTY_TYPE_LABELS: Record<LegacyPropertyType, string> = {
   apartment: "آپارتمان",
   villa: "ویلا",
   land: "زمین",
   commercial: "تجاری",
 };
+
+/** Every value that can appear in the database. */
+export const ALL_PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+  ...PROPERTY_TYPE_LABELS,
+  ...LEGACY_PROPERTY_TYPE_LABELS,
+};
+
+export function propertyTypeLabel(value: string | null | undefined): string {
+  if (!value) return "—";
+  return ALL_PROPERTY_TYPE_LABELS[value as PropertyType] ?? value;
+}
+
+/** Usage types where a plot number (پلاک) is meaningful — always optional. */
+const PLOT_TYPES = new Set<string>([
+  "land_phase_1",
+  "land_phase_2",
+  "apartment_land_phase_1",
+  "apartment_land_phase_2",
+  "tabaq_villaei",
+  "villa_package",
+  "land",
+]);
+
+export function showsPlotNumber(
+  propertyType: string | null | undefined,
+  landCategory?: string | null,
+): boolean {
+  if (propertyType && PLOT_TYPES.has(propertyType)) return true;
+  // باغشهری and other legacy land categories keep their plot field visible.
+  return Boolean(landCategory);
+}
 
 export const TRANSACTION_LABELS: Record<TransactionType, string> = {
   sale: "فروش",
@@ -77,32 +137,43 @@ export const STATUS_LABELS: Record<PropertyStatus, string> = {
   archived: "بایگانی",
 };
 
-export const PHASES = [
-  "فاز ۱",
-  "فاز ۲",
-  "فاز ۳",
-  "فاز ۴",
-  "فاز ۵",
-  "فاز ۶",
-  "سایر",
-];
+export const CITIES = ["صدرا"];
 
-export const NEIGHBORHOODS = [
-  "فاز ۱",
-  "فاز ۲",
-  "فاز ۳",
-  "فاز ۴",
-  "فاز ۵",
-  "فاز ۶",
-  "شهرک گلستان",
-  "شهرک نگین",
-  "سایر",
-];
+export const PHASES = ["فاز ۱", "فاز ۲", "فاز ۳"];
+
+/** Display label for a stored zone label (drops the redundant «زمین » prefix). */
+function zoneDisplay(label: string): string {
+  return label.replace(/^زمین\s+/, "");
+}
+
+function zoneOptions(categoryId: string) {
+  return (LAND_CATEGORIES.find((item) => item.id === categoryId)?.zones ?? []).map((zone) => ({
+    value: zone.label,
+    label: zoneDisplay(zone.label),
+  }));
+}
+
+/** Phase-dependent neighborhoods, derived from the official land zones. */
+export const NEIGHBORHOODS_BY_PHASE: Record<string, { value: string; label: string }[]> = {
+  "فاز ۱": zoneOptions("residential_phase_1"),
+  "فاز ۲": zoneOptions("residential_phase_2"),
+  "فاز ۳": [],
+};
+
+export function neighborhoodsFor(phase: string | null | undefined) {
+  if (!phase) return [];
+  return NEIGHBORHOODS_BY_PHASE[phase] ?? [];
+}
+
+export const NEIGHBORHOODS = Object.values(NEIGHBORHOODS_BY_PHASE)
+  .flat()
+  .map((item) => item.value);
+
 
 export const emptyProperty: PropertyInput = {
   broker_id: null,
   title: "",
-  property_type: "apartment",
+  property_type: "complex",
   ownership_type: null,
   transaction_type: "sale",
   status: "active",
