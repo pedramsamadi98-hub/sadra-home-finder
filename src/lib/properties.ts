@@ -80,6 +80,8 @@ export const PROPERTY_TYPE_LABELS: Record<NewPropertyType, string> = {
   villa_darbast: "ویلایی دربست",
   apartment_land_phase_1: "زمین آپارتمانی فاز ۱",
   apartment_land_phase_2: "زمین آپارتمانی فاز ۲",
+  baghshahri: "باغشهری",
+  zamin_baghshahri: "زمین باغشهری",
 };
 
 /** Older values still present in saved rows — display only, never lost. */
@@ -109,6 +111,7 @@ const PLOT_TYPES = new Set<string>([
   "apartment_land_phase_2",
   "tabaq_villaei",
   "villa_package",
+  "villa_darbast",
   "land",
 ]);
 
@@ -165,6 +168,25 @@ export const NEIGHBORHOODS_BY_PHASE: Record<string, { value: string; label: stri
 export function neighborhoodsFor(phase: string | null | undefined) {
   if (!phase) return [];
   return NEIGHBORHOODS_BY_PHASE[phase] ?? [];
+}
+
+/** Usage types whose neighborhoods are the باغشهری zones (not phase-based). */
+const BAGHSHAHRI_TYPES = new Set<string>(["baghshahri", "zamin_baghshahri"]);
+
+export function isBaghshahriType(propertyType: string | null | undefined): boolean {
+  return Boolean(propertyType) && BAGHSHAHRI_TYPES.has(propertyType as string);
+}
+
+/**
+ * Neighborhood options for the form: باغشهری usage types list the باغشهری
+ * zones; everything else keeps the phase → neighborhood structure.
+ */
+export function neighborhoodsForType(
+  propertyType: string | null | undefined,
+  phase: string | null | undefined,
+) {
+  if (isBaghshahriType(propertyType)) return zoneOptions("baghshahri");
+  return neighborhoodsFor(phase);
 }
 
 export const NEIGHBORHOODS = Object.values(NEIGHBORHOODS_BY_PHASE)
