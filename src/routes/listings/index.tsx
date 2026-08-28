@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { Loader2, Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -243,16 +243,15 @@ function Listings() {
     }
   }, [JSON.stringify(view)]);
 
-  // Restore scroll once the remembered list is on screen again, then start
-  // tracking the position so the next visit returns to the same place.
-  const restored = useRef(false);
+  // Restore scroll every time the list is shown again, then keep tracking the
+  // position so returning from a file's details lands in the same place.
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   useEffect(() => {
-    if (restored.current || isLoading || roleLoading || !results.length) return;
-    restored.current = true;
-    const target = Number(saved["scrollY"] ?? 0);
+    if (pathname !== "/listings" || isLoading || roleLoading || !results.length) return;
+    const target = Number(readSaved()["scrollY"] ?? 0);
 
-    // Debounced on purpose: when the user opens a file the browser resets the
-    // scroll to 0 just before unmount, and that value must never be stored.
+    // Debounced on purpose: the browser resets scroll to 0 right before leaving
+    // the list, and that value must never be stored.
     let pending: number | undefined;
     const save = () => {
       window.clearTimeout(pending);
@@ -265,23 +264,22 @@ function Listings() {
         } catch {
           /* storage unavailable — position simply won't persist */
         }
-      }, 300);
+      }, 250);
     };
 
     let done = target <= 0;
-    // Retry: the list grows as cards render, and the router resets scroll.
-    const timers = [0, 100, 250, 500, 800, 1200, 1600, 2000].map((delay) =>
+    // Retry: the list grows as cards render and the router resets scroll.
+    const timers = [0, 100, 250, 500, 800, 1200].map((delay) =>
       window.setTimeout(() => {
         if (done) return;
         window.scrollTo({ top: target });
-        console.debug("[listings] restore", target, window.scrollY, document.documentElement.scrollHeight);
         if (Math.abs(window.scrollY - target) < 4) done = true;
       }, delay),
     );
     const settle = window.setTimeout(() => {
       done = true;
       window.addEventListener("scroll", save, { passive: true });
-    }, 2200);
+    }, 1300);
     if (done) window.addEventListener("scroll", save, { passive: true });
 
     return () => {
@@ -290,7 +288,7 @@ function Listings() {
       window.clearTimeout(pending);
       window.removeEventListener("scroll", save);
     };
-  }, [isLoading, roleLoading, results.length, saved]);
+  }, [pathname, isLoading, roleLoading, results.length]);
 
 
 
