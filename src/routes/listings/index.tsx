@@ -268,23 +268,31 @@ function Listings() {
     };
 
     let done = target <= 0;
-    // Retry: the list grows as cards render and the router resets scroll.
-    const timers = [0, 100, 250, 500, 800, 1200].map((delay) =>
-      window.setTimeout(() => {
-        if (done) return;
-        window.scrollTo({ top: target });
-        if (Math.abs(window.scrollY - target) < 4) done = true;
-      }, delay),
-    );
+    // The router restores scroll to the top asynchronously, so keep re-applying
+    // the remembered offset for a short window unless the user scrolls first.
+    const abort = () => {
+      done = true;
+    };
+    if (!done) {
+      window.addEventListener("wheel", abort, { passive: true, once: true });
+      window.addEventListener("touchstart", abort, { passive: true, once: true });
+    }
+    const interval = window.setInterval(() => {
+      if (done) return;
+      if (Math.abs(window.scrollY - target) > 4) window.scrollTo({ top: target });
+    }, 100);
     const settle = window.setTimeout(() => {
       done = true;
+      window.clearInterval(interval);
       window.addEventListener("scroll", save, { passive: true });
-    }, 1300);
+    }, 2500);
     if (done) window.addEventListener("scroll", save, { passive: true });
 
     return () => {
-      timers.forEach((t) => window.clearTimeout(t));
+      window.clearInterval(interval);
       window.clearTimeout(settle);
+      window.removeEventListener("wheel", abort);
+      window.removeEventListener("touchstart", abort);
       window.clearTimeout(pending);
       window.removeEventListener("scroll", save);
     };
