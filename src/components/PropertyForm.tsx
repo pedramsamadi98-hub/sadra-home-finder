@@ -15,10 +15,12 @@ import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
 import { categoryOfZone, detectLand, zonesFor } from "@/lib/land";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
+import { PROPERTY_TYPE_ICONS } from "@/lib/property-type-icons";
 import {
   ALL_PROPERTY_TYPE_LABELS,
   CITIES,
-  neighborhoodsFor,
+  isBaghshahriType,
+  neighborhoodsForType,
   PHASES,
   OWNERSHIP_LABELS,
   PROPERTY_TYPE_LABELS,
