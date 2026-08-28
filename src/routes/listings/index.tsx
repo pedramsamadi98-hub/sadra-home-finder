@@ -266,8 +266,14 @@ function Listings() {
     if (restored.current || isLoading || roleLoading || !results.length) return;
     restored.current = true;
     const y = Number(saved["scrollY"] ?? 0);
-    if (y > 0) requestAnimationFrame(() => window.scrollTo({ top: y }));
+    if (y <= 0) return;
+    // Nudge a few times: the router also restores scroll right after mount.
+    const timers = [0, 60, 180, 360].map((delay) =>
+      window.setTimeout(() => window.scrollTo({ top: y }), delay),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
   }, [isLoading, roleLoading, results.length, saved]);
+
 
 
   function reset() {
