@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ImagePlus, Loader2, ScanText, Trash2 } from "lucide-react";
+import { ImagePlus, Loader2, ScanText, Trash2, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -47,27 +47,33 @@ function Chips<T extends string>({
   value,
   options,
   onChange,
+  icons,
 }: {
   value: T;
   options: Record<T, string>;
   onChange: (next: T) => void;
+  icons?: Partial<Record<T, LucideIcon>>;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {(Object.keys(options) as T[]).map((key) => (
-        <button
-          key={key}
-          type="button"
-          onClick={() => onChange(key)}
-          className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-            value === key
-              ? "border-primary bg-primary/15 text-primary"
-              : "border-border text-muted-foreground"
-          }`}
-        >
-          {options[key]}
-        </button>
-      ))}
+      {(Object.keys(options) as T[]).map((key) => {
+        const Icon = icons?.[key];
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              value === key
+                ? "border-primary bg-primary/15 text-primary"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            {Icon ? <Icon className="size-3.5" /> : null}
+            {options[key]}
+          </button>
+        );
+      })}
     </div>
   );
 }
