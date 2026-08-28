@@ -247,11 +247,7 @@ function Listings() {
   // position so returning from a file's details lands in the same place.
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   useEffect(() => {
-    (window as unknown as { __ld?: unknown[] }).__ld = [
-      ...(((window as unknown as { __ld?: unknown[] }).__ld) ?? []),
-      { pathname, isLoading, roleLoading, n: results.length },
-    ];
-    if (pathname !== "/listings" || isLoading || roleLoading || !results.length) return;
+    if (pathname.replace(/\/$/, "") !== "/listings" || isLoading || roleLoading || !results.length) return;
     const target = Number(readSaved()["scrollY"] ?? 0);
 
     // Debounced on purpose: the browser resets scroll to 0 right before leaving
