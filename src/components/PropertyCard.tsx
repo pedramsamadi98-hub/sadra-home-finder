@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { BedDouble, Building, MapPin, Ruler } from "lucide-react";
+import { BedDouble, MapPin, Ruler } from "lucide-react";
+
+import { PropertyTypeIcon } from "@/lib/property-type-icons";
 
 import { PhotoThumb } from "@/components/PhotoGallery";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
@@ -77,7 +79,7 @@ export function PropertyCard({ property }: { property: Property }) {
           <p className="mt-1.5 text-sm font-semibold text-primary">{priceText}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Building className="size-3.5" />
+              <PropertyTypeIcon type={property.property_type} />
               {propertyTypeLabel(property.property_type)} •{" "}
               {TRANSACTION_LABELS[property.transaction_type]}
             </span>
