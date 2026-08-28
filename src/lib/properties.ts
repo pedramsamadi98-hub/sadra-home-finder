@@ -13,7 +13,9 @@ export type NewPropertyType =
   | "villa_package"
   | "villa_darbast"
   | "apartment_land_phase_1"
-  | "apartment_land_phase_2";
+  | "apartment_land_phase_2"
+  | "baghshahri"
+  | "zamin_baghshahri";
 export type PropertyType = NewPropertyType | LegacyPropertyType;
 export type TransactionType = "sale" | "rent" | "mortgage";
 export type PropertyStatus = "active" | "sold" | "rented" | "archived";
