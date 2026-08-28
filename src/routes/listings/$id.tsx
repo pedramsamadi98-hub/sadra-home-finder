@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
+  ArrowRight,
   ArrowUpRightFromSquare,
   Boxes,
+
   Building,
   Calendar,
   Car,
@@ -35,7 +37,7 @@ import {
   deleteProperty,
   fetchPropertyFor,
   OWNERSHIP_LABELS,
-  PROPERTY_TYPE_LABELS,
+  propertyTypeLabel,
   STATUS_LABELS,
   TRANSACTION_LABELS,
   updatePropertyOwnership,
@@ -43,6 +45,7 @@ import {
   type OwnershipType,
   type PropertyStatus,
 } from "@/lib/properties";
+
 
 export const Route = createFileRoute("/listings/$id")({
   head: () => ({
@@ -155,8 +158,18 @@ function Detail({ userId }: { userId: string }) {
   return (
     <AppShell title={property.title} subtitle={STATUS_LABELS[property.status]}>
       <div className="space-y-4">
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-10 w-full justify-start gap-2"
+          onClick={() => router.navigate({ to: "/listings" })}
+        >
+          <ArrowRight className="size-4" />
+          بازگشت به املاک
+        </Button>
         <PhotoGallery paths={property.photos} alt={property.title} />
         {isAdmin ? <PrivatePhotoSection property={property} /> : null}
+
 
         <section className="surface-card space-y-2 p-4">
           <p className="text-lg font-bold text-primary">
@@ -192,8 +205,9 @@ function Detail({ userId }: { userId: string }) {
           <Row
             icon={Building}
             label="کاربری"
-            value={`${PROPERTY_TYPE_LABELS[property.property_type]} • ${TRANSACTION_LABELS[property.transaction_type]}`}
+            value={`${propertyTypeLabel(property.property_type)} • ${TRANSACTION_LABELS[property.transaction_type]}`}
           />
+
           {property.land_category ? (
             <Row
               icon={MapPin}

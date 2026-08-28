@@ -244,8 +244,17 @@ export function parseSmartQuery(input: string): ParsedQuery {
     }
   }
 
-  // --- property type ---
+  // --- property type (specific new values first, legacy words afterwards) ---
   const types: { value: PropertyType; word: string; label: string }[] = [
+    { value: "apartment_land_phase_1", word: "زمین (?:آپارتمانی|اپارتمانی) فاز 1", label: "زمین آپارتمانی فاز ۱" },
+    { value: "apartment_land_phase_2", word: "زمین (?:آپارتمانی|اپارتمانی) فاز 2", label: "زمین آپارتمانی فاز ۲" },
+    { value: "land_phase_1", word: "زمین (?:مسکونی )?فاز 1", label: "زمین فاز ۱" },
+    { value: "land_phase_2", word: "زمین (?:مسکونی )?فاز 2", label: "زمین فاز ۲" },
+    { value: "tabaq_villaei", word: "طبق ویلایی", label: "طبق ویلایی" },
+    { value: "villa_package", word: "ویلایی پکیج|پکیج ویلایی|پکیج", label: "ویلایی پکیج" },
+    { value: "villa_darbast", word: "ویلایی دربست|دربست", label: "ویلایی دربست" },
+    { value: "single_block", word: "تک ?بلوک(?: شخصی ?ساز)?|شخصی ?ساز", label: "تک‌بلوک شخصی‌ساز" },
+    { value: "complex", word: "مجتمع", label: "مجتمع" },
     { value: "apartment", word: "آپارتمان|اپارتمان", label: "آپارتمان" },
     { value: "villa", word: "ویلایی|ویلا", label: "ویلا" },
     { value: "land", word: "زمین", label: "زمین" },
@@ -259,6 +268,7 @@ export function parseSmartQuery(input: string): ParsedQuery {
       break;
     }
   }
+
 
   // --- ownership type (ملکی / اوقاف) ---
   const bothOwnership = text.match(
@@ -351,11 +361,41 @@ export function parseSmartQuery(input: string): ParsedQuery {
   return { criteria, rest };
 }
 
+
+
+/** Legacy usage words still match the equivalent new usage types. */
+const TYPE_GROUPS: Record<string, string[]> = {
+  apartment: ["apartment", "complex", "single_block"],
+  villa: ["villa", "tabaq_villaei", "villa_package", "villa_darbast"],
+  land: [
+    "land",
+    "land_phase_1",
+    "land_phase_2",
+    "apartment_land_phase_1",
+    "apartment_land_phase_2",
+  ],
+  commercial: ["commercial"],
+};
+
+/** Legacy land categories and their equivalent new usage type. */
+const CATEGORY_TYPE: Record<string, string> = {
+  residential_phase_1: "land_phase_1",
+  residential_phase_2: "land_phase_2",
+  apartment_phase_1: "apartment_land_phase_1",
+  apartment_phase_2: "apartment_land_phase_2",
+};
+
+function typeMatches(propertyType: string, criterion: string): boolean {
+  const group = TYPE_GROUPS[criterion];
+  return group ? group.includes(propertyType) : propertyType === criterion;
+}
+
+
 export function matchesCriteria(property: Property, criteria: Criterion[]): boolean {
   for (const c of criteria) {
     switch (c.key) {
       case "property_type":
-        if (property.property_type !== (c.value as PropertyType)) return false;
+        if (!typeMatches(property.property_type, String(c.value))) return false;
         break;
       case "ownership_type":
         if (property.ownership_type !== (c.value as OwnershipType)) return false;
@@ -373,8 +413,13 @@ export function matchesCriteria(property: Property, criteria: Criterion[]): bool
         if (!normalize(property.city ?? "").includes(normalize(String(c.value)))) return false;
         break;
       case "land_category":
-        if (property.land_category !== String(c.value)) return false;
+        if (
+          property.land_category !== String(c.value) &&
+          CATEGORY_TYPE[String(c.value)] !== property.property_type
+        )
+          return false;
         break;
+
       case "land_zone":
         if (normalizeFa(property.land_zone ?? "") !== normalizeFa(String(c.value))) return false;
         break;

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { Loader2, Search, SlidersHorizontal, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
@@ -11,11 +11,13 @@ import { Label } from "@/components/ui/label";
 import { fetchBrokers } from "@/lib/brokers";
 import { enDigits, faDigits, parseNumber } from "@/lib/fa";
 import {
+  ALL_PROPERTY_TYPE_LABELS,
   fetchPropertiesFor,
+  neighborhoodsFor,
   NEIGHBORHOODS,
   PHASES,
   OWNERSHIP_LABELS,
-  PROPERTY_TYPE_LABELS,
+  propertyTypeLabel,
   STATUS_LABELS,
   TRANSACTION_LABELS,
   type Property,
@@ -23,6 +25,7 @@ import {
 import { LAND_CATEGORIES, LAND_CATEGORY_LABELS, zonesFor } from "@/lib/land";
 import { useRole } from "@/lib/roles";
 import { matchesCriteria, parseSmartQuery, relevanceScore } from "@/lib/smart-search";
+
 
 export const Route = createFileRoute("/listings/")({
   head: () => ({
@@ -49,6 +52,23 @@ function ListingsRoute() {
 
 const ALL = "all";
 
+/**
+ * The list view remembers search, filters and scroll position for the session,
+ * so returning from a property's details lands exactly where the user left.
+ */
+const STATE_KEY = "listings-view-state";
+
+type SavedState = Record<string, unknown>;
+
+function readSaved(): SavedState {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.sessionStorage.getItem(STATE_KEY) ?? "{}") as SavedState;
+  } catch {
+    return {};
+  }
+}
+
 function Listings() {
   const { isAdmin, loading: roleLoading } = useRole();
   const { data, isLoading } = useQuery<Property[]>({
@@ -57,25 +77,30 @@ function Listings() {
     enabled: !roleLoading,
   });
 
-  const [query, setQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [type, setType] = useState<string>(ALL);
-  const [ownership, setOwnership] = useState<string>(ALL);
-  const [transaction, setTransaction] = useState<string>(ALL);
-  const [status, setStatus] = useState<string>("active");
-  const [neighborhood, setNeighborhood] = useState<string>(ALL);
-  const [phase, setPhase] = useState<string>(ALL);
-  const [landCategoryId, setLandCategoryId] = useState<string>(ALL);
-  const [landZone, setLandZone] = useState<string>(ALL);
-  const [minArea, setMinArea] = useState("");
-  const [maxArea, setMaxArea] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [minBedrooms, setMinBedrooms] = useState("");
-  const [parking, setParking] = useState(false);
-  const [elevator, setElevator] = useState(false);
-  const [storageOnly, setStorageOnly] = useState(false);
-  const [broker, setBroker] = useState<string>(ALL);
+  const saved = useRef<SavedState>(readSaved()).current;
+  const pick = <T,>(key: string, fallback: T): T =>
+    saved[key] === undefined ? fallback : (saved[key] as T);
+
+  const [query, setQuery] = useState(pick("query", ""));
+  const [showFilters, setShowFilters] = useState(pick("showFilters", false));
+  const [type, setType] = useState<string>(pick("type", ALL));
+  const [ownership, setOwnership] = useState<string>(pick("ownership", ALL));
+  const [transaction, setTransaction] = useState<string>(pick("transaction", ALL));
+  const [status, setStatus] = useState<string>(pick("status", "active"));
+  const [neighborhood, setNeighborhood] = useState<string>(pick("neighborhood", ALL));
+  const [phase, setPhase] = useState<string>(pick("phase", ALL));
+  const [landCategoryId, setLandCategoryId] = useState<string>(pick("landCategoryId", ALL));
+  const [landZone, setLandZone] = useState<string>(pick("landZone", ALL));
+  const [minArea, setMinArea] = useState(pick("minArea", ""));
+  const [maxArea, setMaxArea] = useState(pick("maxArea", ""));
+  const [minPrice, setMinPrice] = useState(pick("minPrice", ""));
+  const [maxPrice, setMaxPrice] = useState(pick("maxPrice", ""));
+  const [minBedrooms, setMinBedrooms] = useState(pick("minBedrooms", ""));
+  const [parking, setParking] = useState(pick("parking", false));
+  const [elevator, setElevator] = useState(pick("elevator", false));
+  const [storageOnly, setStorageOnly] = useState(pick("storageOnly", false));
+  const [broker, setBroker] = useState<string>(pick("broker", ALL));
+
 
   const { data: brokers } = useQuery({
     queryKey: ["brokers"],
@@ -118,7 +143,7 @@ function Listings() {
             item.owner_phone,
             item.description,
             item.notes,
-            PROPERTY_TYPE_LABELS[item.property_type],
+            propertyTypeLabel(item.property_type),
             TRANSACTION_LABELS[item.transaction_type],
             STATUS_LABELS[item.status],
             item.ownership_type ? OWNERSHIP_LABELS[item.ownership_type] : null,
@@ -181,6 +206,100 @@ function Listings() {
     elevator,
     storageOnly,
   ]);
+
+  const view = {
+    query,
+    showFilters,
+    type,
+    ownership,
+    transaction,
+    status,
+    neighborhood,
+    phase,
+    landCategoryId,
+    landZone,
+    minArea,
+    maxArea,
+    minPrice,
+    maxPrice,
+    minBedrooms,
+    parking,
+    elevator,
+    storageOnly,
+    broker,
+    removed,
+  };
+
+  // Persist the current view (without touching scroll, saved separately).
+  useEffect(() => {
+    try {
+      const prev = readSaved();
+      window.sessionStorage.setItem(
+        STATE_KEY,
+        JSON.stringify({ ...prev, ...view }),
+      );
+    } catch {
+      /* storage unavailable — filters simply won't persist */
+    }
+  }, [JSON.stringify(view)]);
+
+  // Restore scroll every time the list is shown again, then keep tracking the
+  // position so returning from a file's details lands in the same place.
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  useEffect(() => {
+    if (pathname.replace(/\/$/, "") !== "/listings" || isLoading || roleLoading || !results.length) return;
+    const target = Number(readSaved()["scrollY"] ?? 0);
+
+    // Debounced on purpose: the browser resets scroll to 0 right before leaving
+    // the list, and that value must never be stored.
+    let pending: number | undefined;
+    const save = () => {
+      window.clearTimeout(pending);
+      pending = window.setTimeout(() => {
+        try {
+          window.sessionStorage.setItem(
+            STATE_KEY,
+            JSON.stringify({ ...readSaved(), scrollY: window.scrollY }),
+          );
+        } catch {
+          /* storage unavailable — position simply won't persist */
+        }
+      }, 250);
+    };
+
+    let done = target <= 0;
+    // The router restores scroll to the top asynchronously, so keep re-applying
+    // the remembered offset for a short window unless the user scrolls first.
+    const abort = () => {
+      done = true;
+    };
+    if (!done) {
+      window.addEventListener("wheel", abort, { passive: true, once: true });
+      window.addEventListener("touchstart", abort, { passive: true, once: true });
+    }
+    const interval = window.setInterval(() => {
+      if (done) return;
+      if (Math.abs(window.scrollY - target) > 4) window.scrollTo({ top: target });
+    }, 100);
+    const settle = window.setTimeout(() => {
+      done = true;
+      window.clearInterval(interval);
+      window.addEventListener("scroll", save, { passive: true });
+    }, 2500);
+    if (done) window.addEventListener("scroll", save, { passive: true });
+
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(settle);
+      window.removeEventListener("wheel", abort);
+      window.removeEventListener("touchstart", abort);
+      window.clearTimeout(pending);
+      window.removeEventListener("scroll", save);
+    };
+  }, [pathname, isLoading, roleLoading, results.length]);
+
+
+
 
 
   function reset() {
@@ -284,7 +403,7 @@ function Listings() {
                 label="کاربری"
                 value={type}
                 onChange={setType}
-                options={PROPERTY_TYPE_LABELS}
+                options={ALL_PROPERTY_TYPE_LABELS}
               />
               <Selector
                 label="معامله"
@@ -302,7 +421,10 @@ function Listings() {
                 <Label className="text-xs">فاز</Label>
                 <select
                   value={phase}
-                  onChange={(event) => setPhase(event.target.value)}
+                  onChange={(event) => {
+                    setPhase(event.target.value);
+                    setNeighborhood(ALL);
+                  }}
                   className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
                 >
                   <option value={ALL}>همه</option>
@@ -321,13 +443,17 @@ function Listings() {
                   className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
                 >
                   <option value={ALL}>همه</option>
-                  {NEIGHBORHOODS.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
+                  {(phase === ALL
+                    ? NEIGHBORHOODS.map((item) => ({ value: item, label: item }))
+                    : neighborhoodsFor(phase)
+                  ).map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
                     </option>
                   ))}
                 </select>
               </div>
+
               <div className="space-y-1.5">
                 <Label className="text-xs">دسته زمین</Label>
                 <select

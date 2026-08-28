@@ -13,13 +13,16 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
-import { LAND_CATEGORIES, categoryOfZone, detectLand, zonesFor } from "@/lib/land";
+import { categoryOfZone, detectLand, zonesFor } from "@/lib/land";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
 import {
-  NEIGHBORHOODS,
+  ALL_PROPERTY_TYPE_LABELS,
+  CITIES,
+  neighborhoodsFor,
   PHASES,
   OWNERSHIP_LABELS,
   PROPERTY_TYPE_LABELS,
+  showsPlotNumber,
   STATUS_LABELS,
   TRANSACTION_LABELS,
   uploadPhotos,
@@ -29,6 +32,7 @@ import {
   type PropertyType,
   type TransactionType,
 } from "@/lib/properties";
+
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -241,7 +245,27 @@ export function PropertyForm({
 
   const isRent = form.transaction_type === "rent" || form.transaction_type === "mortgage";
 
+  // Legacy values (آپارتمان/زمین/…) stay selectable only while the file still
+  // uses them, so old files keep their data when edited.
+  const typeOptions = (
+    form.property_type in PROPERTY_TYPE_LABELS
+      ? PROPERTY_TYPE_LABELS
+      : {
+          ...PROPERTY_TYPE_LABELS,
+          [form.property_type]: ALL_PROPERTY_TYPE_LABELS[form.property_type],
+        }
+  ) as Record<PropertyType, string>;
+  const cityOptions = CITIES.includes(form.city) ? CITIES : [...CITIES, form.city];
+  const phaseOptions = form.phase && !PHASES.includes(form.phase) ? [...PHASES, form.phase] : PHASES;
+  const phaseNeighborhoods = neighborhoodsFor(form.phase);
+  const neighborhoodOptions =
+    form.neighborhood && !phaseNeighborhoods.some((item) => item.value === form.neighborhood)
+      ? [...phaseNeighborhoods, { value: form.neighborhood, label: form.neighborhood }]
+      : phaseNeighborhoods;
+  const showPlot = showsPlotNumber(form.property_type, form.land_category);
+
   return (
+
     <form onSubmit={submit} className="space-y-4">
       <Section title="مشخصات کلی">
         <div className="space-y-1.5">
@@ -280,7 +304,7 @@ export function PropertyForm({
           <Label className="text-xs">نوع کاربری ملک</Label>
           <Chips<PropertyType>
             value={form.property_type}
-            options={PROPERTY_TYPE_LABELS}
+            options={typeOptions}
             onChange={(next) => set("property_type", next)}
           />
         </div>
@@ -306,39 +330,73 @@ export function PropertyForm({
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label className="text-xs">شهر</Label>
-            <Input value={form.city} onChange={(event) => set("city", event.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">محله</Label>
-            <Input
-              list="neighborhood-options"
-              value={form.neighborhood ?? ""}
-              onChange={(event) => set("neighborhood", event.target.value)}
-              placeholder="مثلاً شهرک گلستان"
-            />
-            <datalist id="neighborhood-options">
-              {NEIGHBORHOODS.map((item) => (
-                <option key={item} value={item} />
-              ))}
-            </datalist>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs">فاز</Label>
             <select
-              value={form.phase ?? ""}
-              onChange={(event) => set("phase", event.target.value)}
+              value={form.city}
+              onChange={(event) => set("city", event.target.value)}
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
-              <option value="">انتخاب کنید</option>
-              {PHASES.map((item) => (
+              {cityOptions.map((item) => (
                 <option key={item} value={item}>
                   {item}
                 </option>
               ))}
             </select>
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">فاز</Label>
+            <select
+              value={form.phase ?? ""}
+              onChange={(event) => {
+                const nextPhase = event.target.value;
+                setForm((prev) => {
+                  const allowed = neighborhoodsFor(nextPhase).map((item) => item.value);
+                  return {
+                    ...prev,
+                    phase: nextPhase,
+                    neighborhood:
+                      prev.neighborhood && allowed.includes(prev.neighborhood)
+                        ? prev.neighborhood
+                        : "",
+                  };
+                });
+              }}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="">انتخاب کنید</option>
+              {phaseOptions.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">محله</Label>
+          <select
+            value={form.neighborhood ?? ""}
+            onChange={(event) => set("neighborhood", event.target.value)}
+            disabled={!neighborhoodOptions.length}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
+          >
+            <option value="">بدون محله</option>
+            {neighborhoodOptions.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+          {!form.phase ? (
+            <p className="text-[11px] text-muted-foreground">
+              اول فاز را انتخاب کنید تا محله‌های همان فاز نمایش داده شود.
+            </p>
+          ) : !neighborhoodsFor(form.phase).length ? (
+            <p className="text-[11px] text-muted-foreground">
+              برای این فاز فعلاً محله‌ای تعریف نشده است.
+            </p>
+          ) : null}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label className="text-xs">خیابان</Label>
             <Input
@@ -347,6 +405,16 @@ export function PropertyForm({
               placeholder="نام خیابان / بلوار"
             />
           </div>
+          {showPlot ? (
+            <div className="space-y-1.5">
+              <Label className="text-xs">پلاک (اختیاری)</Label>
+              <Input
+                value={form.plot_number ?? ""}
+                onChange={(event) => set("plot_number", event.target.value)}
+                placeholder="مثلاً ۲۲ یا ۲۲/الف"
+              />
+            </div>
+          ) : null}
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">آدرس</Label>
@@ -358,67 +426,6 @@ export function PropertyForm({
         </div>
       </Section>
 
-      <Section title="دسته، محدوده و پلاک">
-        <div className="space-y-1.5">
-          <Label className="text-xs">دسته زمین</Label>
-          <select
-            value={form.land_category ?? ""}
-            onChange={(event) => {
-              const next = event.target.value || null;
-              setForm((prev) => {
-                const allowed = zonesFor(next).map((zone) => zone.label);
-                return {
-                  ...prev,
-                  land_category: next,
-                  land_zone:
-                    prev.land_zone && allowed.includes(prev.land_zone) ? prev.land_zone : null,
-                };
-              });
-            }}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-          >
-            <option value="">بدون دسته</option>
-            {LAND_CATEGORIES.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">محدوده</Label>
-          <select
-            value={form.land_zone ?? ""}
-            onChange={(event) => set("land_zone", event.target.value || null)}
-            disabled={!zonesFor(form.land_category).length}
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
-          >
-            <option value="">بدون محدوده</option>
-            {zonesFor(form.land_category).map((zone) => (
-              <option key={zone.label} value={zone.label}>
-                {zone.label}
-              </option>
-            ))}
-          </select>
-          {!form.land_category ? (
-            <p className="text-[11px] text-muted-foreground">
-              اول دسته زمین را انتخاب کنید تا محدوده‌های مربوط به آن نمایش داده شود.
-            </p>
-          ) : !zonesFor(form.land_category).length ? (
-            <p className="text-[11px] text-muted-foreground">
-              برای این دسته فعلاً محدوده‌ای تعریف نشده است.
-            </p>
-          ) : null}
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">پلاک (اختیاری)</Label>
-          <Input
-            value={form.plot_number ?? ""}
-            onChange={(event) => set("plot_number", event.target.value)}
-            placeholder="مثلاً ۲۲ یا ۲۲/الف یا ۱۳۲ فرعی"
-          />
-        </div>
-      </Section>
 
       <Section title="قیمت و متراژ">
         <NumberField

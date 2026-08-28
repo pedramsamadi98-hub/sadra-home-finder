@@ -6,11 +6,12 @@ import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
 import { LAND_CATEGORY_LABELS } from "@/lib/land";
 import {
   OWNERSHIP_LABELS,
-  PROPERTY_TYPE_LABELS,
+  propertyTypeLabel,
   STATUS_LABELS,
   TRANSACTION_LABELS,
   type Property,
 } from "@/lib/properties";
+
 
 function statusClass(status: Property["status"]) {
   if (status === "active") return "bg-success/15 text-success";
@@ -77,7 +78,7 @@ export function PropertyCard({ property }: { property: Property }) {
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1">
               <Building className="size-3.5" />
-              {PROPERTY_TYPE_LABELS[property.property_type]} •{" "}
+              {propertyTypeLabel(property.property_type)} •{" "}
               {TRANSACTION_LABELS[property.transaction_type]}
             </span>
             <span className="flex items-center gap-1">
