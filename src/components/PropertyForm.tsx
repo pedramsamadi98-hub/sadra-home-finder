@@ -57,7 +57,7 @@ function Chips<T extends string>({
   return (
     <div className="flex flex-wrap gap-2">
       {(Object.keys(options) as T[]).map((key) => {
-        const Icon = icons?.[key];
+        const Icon = icons?.[key] as LucideIcon | undefined;
         return (
           <button
             key={key}
