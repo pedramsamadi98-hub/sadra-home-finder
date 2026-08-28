@@ -250,6 +250,8 @@ export function parseSmartQuery(input: string): ParsedQuery {
     { value: "apartment_land_phase_2", word: "زمین (?:آپارتمانی|اپارتمانی) فاز 2", label: "زمین آپارتمانی فاز ۲" },
     { value: "land_phase_1", word: "زمین (?:مسکونی )?فاز 1", label: "زمین فاز ۱" },
     { value: "land_phase_2", word: "زمین (?:مسکونی )?فاز 2", label: "زمین فاز ۲" },
+    { value: "zamin_baghshahri", word: "زمین باغ\\s?شهری|زمین باغ\\s?شهر", label: "زمین باغشهری" },
+    { value: "baghshahri", word: "باغ\\s?شهری|باغ\\s?شهر", label: "باغشهری" },
     { value: "tabaq_villaei", word: "طبق ویلایی", label: "طبق ویلایی" },
     { value: "villa_package", word: "ویلایی پکیج|پکیج ویلایی|پکیج", label: "ویلایی پکیج" },
     { value: "villa_darbast", word: "ویلایی دربست|دربست", label: "ویلایی دربست" },
@@ -373,7 +375,9 @@ const TYPE_GROUPS: Record<string, string[]> = {
     "land_phase_2",
     "apartment_land_phase_1",
     "apartment_land_phase_2",
+    "zamin_baghshahri",
   ],
+  baghshahri: ["baghshahri", "zamin_baghshahri"],
   commercial: ["commercial"],
 };
 
@@ -383,6 +387,7 @@ const CATEGORY_TYPE: Record<string, string> = {
   residential_phase_2: "land_phase_2",
   apartment_phase_1: "apartment_land_phase_1",
   apartment_phase_2: "apartment_land_phase_2",
+  baghshahri: "zamin_baghshahri",
 };
 
 function typeMatches(propertyType: string, criterion: string): boolean {
