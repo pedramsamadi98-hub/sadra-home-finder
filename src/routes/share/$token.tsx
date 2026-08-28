@@ -122,7 +122,7 @@ function SharePage() {
 
       <section className="grid gap-2">
         <Row
-          icon={Building}
+          icon={propertyTypeIcon(p.property_type)}
           label="کاربری"
           value={`${propertyTypeLabel(p.property_type)} • ${
             TRANSACTION_LABELS[p.transaction_type as TransactionType]

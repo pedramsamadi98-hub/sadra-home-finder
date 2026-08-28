@@ -203,7 +203,7 @@ function Detail({ userId }: { userId: string }) {
             }
           />
           <Row
-            icon={Building}
+            icon={propertyTypeIcon(property.property_type)}
             label="کاربری"
             value={`${propertyTypeLabel(property.property_type)} • ${TRANSACTION_LABELS[property.transaction_type]}`}
           />
