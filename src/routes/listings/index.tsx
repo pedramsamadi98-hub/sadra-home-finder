@@ -270,17 +270,18 @@ function Listings() {
 
     let done = target <= 0;
     // Retry: the list grows as cards render, and the router resets scroll.
-    const timers = [0, 80, 200, 400, 700, 1000].map((delay) =>
+    const timers = [0, 100, 250, 500, 800, 1200, 1600, 2000].map((delay) =>
       window.setTimeout(() => {
         if (done) return;
         window.scrollTo({ top: target });
+        console.debug("[listings] restore", target, window.scrollY, document.documentElement.scrollHeight);
         if (Math.abs(window.scrollY - target) < 4) done = true;
       }, delay),
     );
     const settle = window.setTimeout(() => {
       done = true;
       window.addEventListener("scroll", save, { passive: true });
-    }, 1100);
+    }, 2200);
     if (done) window.addEventListener("scroll", save, { passive: true });
 
     return () => {
