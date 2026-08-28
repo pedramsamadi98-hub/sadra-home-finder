@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Boxes, Building, Calendar, Car, Landmark, MapPin, Ruler, ShieldCheck } from "lucide-react";
 
 import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
+import { propertyTypeIcon } from "@/lib/property-type-icons";
 import { getSharedProperty } from "@/lib/shares.functions";
 import {
   OWNERSHIP_LABELS,

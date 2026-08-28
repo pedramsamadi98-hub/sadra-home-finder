@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { propertyTypeIcon } from "@/lib/property-type-icons";
+
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { FollowUpSection } from "@/components/FollowUpSection";
