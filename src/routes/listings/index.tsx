@@ -251,19 +251,25 @@ function Listings() {
     restored.current = true;
     const target = Number(saved["scrollY"] ?? 0);
 
+    // Debounced on purpose: when the user opens a file the browser resets the
+    // scroll to 0 just before unmount, and that value must never be stored.
+    let pending: number | undefined;
     const save = () => {
-      try {
-        window.sessionStorage.setItem(
-          STATE_KEY,
-          JSON.stringify({ ...readSaved(), scrollY: window.scrollY }),
-        );
-      } catch {
-        /* storage unavailable — position simply won't persist */
-      }
+      window.clearTimeout(pending);
+      pending = window.setTimeout(() => {
+        try {
+          window.sessionStorage.setItem(
+            STATE_KEY,
+            JSON.stringify({ ...readSaved(), scrollY: window.scrollY }),
+          );
+        } catch {
+          /* storage unavailable — position simply won't persist */
+        }
+      }, 300);
     };
 
     let done = target <= 0;
-    // Retry: the list grows as images/cards render, and the router resets scroll.
+    // Retry: the list grows as cards render, and the router resets scroll.
     const timers = [0, 80, 200, 400, 700, 1000].map((delay) =>
       window.setTimeout(() => {
         if (done) return;
@@ -280,10 +286,11 @@ function Listings() {
     return () => {
       timers.forEach((t) => window.clearTimeout(t));
       window.clearTimeout(settle);
+      window.clearTimeout(pending);
       window.removeEventListener("scroll", save);
-      save();
     };
   }, [isLoading, roleLoading, results.length, saved]);
+
 
 
 
