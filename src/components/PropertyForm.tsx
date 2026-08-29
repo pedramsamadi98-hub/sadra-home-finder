@@ -451,36 +451,145 @@ export function PropertyForm({
       </Section>
 
 
-      <Section title="قیمت و متراژ">
-        <NumberField
-          label="متراژ (متر مربع)"
-          value={form.area}
-          onChange={(next) => set("area", next)}
-        />
-        {isRent ? (
+      {isEmtiaz ? (
+        <Section title="مبالغ امتیاز">
           <div className="grid grid-cols-2 gap-3">
             <NumberField
-              label="رهن / ودیعه (تومان)"
-              value={form.deposit}
-              onChange={(next) => set("deposit", next)}
-              hint={faPrice(form.deposit)}
+              label="قیمت فروش امتیاز (تومان)"
+              value={form.price}
+              onChange={(next) => set("price", next)}
+              hint={faPrice(form.price)}
             />
             <NumberField
-              label="اجاره ماهانه (تومان)"
-              value={form.monthly_rent}
-              onChange={(next) => set("monthly_rent", next)}
-              hint={faPrice(form.monthly_rent)}
+              label="قیمت واریزی (تومان)"
+              value={form.deposited_amount}
+              onChange={(next) => set("deposited_amount", next)}
+              hint={faPrice(form.deposited_amount)}
             />
           </div>
-        ) : (
           <NumberField
-            label="قیمت کل (تومان)"
-            value={form.price}
-            onChange={(next) => set("price", next)}
-            hint={faPrice(form.price)}
+            label="مبلغ قابل پرداخت به شرکت (اختیاری)"
+            value={form.company_payable_amount}
+            onChange={(next) => set("company_payable_amount", next)}
+            hint={faPrice(form.company_payable_amount)}
           />
-        )}
-      </Section>
+          <div className="space-y-1.5">
+            <Label className="text-xs">شرایط پرداخت به شرکت (اختیاری)</Label>
+            <Textarea
+              rows={2}
+              value={form.company_payment_terms ?? ""}
+              onChange={(event) => set("company_payment_terms", event.target.value)}
+              placeholder="مثلاً هر ۶ ماه یک قسط طبق پیشرفت پروژه"
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            این مبالغ کاملاً مستقل هستند و هیچ باقی‌مانده‌ای محاسبه نمی‌شود.
+          </p>
+          <NumberField
+            label="متراژ (متر مربع) — اختیاری"
+            value={form.area}
+            onChange={(next) => set("area", next)}
+          />
+        </Section>
+      ) : (
+        <Section title="قیمت و متراژ">
+          <NumberField
+            label="متراژ (متر مربع)"
+            value={form.area}
+            onChange={(next) => set("area", next)}
+          />
+          {isRent ? (
+            <div className="grid grid-cols-2 gap-3">
+              <NumberField
+                label="رهن / ودیعه (تومان)"
+                value={form.deposit}
+                onChange={(next) => set("deposit", next)}
+                hint={faPrice(form.deposit)}
+              />
+              <NumberField
+                label="اجاره ماهانه (تومان)"
+                value={form.monthly_rent}
+                onChange={(next) => set("monthly_rent", next)}
+                hint={faPrice(form.monthly_rent)}
+              />
+            </div>
+          ) : (
+            <NumberField
+              label="قیمت کل (تومان)"
+              value={form.price}
+              onChange={(next) => set("price", next)}
+              hint={faPrice(form.price)}
+            />
+          )}
+        </Section>
+      )}
+
+      {isPresale ? (
+        <Section title="برنامه پرداخت">
+          {planSteps.length ? (
+            <div className="space-y-3">
+              {planSteps.map((step, index) => (
+                <div key={index} className="space-y-2 rounded-xl bg-secondary/60 p-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={step.title}
+                      onChange={(event) =>
+                        updateStep(index, { title: event.target.value })
+                      }
+                      placeholder="عنوان مرحله (مثلاً پیش‌پرداخت)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeStep(index)}
+                      className="rounded-md p-2 text-destructive"
+                      aria-label="حذف مرحله"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <NumberField
+                      label="مبلغ (تومان)"
+                      value={step.amount}
+                      onChange={(next) => updateStep(index, { amount: next })}
+                      hint={faPrice(step.amount)}
+                    />
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">زمان / توضیح</Label>
+                      <Input
+                        value={step.note}
+                        onChange={(event) => updateStep(index, { note: event.target.value })}
+                        placeholder="مثلاً ۶ ماه بعد"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">
+              هنوز مرحله‌ای ثبت نشده است.
+            </p>
+          )}
+          <Button type="button" variant="outline" className="h-10 w-full" onClick={addStep}>
+            <Plus className="size-4" />
+            افزودن مرحله پرداخت
+          </Button>
+          <div className="flex items-center justify-between rounded-xl bg-primary/10 px-3 py-2 text-sm font-bold text-primary">
+            <span>باقی‌مانده</span>
+            <span>{faPrice(presaleRemaining(form.price, planSteps))}</span>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">توضیح کلی شرایط پرداخت (اختیاری)</Label>
+            <Textarea
+              rows={2}
+              value={form.payment_terms ?? ""}
+              onChange={(event) => set("payment_terms", event.target.value)}
+              placeholder="مثلاً ۶۰٪ پرداخت اولیه، الباقی طی مراحل ساخت، هر ۶ ماه ۵۰۰ میلیون"
+            />
+          </div>
+        </Section>
+      ) : null}
 
       <Section title="جزئیات ساختمان">
         <div className="grid grid-cols-2 gap-3">
@@ -501,6 +610,21 @@ export function PropertyForm({
             onChange={(next) => set("building_age", next)}
           />
         </div>
+        {isPresale ? (
+          <div className="space-y-1.5">
+            <Label className="text-xs">شماره واحد (اختیاری)</Label>
+            <Input
+              value={form.unit_number ?? ""}
+              onChange={(event) => set("unit_number", event.target.value)}
+              placeholder="مثلاً ۴ یا ۱۲ شرقی"
+            />
+          </div>
+        ) : null}
+        {isEmtiaz ? (
+          <p className="text-[11px] text-muted-foreground">
+            در فایل‌های امتیاز، طبقه و شماره واحد اجباری نیستند.
+          </p>
+        ) : null}
         <div className="grid gap-2">
           <ToggleRow
             label="پارکینگ"
@@ -519,6 +643,7 @@ export function PropertyForm({
           />
         </div>
       </Section>
+
 
       <Section title="تصاویر ملک">
         <label
