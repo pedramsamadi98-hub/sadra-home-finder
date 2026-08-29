@@ -1,14 +1,18 @@
 import {
+  Briefcase,
   Building,
   Building2,
+  CalendarClock,
   Fence,
   Grid2x2,
+  Hotel,
   House,
   LandPlot,
   Layers,
   Map,
   Sprout,
   Store,
+  Ticket,
   Trees,
   type LucideIcon,
 } from "lucide-react";
