@@ -257,6 +257,22 @@ export function PropertyForm({
   }
 
   const isRent = form.transaction_type === "rent" || form.transaction_type === "mortgage";
+  const isEmtiaz = isEmtiazType(form.property_type);
+  const isPresale = isPresaleType(form.property_type);
+  const planSteps = paymentSteps(form.payment_plan);
+
+  function setSteps(next: PaymentStep[]) {
+    set("payment_plan", next);
+  }
+  function addStep() {
+    setSteps([...planSteps, { title: "", amount: null, note: "" }]);
+  }
+  function removeStep(index: number) {
+    setSteps(planSteps.filter((_, i) => i !== index));
+  }
+  function updateStep(index: number, patch: Partial<PaymentStep>) {
+    setSteps(planSteps.map((step, i) => (i === index ? { ...step, ...patch } : step)));
+  }
 
   // Legacy values (آپارتمان/زمین/…) stay selectable only while the file still
   // uses them, so old files keep their data when edited.
