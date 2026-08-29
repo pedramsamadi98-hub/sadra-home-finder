@@ -15,7 +15,12 @@ export type NewPropertyType =
   | "apartment_land_phase_1"
   | "apartment_land_phase_2"
   | "baghshahri"
-  | "zamin_baghshahri";
+  | "zamin_baghshahri"
+  | "office_unit"
+  | "shop"
+  | "maskan_mehr"
+  | "emtiaz"
+  | "presale";
 export type PropertyType = NewPropertyType | LegacyPropertyType;
 export type TransactionType = "sale" | "rent" | "mortgage";
 export type PropertyStatus = "active" | "sold" | "rented" | "archived";
