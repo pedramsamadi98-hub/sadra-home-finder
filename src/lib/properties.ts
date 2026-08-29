@@ -27,6 +27,36 @@ export type PropertyStatus = "active" | "sold" | "rented" | "archived";
 export type OwnershipType = "melki" | "owqaf";
 
 
+/** One step of a پیش‌فروش payment plan. */
+export interface PaymentStep {
+  title: string;
+  amount: number | null;
+  note: string;
+}
+
+/** Normalizes the stored jsonb payment plan into typed steps. */
+export function paymentSteps(value: unknown): PaymentStep[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => {
+    const row = (item ?? {}) as Record<string, unknown>;
+    const amount = Number(row["amount"]);
+    return {
+      title: typeof row["title"] === "string" ? row["title"] : "",
+      amount: Number.isFinite(amount) ? amount : null,
+      note: typeof row["note"] === "string" ? row["note"] : "",
+    };
+  });
+}
+
+/** پیش‌فروش: باقی‌مانده = قیمت کل − مجموع پرداخت‌های ثبت‌شده */
+export function presaleRemaining(
+  total: number | null,
+  steps: PaymentStep[],
+): number {
+  const paid = steps.reduce((sum, step) => sum + (step.amount ?? 0), 0);
+  return (total ?? 0) - paid;
+}
+
 export interface Property {
   id: string;
   user_id: string | null;
