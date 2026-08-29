@@ -35,6 +35,11 @@ export const PROPERTY_TYPE_ICONS: Record<PropertyType, LucideIcon> = {
   apartment_land_phase_2: Grid2x2,
   baghshahri: Trees,
   zamin_baghshahri: Sprout,
+  office_unit: Briefcase,
+  shop: Store,
+  maskan_mehr: Hotel,
+  emtiaz: Ticket,
+  presale: CalendarClock,
   // Legacy values kept for existing rows.
   apartment: Building,
   villa: House,
