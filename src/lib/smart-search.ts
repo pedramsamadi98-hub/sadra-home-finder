@@ -383,7 +383,7 @@ const TYPE_GROUPS: Record<string, string[]> = {
     "zamin_baghshahri",
   ],
   baghshahri: ["baghshahri", "zamin_baghshahri"],
-  commercial: ["commercial"],
+  commercial: ["commercial", "shop"],
 };
 
 /** Legacy land categories and their equivalent new usage type. */
