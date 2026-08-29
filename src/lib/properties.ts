@@ -55,6 +55,18 @@ export interface Property {
   floor: number | null;
   total_floors: number | null;
   building_age: number | null;
+  /** «شماره واحد» — used by پیش‌فروش files. */
+  unit_number: string | null;
+  /** «قیمت واریزی» — امتیاز only, independent amount. */
+  deposited_amount: number | null;
+  /** «مبلغ قابل پرداخت به شرکت» — امتیاز only, optional. */
+  company_payable_amount: number | null;
+  /** «شرایط پرداخت به شرکت» — امتیاز only, optional free text. */
+  company_payment_terms: string | null;
+  /** «برنامه پرداخت» — پیش‌فروش only. */
+  payment_plan: PaymentStep[];
+  /** توضیح کلی شرایط پرداخت — پیش‌فروش only. */
+  payment_terms: string | null;
   parking: boolean;
   elevator: boolean;
   storage: boolean;
