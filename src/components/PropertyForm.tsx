@@ -270,8 +270,13 @@ export function PropertyForm({
   function removeStep(index: number) {
     setSteps(planSteps.filter((_, i) => i !== index));
   }
-  function updateStep(index: number, patch: Partial<PaymentStep>) {
-    setSteps(planSteps.map((step, i) => (i === index ? { ...step, ...patch } : step)));
+  function updateStep(
+    index: number,
+    patch: { title?: string; amount?: number | null; note?: string },
+  ) {
+    setSteps(
+      planSteps.map((step, i) => (i === index ? ({ ...step, ...patch } as PaymentStep) : step)),
+    );
   }
 
   // Legacy values (آپارتمان/زمین/…) stay selectable only while the file still
