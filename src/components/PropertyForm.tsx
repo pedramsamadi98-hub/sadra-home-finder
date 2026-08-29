@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ImagePlus, Loader2, ScanText, Trash2, type LucideIcon } from "lucide-react";
+import { ImagePlus, Loader2, Plus, ScanText, Trash2, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
