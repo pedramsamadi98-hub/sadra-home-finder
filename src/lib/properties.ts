@@ -29,6 +29,7 @@ export type OwnershipType = "melki" | "owqaf";
 
 /** One step of a پیش‌فروش payment plan. */
 export interface PaymentStep {
+  [key: string]: string | number | null;
   title: string;
   amount: number | null;
   note: string;
