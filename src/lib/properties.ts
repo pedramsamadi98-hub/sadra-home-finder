@@ -112,6 +112,8 @@ const PLOT_TYPES = new Set<string>([
   "tabaq_villaei",
   "villa_package",
   "villa_darbast",
+  "baghshahri",
+  "zamin_baghshahri",
   "land",
 ]);
 
