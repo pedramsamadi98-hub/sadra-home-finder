@@ -38,7 +38,11 @@ import { useRole } from "@/lib/roles";
 import {
   deleteProperty,
   fetchPropertyFor,
+  isEmtiazType,
+  isPresaleType,
   OWNERSHIP_LABELS,
+  paymentSteps,
+  presaleRemaining,
   propertyTypeLabel,
   STATUS_LABELS,
   TRANSACTION_LABELS,
@@ -175,9 +179,11 @@ function Detail({ userId }: { userId: string }) {
 
         <section className="surface-card space-y-2 p-4">
           <p className="text-lg font-bold text-primary">
-            {property.transaction_type === "sale"
-              ? faPrice(property.price)
-              : `${faPrice(property.deposit)} رهن`}
+            {isEmtiazType(property.property_type)
+              ? `${faPrice(property.price)} — قیمت فروش امتیاز`
+              : property.transaction_type === "sale"
+                ? faPrice(property.price)
+                : `${faPrice(property.deposit)} رهن`}
           </p>
           {property.transaction_type !== "sale" ? (
             <p className="text-sm text-muted-foreground">
@@ -193,6 +199,65 @@ function Detail({ userId }: { userId: string }) {
             {property.address ? ` — ${property.address}` : ""}
           </p>
         </section>
+
+        {isEmtiazType(property.property_type) ? (
+          <section className="surface-card space-y-2 p-4">
+            <h2 className="text-sm font-bold">مبالغ امتیاز</h2>
+            <Row icon={Landmark} label="قیمت فروش امتیاز" value={faPrice(property.price)} />
+            <Row
+              icon={Landmark}
+              label="قیمت واریزی"
+              value={faPrice(property.deposited_amount)}
+            />
+            {property.company_payable_amount ? (
+              <Row
+                icon={Landmark}
+                label="مبلغ قابل پرداخت به شرکت"
+                value={faPrice(property.company_payable_amount)}
+              />
+            ) : null}
+            {property.company_payment_terms ? (
+              <p className="text-sm leading-7 text-muted-foreground">
+                شرایط پرداخت به شرکت: {property.company_payment_terms}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {isPresaleType(property.property_type) ? (
+          <section className="surface-card space-y-2 p-4">
+            <h2 className="text-sm font-bold">برنامه پرداخت</h2>
+            <Row icon={Landmark} label="قیمت کل" value={faPrice(property.price)} />
+            {property.unit_number ? (
+              <Row
+                icon={Building}
+                label="شماره واحد"
+                value={faDigits(property.unit_number)}
+              />
+            ) : null}
+            {paymentSteps(property.payment_plan).map((step, index) => (
+              <Row
+                key={index}
+                icon={Calendar}
+                label={step.title || `مرحله ${faDigits(index + 1)}`}
+                value={`${faPrice(step.amount)}${step.note ? ` — ${step.note}` : ""}`}
+              />
+            ))}
+            <Row
+              icon={Landmark}
+              label="باقی‌مانده"
+              value={faPrice(
+                presaleRemaining(property.price, paymentSteps(property.payment_plan)),
+              )}
+            />
+            {property.payment_terms ? (
+              <p className="text-sm leading-7 text-muted-foreground">
+                شرایط پرداخت: {property.payment_terms}
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+
 
         <section className="grid gap-2">
           <Row

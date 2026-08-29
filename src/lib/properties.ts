@@ -15,12 +15,48 @@ export type NewPropertyType =
   | "apartment_land_phase_1"
   | "apartment_land_phase_2"
   | "baghshahri"
-  | "zamin_baghshahri";
+  | "zamin_baghshahri"
+  | "office_unit"
+  | "shop"
+  | "maskan_mehr"
+  | "emtiaz"
+  | "presale";
 export type PropertyType = NewPropertyType | LegacyPropertyType;
 export type TransactionType = "sale" | "rent" | "mortgage";
 export type PropertyStatus = "active" | "sold" | "rented" | "archived";
 export type OwnershipType = "melki" | "owqaf";
 
+
+/** One step of a پیش‌فروش payment plan. */
+export interface PaymentStep {
+  [key: string]: string | number | null;
+  title: string;
+  amount: number | null;
+  note: string;
+}
+
+/** Normalizes the stored jsonb payment plan into typed steps. */
+export function paymentSteps(value: unknown): PaymentStep[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => {
+    const row = (item ?? {}) as Record<string, unknown>;
+    const amount = Number(row["amount"]);
+    return {
+      title: typeof row["title"] === "string" ? row["title"] : "",
+      amount: Number.isFinite(amount) ? amount : null,
+      note: typeof row["note"] === "string" ? row["note"] : "",
+    };
+  });
+}
+
+/** پیش‌فروش: باقی‌مانده = قیمت کل − مجموع پرداخت‌های ثبت‌شده */
+export function presaleRemaining(
+  total: number | null,
+  steps: PaymentStep[],
+): number {
+  const paid = steps.reduce((sum, step) => sum + (step.amount ?? 0), 0);
+  return (total ?? 0) - paid;
+}
 
 export interface Property {
   id: string;
@@ -50,6 +86,18 @@ export interface Property {
   floor: number | null;
   total_floors: number | null;
   building_age: number | null;
+  /** «شماره واحد» — used by پیش‌فروش files. */
+  unit_number: string | null;
+  /** «قیمت واریزی» — امتیاز only, independent amount. */
+  deposited_amount: number | null;
+  /** «مبلغ قابل پرداخت به شرکت» — امتیاز only, optional. */
+  company_payable_amount: number | null;
+  /** «شرایط پرداخت به شرکت» — امتیاز only, optional free text. */
+  company_payment_terms: string | null;
+  /** «برنامه پرداخت» — پیش‌فروش only. */
+  payment_plan: PaymentStep[];
+  /** توضیح کلی شرایط پرداخت — پیش‌فروش only. */
+  payment_terms: string | null;
   parking: boolean;
   elevator: boolean;
   storage: boolean;
@@ -82,6 +130,11 @@ export const PROPERTY_TYPE_LABELS: Record<NewPropertyType, string> = {
   apartment_land_phase_2: "زمین آپارتمانی فاز ۲",
   baghshahri: "باغشهری",
   zamin_baghshahri: "زمین باغشهری",
+  office_unit: "واحد اداری",
+  shop: "مغازه",
+  maskan_mehr: "مسکن مهر",
+  emtiaz: "امتیاز",
+  presale: "پیش‌فروش",
 };
 
 /** Older values still present in saved rows — display only, never lost. */
@@ -115,6 +168,7 @@ const PLOT_TYPES = new Set<string>([
   "baghshahri",
   "zamin_baghshahri",
   "land",
+  "presale",
 ]);
 
 export function showsPlotNumber(
@@ -125,6 +179,18 @@ export function showsPlotNumber(
   // باغشهری and other legacy land categories keep their plot field visible.
   return Boolean(landCategory);
 }
+
+/** «امتیاز»: multi-unit project share — unit/floor unknown at registration. */
+export function isEmtiazType(propertyType: string | null | undefined): boolean {
+  return propertyType === "emtiaz";
+}
+
+/** «پیش‌فروش»: a known unit with a staged payment plan. */
+export function isPresaleType(propertyType: string | null | undefined): boolean {
+  return propertyType === "presale";
+}
+
+
 
 export const TRANSACTION_LABELS: Record<TransactionType, string> = {
   sale: "فروش",
@@ -219,6 +285,12 @@ export const emptyProperty: PropertyInput = {
   floor: null,
   total_floors: null,
   building_age: null,
+  unit_number: "",
+  deposited_amount: null,
+  company_payable_amount: null,
+  company_payment_terms: "",
+  payment_plan: [],
+  payment_terms: "",
   parking: false,
   elevator: false,
   storage: false,

@@ -287,8 +287,11 @@ export type Database = {
           broker_id: string | null
           building_age: number | null
           city: string
+          company_payable_amount: number | null
+          company_payment_terms: string | null
           created_at: string
           deposit: number | null
+          deposited_amount: number | null
           description: string | null
           elevator: boolean
           floor: number | null
@@ -302,6 +305,8 @@ export type Database = {
           owner_phone: string | null
           ownership_type: string | null
           parking: boolean
+          payment_plan: Json
+          payment_terms: string | null
           phase: string | null
           photos: string[]
           plot_number: string | null
@@ -314,6 +319,7 @@ export type Database = {
           title: string
           total_floors: number | null
           transaction_type: string
+          unit_number: string | null
           updated_at: string
           user_id: string
         }
@@ -324,8 +330,11 @@ export type Database = {
           broker_id?: string | null
           building_age?: number | null
           city?: string
+          company_payable_amount?: number | null
+          company_payment_terms?: string | null
           created_at?: string
           deposit?: number | null
+          deposited_amount?: number | null
           description?: string | null
           elevator?: boolean
           floor?: number | null
@@ -339,6 +348,8 @@ export type Database = {
           owner_phone?: string | null
           ownership_type?: string | null
           parking?: boolean
+          payment_plan?: Json
+          payment_terms?: string | null
           phase?: string | null
           photos?: string[]
           plot_number?: string | null
@@ -351,6 +362,7 @@ export type Database = {
           title: string
           total_floors?: number | null
           transaction_type?: string
+          unit_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -361,8 +373,11 @@ export type Database = {
           broker_id?: string | null
           building_age?: number | null
           city?: string
+          company_payable_amount?: number | null
+          company_payment_terms?: string | null
           created_at?: string
           deposit?: number | null
+          deposited_amount?: number | null
           description?: string | null
           elevator?: boolean
           floor?: number | null
@@ -376,6 +391,8 @@ export type Database = {
           owner_phone?: string | null
           ownership_type?: string | null
           parking?: boolean
+          payment_plan?: Json
+          payment_terms?: string | null
           phase?: string | null
           photos?: string[]
           plot_number?: string | null
@@ -388,6 +405,7 @@ export type Database = {
           title?: string
           total_floors?: number | null
           transaction_type?: string
+          unit_number?: string | null
           updated_at?: string
           user_id?: string
         }
