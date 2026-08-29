@@ -38,7 +38,11 @@ import { useRole } from "@/lib/roles";
 import {
   deleteProperty,
   fetchPropertyFor,
+  isEmtiazType,
+  isPresaleType,
   OWNERSHIP_LABELS,
+  paymentSteps,
+  presaleRemaining,
   propertyTypeLabel,
   STATUS_LABELS,
   TRANSACTION_LABELS,
