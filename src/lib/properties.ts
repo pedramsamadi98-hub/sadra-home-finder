@@ -168,6 +168,7 @@ const PLOT_TYPES = new Set<string>([
   "baghshahri",
   "zamin_baghshahri",
   "land",
+  "presale",
 ]);
 
 export function showsPlotNumber(
