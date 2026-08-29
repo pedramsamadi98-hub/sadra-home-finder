@@ -87,6 +87,11 @@ export const PROPERTY_TYPE_LABELS: Record<NewPropertyType, string> = {
   apartment_land_phase_2: "زمین آپارتمانی فاز ۲",
   baghshahri: "باغشهری",
   zamin_baghshahri: "زمین باغشهری",
+  office_unit: "واحد اداری",
+  shop: "مغازه",
+  maskan_mehr: "مسکن مهر",
+  emtiaz: "امتیاز",
+  presale: "پیش‌فروش",
 };
 
 /** Older values still present in saved rows — display only, never lost. */
