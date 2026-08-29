@@ -180,6 +180,18 @@ export function showsPlotNumber(
   return Boolean(landCategory);
 }
 
+/** «امتیاز»: multi-unit project share — unit/floor unknown at registration. */
+export function isEmtiazType(propertyType: string | null | undefined): boolean {
+  return propertyType === "emtiaz";
+}
+
+/** «پیش‌فروش»: a known unit with a staged payment plan. */
+export function isPresaleType(propertyType: string | null | undefined): boolean {
+  return propertyType === "presale";
+}
+
+
+
 export const TRANSACTION_LABELS: Record<TransactionType, string> = {
   sale: "فروش",
   rent: "اجاره",
