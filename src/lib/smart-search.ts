@@ -246,6 +246,11 @@ export function parseSmartQuery(input: string): ParsedQuery {
 
   // --- property type (specific new values first, legacy words afterwards) ---
   const types: { value: PropertyType; word: string; label: string }[] = [
+    { value: "office_unit", word: "واحد اداری|اداری", label: "واحد اداری" },
+    { value: "maskan_mehr", word: "مسکن مهر|مسکن‌مهر", label: "مسکن مهر" },
+    { value: "presale", word: "پیش ?فروش", label: "پیش‌فروش" },
+    { value: "emtiaz", word: "امتیاز", label: "امتیاز" },
+    { value: "shop", word: "مغازه", label: "مغازه" },
     { value: "apartment_land_phase_1", word: "زمین (?:آپارتمانی|اپارتمانی) فاز 1", label: "زمین آپارتمانی فاز ۱" },
     { value: "apartment_land_phase_2", word: "زمین (?:آپارتمانی|اپارتمانی) فاز 2", label: "زمین آپارتمانی فاز ۲" },
     { value: "land_phase_1", word: "زمین (?:مسکونی )?فاز 1", label: "زمین فاز ۱" },
