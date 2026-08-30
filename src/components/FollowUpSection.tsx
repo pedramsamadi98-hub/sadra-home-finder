@@ -225,8 +225,9 @@ export function FollowUpSection({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">نتیجه تماس</label>
+            <label className="text-xs text-muted-foreground">نتیجه</label>
             <Input
+              className="h-11"
               value={form.call_result ?? ""}
               placeholder="مثلاً: جواب نداد / قیمت را کاهش داد"
               onChange={(e) => setForm((f) => ({ ...f, call_result: e.target.value }))}
@@ -236,12 +237,14 @@ export function FollowUpSection({
             <label className="text-xs text-muted-foreground">پیگیری بعدی</label>
             <Input
               type="datetime-local"
+              className="h-11"
               value={toLocalInput(form.next_at)}
               onChange={(e) =>
                 setForm((f) => ({ ...f, next_at: fromLocalInput(e.target.value) }))
               }
             />
           </div>
+
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">یادداشت</label>
             <Textarea
