@@ -2,12 +2,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type FollowUpStatus = "pending" | "done" | "canceled";
 export type FollowUpPriority = "normal" | "important" | "urgent";
+/** How the contact happened. */
+export type FollowUpKind = "call" | "visit" | "message";
 
 export interface FollowUp {
   id: string;
   user_id: string;
   property_id: string | null;
   customer_id: string | null;
+  kind: FollowUpKind;
   called_at: string | null;
   call_result: string | null;
   next_at: string | null;
@@ -21,7 +24,7 @@ export interface FollowUp {
 
 export type FollowUpInput = Pick<
   FollowUp,
-  "called_at" | "call_result" | "next_at" | "notes" | "status" | "priority"
+  "kind" | "called_at" | "call_result" | "next_at" | "notes" | "status" | "priority"
 >;
 
 export const FOLLOW_UP_STATUS_LABELS: Record<FollowUpStatus, string> = {
@@ -36,7 +39,18 @@ export const FOLLOW_UP_PRIORITY_LABELS: Record<FollowUpPriority, string> = {
   urgent: "فوری",
 };
 
+export const FOLLOW_UP_KIND_LABELS: Record<FollowUpKind, string> = {
+  call: "تماس",
+  visit: "مراجعه",
+  message: "پیام",
+};
+
+export function followUpKind(value: string | null | undefined): FollowUpKind {
+  return value === "visit" || value === "message" ? value : "call";
+}
+
 export const emptyFollowUp: FollowUpInput = {
+  kind: "call",
   called_at: null,
   call_result: "",
   next_at: null,
@@ -44,6 +58,7 @@ export const emptyFollowUp: FollowUpInput = {
   status: "pending",
   priority: "normal",
 };
+
 
 /** A follow-up hangs off a property file or off a customer. */
 export interface FollowUpTarget {
