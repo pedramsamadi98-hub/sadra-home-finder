@@ -1,0 +1,1 @@
+ALTER TABLE public.follow_ups ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'call';

@@ -162,6 +162,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           id: string
+          kind: string
           next_at: string | null
           notes: string | null
           priority: string
@@ -177,6 +178,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
+          kind?: string
           next_at?: string | null
           notes?: string | null
           priority?: string
@@ -192,6 +194,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
+          kind?: string
           next_at?: string | null
           notes?: string | null
           priority?: string
