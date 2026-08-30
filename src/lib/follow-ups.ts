@@ -178,3 +178,19 @@ export function fromLocalInput(value: string): string | null {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
+
+/** Latest logged contact + next pending follow-up for a set of records. */
+export function followUpSummary(items: FollowUp[]): {
+  last: FollowUp | null;
+  next: FollowUp | null;
+} {
+  const byRecent = [...items].sort(
+    (a, b) =>
+      new Date(b.called_at ?? b.created_at).getTime() -
+      new Date(a.called_at ?? a.created_at).getTime(),
+  );
+  const pending = items
+    .filter((item) => item.status === "pending" && item.next_at)
+    .sort((a, b) => new Date(a.next_at ?? 0).getTime() - new Date(b.next_at ?? 0).getTime());
+  return { last: byRecent[0] ?? null, next: pending[0] ?? null };
+}
