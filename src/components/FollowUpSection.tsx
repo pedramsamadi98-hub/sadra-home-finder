@@ -346,27 +346,36 @@ export function FollowUpSection({
                       لغو
                     </Button>
                   ) : null}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    className="h-9"
-                    disabled={removal.isPending}
-                    onClick={() => {
-                      if (window.confirm("این پیگیری حذف شود؟")) removal.mutate(item.id);
-                    }}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
+                  <ConfirmDialog
+                    title="حذف پیگیری"
+                    name={`${FOLLOW_UP_KIND_LABELS[followUpKind(item.kind)]} — ${faDateTime(item.called_at ?? item.created_at)}`}
+                    description="این پیگیری از تاریخچه حذف می‌شود و قابل بازگشت نیست."
+                    pending={removal.isPending}
+                    onConfirm={() => removal.mutate(item.id)}
+                    trigger={
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        className="h-9"
+                        aria-label="حذف پیگیری"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    }
+                  />
                 </div>
               ) : null}
             </div>
           ))
         ) : (
-          <p className="py-3 text-center text-xs text-muted-foreground">
-            هنوز پیگیری‌ای ثبت نشده است.
-          </p>
+          <EmptyState
+            icon={CalendarClock}
+            title="هنوز پیگیری‌ای ثبت نشده"
+            description="اولین تماس، مراجعه یا پیام خود را ثبت کنید تا سابقه کار شکل بگیرد."
+          />
         )}
+
       </div>
     </section>
   );
