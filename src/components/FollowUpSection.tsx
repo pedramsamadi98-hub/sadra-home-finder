@@ -185,15 +185,18 @@ export function FollowUpSection({
       </div>
 
       <div className="grid gap-2 text-xs">
-        <div className="flex items-center justify-between rounded-xl bg-secondary/60 px-3 py-2">
-          <span className="text-muted-foreground">آخرین تماس</span>
-          <span className="font-medium">{faDateTime(last?.called_at ?? null)}</span>
+        <div className="flex items-center justify-between gap-2 rounded-xl bg-secondary/60 px-3 py-2">
+          <span className="text-muted-foreground">آخرین پیگیری</span>
+          <span className="flex items-center gap-2 font-medium">
+            {last ? <FollowUpKindBadge kind={last.kind} /> : null}
+            {faDateTime(last?.called_at ?? last?.created_at ?? null)}
+          </span>
         </div>
-        <div className="flex items-center justify-between rounded-xl bg-secondary/60 px-3 py-2">
-          <span className="text-muted-foreground">نتیجه آخرین تماس</span>
-          <span className="font-medium">{last?.call_result || "—"}</span>
+        <div className="flex items-center justify-between gap-2 rounded-xl bg-secondary/60 px-3 py-2">
+          <span className="text-muted-foreground">نتیجه</span>
+          <span className="truncate font-medium">{last?.call_result || "—"}</span>
         </div>
-        <div className="flex items-center justify-between rounded-xl bg-secondary/60 px-3 py-2">
+        <div className="flex items-center justify-between gap-2 rounded-xl bg-secondary/60 px-3 py-2">
           <span className="text-muted-foreground">پیگیری بعدی</span>
           <span className="font-medium">{faDateTime(nextPending?.next_at ?? null)}</span>
         </div>
@@ -202,15 +205,25 @@ export function FollowUpSection({
       {open && canEdit ? (
         <div className="space-y-3 rounded-xl border border-border p-3">
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">تاریخ و ساعت تماس</label>
+            <label className="text-xs text-muted-foreground">نوع پیگیری</label>
+            <Chips
+              value={form.kind}
+              labels={FOLLOW_UP_KIND_LABELS}
+              onChange={(kind) => setForm((f) => ({ ...f, kind }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">تاریخ و ساعت</label>
             <Input
               type="datetime-local"
+              className="h-11"
               value={toLocalInput(form.called_at)}
               onChange={(e) =>
                 setForm((f) => ({ ...f, called_at: fromLocalInput(e.target.value) }))
               }
             />
           </div>
+
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">نتیجه تماس</label>
             <Input
