@@ -291,6 +291,7 @@ export function FollowUpSection({
           history.map((item) => (
             <div key={item.id} className="space-y-2 rounded-xl border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
+                <FollowUpKindBadge kind={item.kind} />
                 <span
                   className={`rounded-lg px-2 py-0.5 text-[11px] font-medium ${STATUS_TONE[item.status]}`}
                 >
@@ -303,11 +304,12 @@ export function FollowUpSection({
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                تماس: {faDateTime(item.called_at)}
+                {FOLLOW_UP_KIND_LABELS[followUpKind(item.kind)]}: {faDateTime(item.called_at)}
               </p>
               <p className="text-[11px] text-muted-foreground">
                 پیگیری بعدی: {faDateTime(item.next_at)}
               </p>
+
               {item.call_result ? (
                 <p className="text-xs">نتیجه: {item.call_result}</p>
               ) : null}
