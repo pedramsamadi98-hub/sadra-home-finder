@@ -1,11 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { BedDouble, MapPin, Ruler } from "lucide-react";
+import { BedDouble, Car, MapPin, MoveVertical, Package, Ruler } from "lucide-react";
 
 import { PropertyTypeIcon } from "@/lib/property-type-icons";
 
 import { PhotoThumb } from "@/components/PhotoGallery";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
-import { LAND_CATEGORY_LABELS } from "@/lib/land";
 import {
   OWNERSHIP_LABELS,
   propertyTypeLabel,
@@ -13,7 +12,6 @@ import {
   TRANSACTION_LABELS,
   type Property,
 } from "@/lib/properties";
-
 
 function statusClass(status: Property["status"]) {
   if (status === "active") return "bg-success/15 text-success";
@@ -29,10 +27,19 @@ export function PropertyCard({ property }: { property: Property }) {
       : `${faPrice(property.deposit)} رهن • ${faPrice(property.monthly_rent)} اجاره`;
 
   const amenities = [
-    property.parking ? "پارکینگ" : null,
-    property.elevator ? "آسانسور" : null,
-    property.storage ? "انباری" : null,
-  ].filter(Boolean) as string[];
+    property.parking ? { icon: Car, label: "پارکینگ" } : null,
+    property.elevator ? { icon: MoveVertical, label: "آسانسور" } : null,
+    property.storage ? { icon: Package, label: "انباری" } : null,
+  ].filter(Boolean) as Array<{ icon: typeof Car; label: string }>;
+
+  const location = [
+    property.city,
+    property.phase,
+    property.neighborhood,
+    property.plot_number ? `پلاک ${faDigits(property.plot_number)}` : null,
+  ]
+    .filter(Boolean)
+    .join(" — ");
 
   return (
     <Link
@@ -43,46 +50,28 @@ export function PropertyCard({ property }: { property: Property }) {
       <div className="flex gap-3">
         <PhotoThumb paths={property.photos} alt={property.title} />
         <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-1.5">
             <h3 className="min-w-0 flex-1 truncate text-sm font-bold">{property.title}</h3>
             {property.ownership_type ? (
-              <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning">
+              <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning">
                 {OWNERSHIP_LABELS[property.ownership_type]}
               </span>
             ) : null}
             <span
-              className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClass(property.status)}`}
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClass(property.status)}`}
             >
               {STATUS_LABELS[property.status]}
             </span>
           </div>
-          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="size-3.5" />
-            <span className="truncate">
-              {property.city}
-              {property.phase ? ` — ${property.phase}` : ""}
-              {property.neighborhood ? ` — ${property.neighborhood}` : ""}
-              {property.street ? ` — ${property.street}` : ""}
-            </span>
-          </p>
-          {property.land_category || property.land_zone || property.plot_number ? (
-            <p className="mt-1 truncate text-xs text-muted-foreground">
-              {[
-                property.land_category ? LAND_CATEGORY_LABELS[property.land_category] : null,
-                property.land_zone,
-                property.plot_number ? `پلاک ${faDigits(property.plot_number)}` : null,
-              ]
-                .filter(Boolean)
-                .join(" — ")}
-            </p>
-          ) : null}
-          <p className="mt-1.5 text-sm font-semibold text-primary">{priceText}</p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <PropertyTypeIcon type={property.property_type} />
-              {propertyTypeLabel(property.property_type)} •{" "}
+
+          <p className="mt-1 text-sm font-semibold text-primary">
+            <span className="text-[11px] font-medium text-muted-foreground">
               {TRANSACTION_LABELS[property.transaction_type]}
-            </span>
+            </span>{" "}
+            {priceText}
+          </p>
+
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1">
               <Ruler className="size-3.5" />
               {faArea(property.area)}
@@ -93,20 +82,26 @@ export function PropertyCard({ property }: { property: Property }) {
                 {faDigits(property.bedrooms)} خواب
               </span>
             ) : null}
-            <span>{faRelative(property.created_at)}</span>
+            <span className="flex items-center gap-1">
+              <PropertyTypeIcon type={property.property_type} />
+              {propertyTypeLabel(property.property_type)}
+            </span>
           </div>
-          {amenities.length ? (
-            <div className="mt-1.5 flex flex-wrap gap-1">
-              {amenities.map((item) => (
-                <span
-                  key={item}
-                  className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          ) : null}
+
+          <p className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <MapPin className="size-3.5 shrink-0" />
+            <span className="truncate">{location}</span>
+          </p>
+
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+            {amenities.map(({ icon: Icon, label }) => (
+              <span key={label} className="flex items-center gap-1" title={label}>
+                <Icon className="size-3.5" aria-hidden="true" />
+                <span className="sr-only">{label}</span>
+              </span>
+            ))}
+            <span className="ms-auto">{faRelative(property.created_at)}</span>
+          </div>
         </div>
       </div>
     </Link>
