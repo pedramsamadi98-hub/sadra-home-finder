@@ -19,9 +19,12 @@ export type Database = {
           agency: string | null
           created_at: string
           id: string
+          last_contact_at: string | null
+          last_contact_note: string | null
           name: string
           notes: string | null
           phone: string | null
+          update_interval_days: number
           updated_at: string
           user_id: string
         }
@@ -29,9 +32,12 @@ export type Database = {
           agency?: string | null
           created_at?: string
           id?: string
+          last_contact_at?: string | null
+          last_contact_note?: string | null
           name: string
           notes?: string | null
           phone?: string | null
+          update_interval_days?: number
           updated_at?: string
           user_id: string
         }
@@ -39,9 +45,12 @@ export type Database = {
           agency?: string | null
           created_at?: string
           id?: string
+          last_contact_at?: string | null
+          last_contact_note?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
+          update_interval_days?: number
           updated_at?: string
           user_id?: string
         }

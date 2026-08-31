@@ -81,3 +81,36 @@ export function faDateTime(value: string | Date | null | undefined): string {
   if (Number.isNaN(date.getTime())) return "—";
   return jalaliTime.format(date);
 }
+
+/**
+ * Readable Persian wording for a Toman amount, including the thousands unit.
+ * e.g. ۶ میلیارد و ۵۰۰ میلیون تومان / ۸۵۰ هزار تومان
+ */
+export function faMoneyWords(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value) || value === 0) return "";
+  const negative = value < 0;
+  let rest = Math.floor(Math.abs(value));
+  const units: [number, string][] = [
+    [1_000_000_000_000, "هزار میلیارد"],
+    [1_000_000_000, "میلیارد"],
+    [1_000_000, "میلیون"],
+    [1_000, "هزار"],
+  ];
+  const parts: string[] = [];
+  for (const [size, label] of units) {
+    const count = Math.floor(rest / size);
+    if (count) {
+      parts.push(`${faDigits(count)} ${label}`);
+      rest -= count * size;
+    }
+  }
+  if (rest) parts.push(faDigits(rest));
+  const text = `${parts.join(" و ")} تومان`;
+  return negative ? `منفی ${text}` : text;
+}
+
+/** Group a raw numeric input value with thousands separators for display. */
+export function groupDigits(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "";
+  return value.toLocaleString("en-US");
+}
