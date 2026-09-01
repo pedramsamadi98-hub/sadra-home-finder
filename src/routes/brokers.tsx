@@ -57,7 +57,7 @@ export const Route = createFileRoute("/brokers")({
     ],
   }),
   validateSearch: (search: Record<string, unknown>) => ({
-    due: search.due === true || search.due === "true" ? true : undefined,
+    due: search['due'] === true || search['due'] === "true" ? true : undefined,
   }),
   component: BrokersRoute,
 });
