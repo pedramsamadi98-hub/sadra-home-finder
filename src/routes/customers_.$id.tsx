@@ -324,27 +324,18 @@ function CustomerDetail({ userId }: { userId: string }) {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">حداقل بودجه (تومان)</Label>
-                  <Input
-                    inputMode="numeric"
-                    value={numberInput(form.min_budget)}
-                    onChange={(e) =>
-                      setForm({ ...form, min_budget: parseNumber(e.target.value) })
-                    }
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">حداکثر بودجه (تومان)</Label>
-                  <Input
-                    inputMode="numeric"
-                    value={numberInput(form.max_budget)}
-                    onChange={(e) =>
-                      setForm({ ...form, max_budget: parseNumber(e.target.value) })
-                    }
-                  />
-                </div>
+                <MoneyInput
+                  label="حداقل بودجه (تومان)"
+                  value={form.min_budget}
+                  onChange={(min_budget) => setForm({ ...form, min_budget })}
+                />
+                <MoneyInput
+                  label="حداکثر بودجه (تومان)"
+                  value={form.max_budget}
+                  onChange={(max_budget) => setForm({ ...form, max_budget })}
+                />
               </div>
+
 
               <div className="space-y-1.5">
                 <Label className="text-xs">امکانات موردنیاز</Label>
