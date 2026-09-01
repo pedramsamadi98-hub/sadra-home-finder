@@ -49,7 +49,7 @@ export function StaleBrokers() {
         <p className="text-xs text-muted-foreground">
           اطلاعات همه دلال‌ها بروز است ({faDigits(all.length)} دلال).
         </p>
-        <Link to="/brokers" className="ms-auto shrink-0 text-xs font-medium text-primary">
+        <Link to="/brokers" search={{ due: undefined }} className="ms-auto shrink-0 text-xs font-medium text-primary">
           دلال‌ها
         </Link>
       </section>
