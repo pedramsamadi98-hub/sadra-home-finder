@@ -37,8 +37,25 @@ export function StaleBrokers() {
 
   if (isLoading) return null;
 
-  const stale = (brokers ?? []).filter(needsUpdate).sort(staleFirst);
-  if (!stale.length) return null;
+  const all = brokers ?? [];
+  const stale = all.filter(needsUpdate).sort(staleFirst);
+  if (!stale.length) {
+    if (!all.length) return null;
+    return (
+      <section className="surface-card flex items-center gap-2 p-4">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-success/15 text-success">
+          <Check className="size-4" />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          اطلاعات همه دلال‌ها بروز است ({faDigits(all.length)} دلال).
+        </p>
+        <Link to="/brokers" search={{ due: undefined }} className="ms-auto shrink-0 text-xs font-medium text-primary">
+          دلال‌ها
+        </Link>
+      </section>
+    );
+  }
+
 
   return (
     <section className="surface-card space-y-3 p-4">
