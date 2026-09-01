@@ -152,6 +152,9 @@ function Dashboard({ userId }: { userId: string }) {
 
           {isAdmin ? <TodayFollowUps userId={userId} /> : null}
 
+          {isAdmin ? <StaleBrokers /> : null}
+
+
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold">آخرین فایل‌ها</h2>
