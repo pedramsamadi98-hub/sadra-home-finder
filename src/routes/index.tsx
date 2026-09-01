@@ -5,7 +5,9 @@ import { Archive, CheckCircle2, Home, KeyRound, Loader2, TrendingUp } from "luci
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { PropertyCard } from "@/components/PropertyCard";
+import { StaleBrokers } from "@/components/StaleBrokers";
 import { TodayFollowUps } from "@/components/TodayFollowUps";
+
 import { faDate, faDigits } from "@/lib/fa";
 import { fetchPropertiesFor, PROPERTY_TYPE_LABELS, type Property } from "@/lib/properties";
 import { propertyTypeIcon } from "@/lib/property-type-icons";
