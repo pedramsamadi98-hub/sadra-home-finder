@@ -17,6 +17,8 @@ import { AdminOnly } from "@/components/AdminOnly";
 import { AppShell } from "@/components/AppShell";
 import { FollowUpSection } from "@/components/FollowUpSection";
 import { MatchChecks, MatchScoreBadge } from "@/components/MatchBits";
+import { MoneyInput } from "@/components/MoneyInput";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
