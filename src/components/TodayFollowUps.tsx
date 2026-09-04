@@ -105,31 +105,37 @@ export function TodayFollowUps({ userId }: { userId: string }) {
               const isOwner = !!property && property.user_id === userId;
               const broker =
                 brokers?.find((b) => b.id === property?.broker_id) ?? null;
+              const KindIcon = KIND_ICONS[followUpKind(item.kind)];
+              const subject = item.notes?.trim() || item.call_result?.trim() || "";
               return (
                 <div
                   key={item.id}
                   className="surface-card space-y-2 p-3"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    {property ? (
-                      <Link
-                        to="/listings/$id"
-                        params={{ id: property.id }}
-                        className="text-sm font-bold text-primary"
-                      >
-                        {property.title}
-                      </Link>
-                    ) : customer ? (
-                      <Link
-                        to="/customers/$id"
-                        params={{ id: customer.id }}
-                        className="text-sm font-bold text-primary"
-                      >
-                        مشتری: {customer.full_name}
-                      </Link>
-                    ) : (
-                      <span className="text-sm font-bold">فایل نامشخص</span>
-                    )}
+                    <div className="min-w-0 space-y-1">
+                      {customer ? (
+                        <Link
+                          to="/customers/$id"
+                          params={{ id: customer.id }}
+                          className="block truncate text-sm font-bold text-primary"
+                        >
+                          {customer.full_name}
+                        </Link>
+                      ) : null}
+                      {property ? (
+                        <Link
+                          to="/listings/$id"
+                          params={{ id: property.id }}
+                          className={`block truncate ${customer ? "text-xs text-muted-foreground" : "text-sm font-bold text-primary"}`}
+                        >
+                          {property.title}
+                        </Link>
+                      ) : null}
+                      {!customer && !property ? (
+                        <span className="text-sm font-bold">پیگیری عمومی</span>
+                      ) : null}
+                    </div>
                     <span
                       className={`shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-medium ${PRIORITY_TONE[item.priority]}`}
                     >
@@ -137,11 +143,19 @@ export function TodayFollowUps({ userId }: { userId: string }) {
                     </span>
                   </div>
 
+                  {subject ? (
+                    <p className="line-clamp-2 text-xs text-foreground/90">{subject}</p>
+                  ) : null}
+
                   <div className="flex flex-wrap items-center gap-2 text-[11px]">
                     <span
                       className={`rounded-lg px-2 py-0.5 font-medium ${STATUS_TONE[item.status]}`}
                     >
                       {FOLLOW_UP_STATUS_LABELS[item.status]}
+                    </span>
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <KindIcon className="size-3.5" />
+                      {FOLLOW_UP_KIND_LABELS[followUpKind(item.kind)]}
                     </span>
                     <span className="text-muted-foreground">
                       {faDateTime(item.next_at)}
@@ -152,6 +166,16 @@ export function TodayFollowUps({ userId }: { userId: string }) {
                     <p className="text-[11px] text-muted-foreground">
                       منبع فایل: {broker ? broker.name : "فایل شخصی"}
                     </p>
+                  ) : null}
+
+                  {customer?.phone ? (
+                    <a
+                      href={`tel:${customer.phone}`}
+                      className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-semibold text-primary"
+                    >
+                      <Phone className="size-4" />
+                      <span dir="ltr">{faDigits(customer.phone)}</span>
+                    </a>
                   ) : null}
 
                   {isOwner && property?.owner_phone ? (
@@ -178,6 +202,7 @@ export function TodayFollowUps({ userId }: { userId: string }) {
                 </div>
               );
             })}
+
           </div>
         );
       })}
