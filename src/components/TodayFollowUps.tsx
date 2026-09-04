@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { CalendarClock, Check, Loader2, Phone } from "lucide-react";
 import { toast } from "sonner";
 
-import { PRIORITY_TONE, STATUS_TONE } from "@/components/FollowUpSection";
+import { KIND_ICONS, PRIORITY_TONE, STATUS_TONE } from "@/components/FollowUpSection";
 import { Button } from "@/components/ui/button";
 import { fetchBrokers } from "@/lib/brokers";
 import { fetchCustomers } from "@/lib/customers";
@@ -12,6 +12,8 @@ import {
   completeFollowUp,
   dueBucket,
   fetchFollowUps,
+  followUpKind,
+  FOLLOW_UP_KIND_LABELS,
   FOLLOW_UP_PRIORITY_LABELS,
   FOLLOW_UP_STATUS_LABELS,
   sortFollowUps,
