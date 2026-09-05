@@ -114,3 +114,16 @@ export function groupDigits(value: number | null | undefined): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return "";
   return value.toLocaleString("en-US");
 }
+
+/**
+ * Format a raw money input string: latin digits, thousands separators on the
+ * integer part and a preserved decimal part so decimals stay typeable.
+ */
+export function formatMoneyText(raw: string): string {
+  const cleaned = enDigits(raw).replace(/[^\d.]/g, "");
+  if (!cleaned) return "";
+  const [intPart = "", ...rest] = cleaned.split(".");
+  const decimal = rest.join("");
+  const grouped = intPart ? Number(intPart).toLocaleString("en-US") : "";
+  return cleaned.includes(".") ? `${grouped}.${decimal}` : grouped;
+}
