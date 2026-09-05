@@ -19,6 +19,7 @@ import { AppShell } from "@/components/AppShell";
 import { AdminOnly } from "@/components/AdminOnly";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState, LoadingBlock } from "@/components/StateBlocks";
+import { PriceUpdateDialog } from "@/components/PriceUpdateDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,11 +35,10 @@ import {
   FRESHNESS_TONE,
   needsUpdate,
   staleFirst,
-  touchBroker,
   updateBroker,
   type BrokerInput,
 } from "@/lib/brokers";
-import { enDigits, faDigits, faRelative } from "@/lib/fa";
+import { enDigits, faDate, faDigits, faRelative } from "@/lib/fa";
 import { fetchProperties, STATUS_LABELS, type PropertyStatus } from "@/lib/properties";
 
 export const Route = createFileRoute("/brokers")({
