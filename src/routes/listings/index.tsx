@@ -510,8 +510,10 @@ function Listings() {
             <div className="grid grid-cols-2 gap-3">
               <TextFilter label="حداقل متراژ" value={minArea} onChange={setMinArea} />
               <TextFilter label="حداکثر متراژ" value={maxArea} onChange={setMaxArea} />
-              <TextFilter label="حداقل قیمت" value={minPrice} onChange={setMinPrice} />
-              <TextFilter label="حداکثر قیمت" value={maxPrice} onChange={setMaxPrice} />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <MoneyFilterInput label="حداقل قیمت (تومان)" value={minPrice} onChange={setMinPrice} />
+              <MoneyFilterInput label="حداکثر قیمت (تومان)" value={maxPrice} onChange={setMaxPrice} />
             </div>
             <TextFilter label="حداقل خواب" value={minBedrooms} onChange={setMinBedrooms} />
             <div className="grid grid-cols-3 gap-2">
