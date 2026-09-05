@@ -118,15 +118,6 @@ function Brokers({ userId }: { userId: string }) {
     onError: () => toast.error("ذخیره ناموفق بود"),
   });
 
-  const touch = useMutation({
-    mutationFn: (id: string) => touchBroker(id),
-    onSuccess: async () => {
-      await invalidate();
-      toast.success("بروزرسانی دلال ثبت شد");
-    },
-    onError: () => toast.error("ثبت بروزرسانی ناموفق بود"),
-  });
-
   const removal = useMutation({
     mutationFn: (id: string) => deleteBroker(id),
     onSuccess: async () => {
