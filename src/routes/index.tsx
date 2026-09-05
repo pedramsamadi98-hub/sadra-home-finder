@@ -161,6 +161,27 @@ function Dashboard({ userId }: { userId: string }) {
 
           {isAdmin ? <TodayFollowUps userId={userId} /> : null}
 
+          {isAdmin ? (
+            <Link
+              to="/brokers"
+              search={{ due: true }}
+              className={`surface-card flex items-center gap-3 p-4 ${
+                dueCount > 0 ? "bg-warning/15 text-warning" : "bg-success/15 text-success"
+              }`}
+            >
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-background/50">
+                <RefreshCw className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold">بروزرسانی قیمت دلال‌ها</p>
+                <p className="text-[11px] opacity-80">
+                  {faDigits(dueCount)} دلال نیازمند پیگیری
+                </p>
+              </div>
+              <span className="shrink-0 text-xs font-semibold">مشاهده</span>
+            </Link>
+          ) : null}
+
           {isAdmin ? <StaleBrokers /> : null}
 
 
