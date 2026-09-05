@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Archive, CheckCircle2, Home, KeyRound, Loader2, TrendingUp } from "lucide-react";
+import { Archive, CheckCircle2, Home, KeyRound, Loader2, RefreshCw, TrendingUp } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
@@ -8,6 +8,7 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { StaleBrokers } from "@/components/StaleBrokers";
 import { TodayFollowUps } from "@/components/TodayFollowUps";
 
+import { fetchBrokers, needsUpdate } from "@/lib/brokers";
 import { faDate, faDigits } from "@/lib/fa";
 import { fetchPropertiesFor, PROPERTY_TYPE_LABELS, type Property } from "@/lib/properties";
 import { propertyTypeIcon } from "@/lib/property-type-icons";
@@ -65,8 +66,14 @@ function Dashboard({ userId }: { userId: string }) {
     queryFn: () => fetchPropertiesFor(isAdmin),
     enabled: !roleLoading,
   });
+  const { data: brokers } = useQuery({
+    queryKey: ["brokers"],
+    queryFn: fetchBrokers,
+    enabled: isAdmin && !roleLoading,
+  });
 
   const items = data ?? [];
+  const dueCount = (brokers ?? []).filter(needsUpdate).length;
   const active = items.filter((item) => item.status === "active");
   const sold = items.filter((item) => item.status === "sold");
   const rented = items.filter((item) => item.status === "rented");
@@ -153,6 +160,27 @@ function Dashboard({ userId }: { userId: string }) {
           ) : null}
 
           {isAdmin ? <TodayFollowUps userId={userId} /> : null}
+
+          {isAdmin ? (
+            <Link
+              to="/brokers"
+              search={{ due: true }}
+              className={`surface-card flex items-center gap-3 p-4 ${
+                dueCount > 0 ? "bg-warning/15 text-warning" : "bg-success/15 text-success"
+              }`}
+            >
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-background/50">
+                <RefreshCw className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold">بروزرسانی قیمت دلال‌ها</p>
+                <p className="text-[11px] opacity-80">
+                  {faDigits(dueCount)} دلال نیازمند پیگیری
+                </p>
+              </div>
+              <span className="shrink-0 text-xs font-semibold">مشاهده</span>
+            </Link>
+          ) : null}
 
           {isAdmin ? <StaleBrokers /> : null}
 

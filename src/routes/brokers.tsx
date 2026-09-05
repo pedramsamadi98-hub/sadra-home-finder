@@ -19,6 +19,7 @@ import { AppShell } from "@/components/AppShell";
 import { AdminOnly } from "@/components/AdminOnly";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState, LoadingBlock } from "@/components/StateBlocks";
+import { PriceUpdateDialog } from "@/components/PriceUpdateDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,11 +35,10 @@ import {
   FRESHNESS_TONE,
   needsUpdate,
   staleFirst,
-  touchBroker,
   updateBroker,
   type BrokerInput,
 } from "@/lib/brokers";
-import { enDigits, faDigits, faRelative } from "@/lib/fa";
+import { enDigits, faDate, faDigits, faRelative } from "@/lib/fa";
 import { fetchProperties, STATUS_LABELS, type PropertyStatus } from "@/lib/properties";
 
 export const Route = createFileRoute("/brokers")({
@@ -74,7 +74,6 @@ function Brokers({ userId }: { userId: string }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [onlyDue, setOnlyDue] = useState(Boolean(due));
-  const [sortStale, setSortStale] = useState(Boolean(due));
 
   const { data: brokers, isLoading } = useQuery({
     queryKey: ["brokers"],
@@ -96,7 +95,7 @@ function Brokers({ userId }: { userId: string }) {
       .toLowerCase();
     return query.split(/\s+/).every((token) => haystack.includes(token));
   });
-  const visible = sortStale ? [...filtered].sort(staleFirst) : filtered;
+  const visible = [...filtered].sort(staleFirst);
 
   function invalidate() {
     return Promise.all([
@@ -116,15 +115,6 @@ function Brokers({ userId }: { userId: string }) {
       setOpen(false);
     },
     onError: () => toast.error("ذخیره ناموفق بود"),
-  });
-
-  const touch = useMutation({
-    mutationFn: (id: string) => touchBroker(id),
-    onSuccess: async () => {
-      await invalidate();
-      toast.success("بروزرسانی دلال ثبت شد");
-    },
-    onError: () => toast.error("ثبت بروزرسانی ناموفق بود"),
   });
 
   const removal = useMutation({
@@ -190,18 +180,6 @@ function Brokers({ userId }: { userId: string }) {
           >
             <RefreshCw className="size-3.5" />
             نیاز به بروزرسانی ({faDigits(dueCount)})
-          </button>
-          <button
-            type="button"
-            aria-pressed={sortStale}
-            onClick={() => setSortStale((value) => !value)}
-            className={`flex h-10 flex-1 items-center justify-center rounded-xl border px-3 text-xs font-semibold transition-colors ${
-              sortStale
-                ? "border-primary/50 bg-primary/15 text-primary"
-                : "border-border text-muted-foreground"
-            }`}
-          >
-            مرتب‌سازی: قدیمی‌ترین بروزرسانی
           </button>
         </div>
 
@@ -353,21 +331,21 @@ function Brokers({ userId }: { userId: string }) {
                   <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
                     {days === null
                       ? "آخرین بروزرسانی ثبت نشده"
-                      : `آخرین بروزرسانی ${faRelative(broker.last_contact_at)} (${faDigits(days)} روز پیش)`}
+                      : `${faDate(broker.last_contact_at)} · ${faRelative(broker.last_contact_at)} · ${faDigits(days)} روز گذشته`}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => touch.mutate(broker.id)}
-                    disabled={touch.isPending}
-                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 px-2.5 text-[11px] font-semibold text-primary"
-                  >
-                    {touch.isPending ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Check className="size-3.5" />
-                    )}
-                    بروزرسانی شد
-                  </button>
+                  <PriceUpdateDialog
+                    brokerId={broker.id}
+                    brokerName={broker.name}
+                    trigger={
+                      <button
+                        type="button"
+                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 px-2.5 text-[11px] font-semibold text-primary"
+                      >
+                        <Check className="size-3.5" />
+                        ثبت بروزرسانی
+                      </button>
+                    }
+                  />
                 </div>
 
                 {broker.notes ? (
