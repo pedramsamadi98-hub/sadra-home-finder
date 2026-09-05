@@ -181,18 +181,6 @@ function Brokers({ userId }: { userId: string }) {
             <RefreshCw className="size-3.5" />
             نیاز به بروزرسانی ({faDigits(dueCount)})
           </button>
-          <button
-            type="button"
-            aria-pressed={sortStale}
-            onClick={() => setSortStale((value) => !value)}
-            className={`flex h-10 flex-1 items-center justify-center rounded-xl border px-3 text-xs font-semibold transition-colors ${
-              sortStale
-                ? "border-primary/50 bg-primary/15 text-primary"
-                : "border-border text-muted-foreground"
-            }`}
-          >
-            مرتب‌سازی: قدیمی‌ترین بروزرسانی
-          </button>
         </div>
 
         {open ? (
