@@ -66,8 +66,14 @@ function Dashboard({ userId }: { userId: string }) {
     queryFn: () => fetchPropertiesFor(isAdmin),
     enabled: !roleLoading,
   });
+  const { data: brokers } = useQuery({
+    queryKey: ["brokers"],
+    queryFn: fetchBrokers,
+    enabled: isAdmin && !roleLoading,
+  });
 
   const items = data ?? [];
+  const dueCount = (brokers ?? []).filter(needsUpdate).length;
   const active = items.filter((item) => item.status === "active");
   const sold = items.filter((item) => item.status === "sold");
   const rented = items.filter((item) => item.status === "rented");
