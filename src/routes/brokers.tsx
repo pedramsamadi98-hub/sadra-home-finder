@@ -344,21 +344,21 @@ function Brokers({ userId }: { userId: string }) {
                   <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
                     {days === null
                       ? "آخرین بروزرسانی ثبت نشده"
-                      : `آخرین بروزرسانی ${faRelative(broker.last_contact_at)} (${faDigits(days)} روز پیش)`}
+                      : `${faDate(broker.last_contact_at)} · ${faRelative(broker.last_contact_at)} · ${faDigits(days)} روز گذشته`}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => touch.mutate(broker.id)}
-                    disabled={touch.isPending}
-                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 px-2.5 text-[11px] font-semibold text-primary"
-                  >
-                    {touch.isPending ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Check className="size-3.5" />
-                    )}
-                    بروزرسانی شد
-                  </button>
+                  <PriceUpdateDialog
+                    brokerId={broker.id}
+                    brokerName={broker.name}
+                    trigger={
+                      <button
+                        type="button"
+                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 px-2.5 text-[11px] font-semibold text-primary"
+                      >
+                        <Check className="size-3.5" />
+                        ثبت بروزرسانی
+                      </button>
+                    }
+                  />
                 </div>
 
                 {broker.notes ? (
