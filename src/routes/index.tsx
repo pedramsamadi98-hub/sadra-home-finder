@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Archive, CheckCircle2, Home, KeyRound, Loader2, TrendingUp } from "lucide-react";
+import { Archive, CheckCircle2, Home, KeyRound, Loader2, RefreshCw, TrendingUp } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
@@ -8,6 +8,7 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { StaleBrokers } from "@/components/StaleBrokers";
 import { TodayFollowUps } from "@/components/TodayFollowUps";
 
+import { fetchBrokers, needsUpdate } from "@/lib/brokers";
 import { faDate, faDigits } from "@/lib/fa";
 import { fetchPropertiesFor, PROPERTY_TYPE_LABELS, type Property } from "@/lib/properties";
 import { propertyTypeIcon } from "@/lib/property-type-icons";
