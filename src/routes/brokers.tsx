@@ -74,7 +74,6 @@ function Brokers({ userId }: { userId: string }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [onlyDue, setOnlyDue] = useState(Boolean(due));
-  const [sortStale, setSortStale] = useState(Boolean(due));
 
   const { data: brokers, isLoading } = useQuery({
     queryKey: ["brokers"],
@@ -96,7 +95,7 @@ function Brokers({ userId }: { userId: string }) {
       .toLowerCase();
     return query.split(/\s+/).every((token) => haystack.includes(token));
   });
-  const visible = sortStale ? [...filtered].sort(staleFirst) : filtered;
+  const visible = [...filtered].sort(staleFirst);
 
   function invalidate() {
     return Promise.all([
