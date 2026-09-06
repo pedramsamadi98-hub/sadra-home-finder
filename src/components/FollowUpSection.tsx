@@ -127,6 +127,15 @@ export function FollowUpSection({
     queryFn: () => fetchFollowUps(target),
   });
 
+  // Only needed on a customer page, to link each follow-up to its property file.
+  const { data: properties } = useQuery<Property[]>({
+    queryKey: ["properties"],
+    queryFn: fetchProperties,
+    enabled: !!customerId,
+  });
+
+
+
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["follow_ups"] });
   };
