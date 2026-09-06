@@ -194,7 +194,7 @@ function Detail({ userId }: { userId: string }) {
             <MapPin className="size-4" />
             {property.city}
             {property.phase ? ` — ${property.phase}` : ""}
-            {property.neighborhood ? ` — ${property.neighborhood}` : ""}
+            {property.neighborhood ? ` — ${neighborhoodLabel(property.neighborhood)}` : ""}
             {property.street ? ` — ${property.street}` : ""}
             {property.address ? ` — ${property.address}` : ""}
           </p>
@@ -275,19 +275,20 @@ function Detail({ userId }: { userId: string }) {
             value={`${propertyTypeLabel(property.property_type)} • ${TRANSACTION_LABELS[property.transaction_type]}`}
           />
 
-          {property.land_category ? (
+          {isLandType(property.property_type) && property.land_category ? (
             <Row
               icon={MapPin}
               label="دسته زمین"
               value={LAND_CATEGORY_LABELS[property.land_category] ?? property.land_category}
             />
           ) : null}
-          {property.land_zone ? (
+          {isLandType(property.property_type) && property.land_zone ? (
             <Row icon={MapPin} label="محدوده" value={property.land_zone} />
           ) : null}
-          {property.plot_number ? (
+          {isLandType(property.property_type) && property.plot_number ? (
             <Row icon={Landmark} label="پلاک" value={faDigits(property.plot_number)} />
           ) : null}
+
           <Row icon={Ruler} label="متراژ" value={faArea(property.area)} />
           {property.bedrooms !== null ? (
             <Row icon={Boxes} label="اتاق خواب" value={faDigits(property.bedrooms)} />

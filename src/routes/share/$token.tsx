@@ -5,12 +5,14 @@ import { faArea, faDate, faDigits, faPrice } from "@/lib/fa";
 import { propertyTypeIcon } from "@/lib/property-type-icons";
 import { getSharedProperty } from "@/lib/shares.functions";
 import {
+  neighborhoodLabel,
   OWNERSHIP_LABELS,
   propertyTypeLabel,
   TRANSACTION_LABELS,
   type OwnershipType,
   type TransactionType,
 } from "@/lib/properties";
+
 
 export const Route = createFileRoute("/share/$token")({
   head: () => ({
@@ -117,7 +119,7 @@ function SharePage() {
           <MapPin className="size-4" />
           {p.city}
           {p.phase ? ` — ${p.phase}` : ""}
-          {p.neighborhood ? ` — ${p.neighborhood}` : ""}
+          {p.neighborhood ? ` — ${neighborhoodLabel(p.neighborhood)}` : ""}
         </p>
       </section>
 
