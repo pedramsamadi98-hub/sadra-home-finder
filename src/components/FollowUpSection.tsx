@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   CalendarClock,
   Check,
   Footprints,
@@ -20,9 +22,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { faDateTime } from "@/lib/fa";
+import { fetchProperties, type Property } from "@/lib/properties";
 import {
   createFollowUp,
   deleteFollowUp,
+  dueBucket,
   emptyFollowUp,
   fetchFollowUps,
   FOLLOW_UP_KIND_LABELS,
@@ -38,6 +42,7 @@ import {
   type FollowUpPriority,
   type FollowUpStatus,
 } from "@/lib/follow-ups";
+
 
 export const PRIORITY_TONE: Record<FollowUpPriority, string> = {
   normal: "bg-secondary text-muted-foreground",
