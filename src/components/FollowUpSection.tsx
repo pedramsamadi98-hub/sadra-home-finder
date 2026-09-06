@@ -403,7 +403,9 @@ export function FollowUpSection({
                 </div>
               ) : null}
             </div>
-          ))
+            );
+          })
+
         ) : (
           <EmptyState
             icon={CalendarClock}
