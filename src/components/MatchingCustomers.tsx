@@ -14,7 +14,13 @@ import {
   REQ_OWNERSHIP_LABELS,
   REQ_TRANSACTION_LABELS,
 } from "@/lib/customers";
-import { faDigits } from "@/lib/fa";
+import { faDateTime, faDigits } from "@/lib/fa";
+import {
+  fetchFollowUps,
+  FOLLOW_UP_KIND_LABELS,
+  FOLLOW_UP_STATUS_LABELS,
+  followUpKind,
+} from "@/lib/follow-ups";
 import type { Property } from "@/lib/properties";
 
 /** Customers whose registered needs fit this property file. Admin only. */
@@ -26,6 +32,11 @@ export function MatchingCustomers({ property }: { property: Property }) {
   const { data: requirements } = useQuery({
     queryKey: ["customer_requirements"],
     queryFn: () => fetchRequirements(),
+  });
+  // Follow-ups logged on this property file, to show each customer's last state.
+  const { data: followUps } = useQuery({
+    queryKey: ["follow_ups", property.id, null],
+    queryFn: () => fetchFollowUps({ propertyId: property.id }),
   });
 
   const rows = (customers ?? [])
@@ -82,6 +93,27 @@ export function MatchingCustomers({ property }: { property: Property }) {
               </span>
             </div>
             <MatchChecks checks={result.checks} />
+            {(() => {
+              const last = (followUps ?? [])
+                .filter((item) => item.customer_id === customer.id)
+                .sort(
+                  (a, b) =>
+                    new Date(b.called_at ?? b.created_at).getTime() -
+                    new Date(a.called_at ?? a.created_at).getTime(),
+                )[0];
+              if (!last) return null;
+              return (
+                <p className="rounded-xl bg-secondary/60 px-3 py-2 text-[11px] leading-5 text-muted-foreground">
+                  آخرین پیگیری روی این فایل:{" "}
+                  <span className="font-semibold text-foreground">
+                    {FOLLOW_UP_KIND_LABELS[followUpKind(last.kind)]} —{" "}
+                    {FOLLOW_UP_STATUS_LABELS[last.status]}
+                  </span>{" "}
+                  · {faDateTime(last.called_at ?? last.created_at)}
+                  {last.call_result ? ` · ${last.call_result}` : ""}
+                </p>
+              );
+            })()}
             {customer.phone ? (
               <a
                 href={`tel:${customer.phone}`}
