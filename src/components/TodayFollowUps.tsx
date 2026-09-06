@@ -101,7 +101,7 @@ export function TodayFollowUps({ userId }: { userId: string }) {
         </span>
       </div>
 
-      {!total ? (
+      {!total && !doneToday.length ? (
         <p className="surface-card p-4 text-center text-xs text-muted-foreground">
           پیگیری عقب‌افتاده یا نزدیکی وجود ندارد.
         </p>
