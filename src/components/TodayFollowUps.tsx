@@ -64,6 +64,21 @@ export function TodayFollowUps({ userId }: { userId: string }) {
   const total =
     buckets.overdue.length + buckets.today.length + buckets.tomorrow.length;
 
+  // Finished today, kept in a separate list so it never mixes with open work.
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const doneToday = (followUps ?? [])
+    .filter(
+      (item) =>
+        item.status === "done" &&
+        item.completed_at &&
+        new Date(item.completed_at).getTime() >= startOfToday.getTime(),
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.completed_at ?? 0).getTime() - new Date(a.completed_at ?? 0).getTime(),
+    );
+
   if (isLoading) {
     return (
       <section className="surface-card p-4">
@@ -86,7 +101,7 @@ export function TodayFollowUps({ userId }: { userId: string }) {
         </span>
       </div>
 
-      {!total ? (
+      {!total && !doneToday.length ? (
         <p className="surface-card p-4 text-center text-xs text-muted-foreground">
           پیگیری عقب‌افتاده یا نزدیکی وجود ندارد.
         </p>
@@ -208,6 +223,73 @@ export function TodayFollowUps({ userId }: { userId: string }) {
           </div>
         );
       })}
+
+      {doneToday.length ? (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-success">
+            انجام‌شده امروز ({faDigits(doneToday.length)})
+          </p>
+          {doneToday.map((item) => {
+            const property = properties?.find((p) => p.id === item.property_id) ?? null;
+            const customer = customers?.find((c) => c.id === item.customer_id) ?? null;
+            const KindIcon = KIND_ICONS[followUpKind(item.kind)];
+            const subject = item.notes?.trim() || item.call_result?.trim() || "";
+            return (
+              <div key={item.id} className="surface-card space-y-1.5 p-3 opacity-90">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 space-y-1">
+                    {customer ? (
+                      <Link
+                        to="/customers/$id"
+                        params={{ id: customer.id }}
+                        className="block truncate text-sm font-bold text-primary"
+                      >
+                        {customer.full_name}
+                      </Link>
+                    ) : null}
+                    {property ? (
+                      <Link
+                        to="/listings/$id"
+                        params={{ id: property.id }}
+                        className={`block truncate ${customer ? "text-xs text-muted-foreground" : "text-sm font-bold text-primary"}`}
+                      >
+                        {property.title}
+                      </Link>
+                    ) : null}
+                    {!customer && !property ? (
+                      <span className="text-sm font-bold">پیگیری عمومی</span>
+                    ) : null}
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-medium ${STATUS_TONE.done}`}
+                  >
+                    {FOLLOW_UP_STATUS_LABELS.done}
+                  </span>
+                </div>
+                {subject ? (
+                  <p className="line-clamp-2 text-xs text-foreground/90">{subject}</p>
+                ) : null}
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <KindIcon className="size-3.5" />
+                    {FOLLOW_UP_KIND_LABELS[followUpKind(item.kind)]}
+                  </span>
+                  <span>{faDateTime(item.completed_at)}</span>
+                </div>
+                {customer?.phone ? (
+                  <a
+                    href={`tel:${customer.phone}`}
+                    className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs font-semibold text-primary"
+                  >
+                    <Phone className="size-4" />
+                    <span dir="ltr">{faDigits(customer.phone)}</span>
+                  </a>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
     </section>
   );
 }

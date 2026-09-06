@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
+  AlertTriangle,
   CalendarClock,
   Check,
   Footprints,
@@ -20,9 +22,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { faDateTime } from "@/lib/fa";
+import { fetchProperties, type Property } from "@/lib/properties";
 import {
   createFollowUp,
   deleteFollowUp,
+  dueBucket,
   emptyFollowUp,
   fetchFollowUps,
   FOLLOW_UP_KIND_LABELS,
@@ -38,6 +42,7 @@ import {
   type FollowUpPriority,
   type FollowUpStatus,
 } from "@/lib/follow-ups";
+
 
 export const PRIORITY_TONE: Record<FollowUpPriority, string> = {
   normal: "bg-secondary text-muted-foreground",
@@ -121,6 +126,15 @@ export function FollowUpSection({
     queryKey: ["follow_ups", propertyId ?? null, customerId ?? null],
     queryFn: () => fetchFollowUps(target),
   });
+
+  // Only needed on a customer page, to link each follow-up to its property file.
+  const { data: properties } = useQuery<Property[]>({
+    queryKey: ["properties"],
+    queryFn: fetchProperties,
+    enabled: !!customerId,
+  });
+
+
 
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ["follow_ups"] });
@@ -288,8 +302,24 @@ export function FollowUpSection({
             <Loader2 className="size-5 animate-spin text-primary" />
           </div>
         ) : history.length ? (
-          history.map((item) => (
-            <div key={item.id} className="space-y-2 rounded-xl border border-border p-3">
+          history.map((item) => {
+            const bucket = dueBucket(item);
+            const isOverdue = bucket === "overdue";
+            const isPending = item.status === "pending";
+            const related = item.property_id
+              ? (properties ?? []).find((p) => p.id === item.property_id)
+              : null;
+            return (
+            <div
+              key={item.id}
+              className={`space-y-2 rounded-xl border p-3 ${
+                isOverdue
+                  ? "border-destructive/60 bg-destructive/5"
+                  : isPending
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border"
+              }`}
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <FollowUpKindBadge kind={item.kind} />
                 <span
@@ -302,6 +332,16 @@ export function FollowUpSection({
                 >
                   {FOLLOW_UP_PRIORITY_LABELS[item.priority]}
                 </span>
+                {isOverdue ? (
+                  <span className="flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-0.5 text-[11px] font-bold text-destructive">
+                    <AlertTriangle className="size-3.5" />
+                    عقب‌افتاده
+                  </span>
+                ) : bucket === "today" ? (
+                  <span className="rounded-lg bg-warning/15 px-2 py-0.5 text-[11px] font-bold text-warning">
+                    سررسید امروز
+                  </span>
+                ) : null}
               </div>
               <p className="text-[11px] text-muted-foreground">
                 {FOLLOW_UP_KIND_LABELS[followUpKind(item.kind)]}: {faDateTime(item.called_at)}
@@ -309,6 +349,16 @@ export function FollowUpSection({
               <p className="text-[11px] text-muted-foreground">
                 پیگیری بعدی: {faDateTime(item.next_at)}
               </p>
+              {customerId && related ? (
+                <Link
+                  to="/listings/$id"
+                  params={{ id: related.id }}
+                  className="block truncate text-[11px] font-semibold text-primary"
+                >
+                  فایل مرتبط: {related.title}
+                </Link>
+              ) : null}
+
 
               {item.call_result ? (
                 <p className="text-xs">نتیجه: {item.call_result}</p>
@@ -367,7 +417,9 @@ export function FollowUpSection({
                 </div>
               ) : null}
             </div>
-          ))
+            );
+          })
+
         ) : (
           <EmptyState
             icon={CalendarClock}
