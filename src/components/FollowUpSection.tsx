@@ -288,8 +288,24 @@ export function FollowUpSection({
             <Loader2 className="size-5 animate-spin text-primary" />
           </div>
         ) : history.length ? (
-          history.map((item) => (
-            <div key={item.id} className="space-y-2 rounded-xl border border-border p-3">
+          history.map((item) => {
+            const bucket = dueBucket(item);
+            const isOverdue = bucket === "overdue";
+            const isPending = item.status === "pending";
+            const related = item.property_id
+              ? (properties ?? []).find((p) => p.id === item.property_id)
+              : null;
+            return (
+            <div
+              key={item.id}
+              className={`space-y-2 rounded-xl border p-3 ${
+                isOverdue
+                  ? "border-destructive/60 bg-destructive/5"
+                  : isPending
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border"
+              }`}
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <FollowUpKindBadge kind={item.kind} />
                 <span
@@ -302,6 +318,16 @@ export function FollowUpSection({
                 >
                   {FOLLOW_UP_PRIORITY_LABELS[item.priority]}
                 </span>
+                {isOverdue ? (
+                  <span className="flex items-center gap-1 rounded-lg bg-destructive/15 px-2 py-0.5 text-[11px] font-bold text-destructive">
+                    <AlertTriangle className="size-3.5" />
+                    عقب‌افتاده
+                  </span>
+                ) : bucket === "today" ? (
+                  <span className="rounded-lg bg-warning/15 px-2 py-0.5 text-[11px] font-bold text-warning">
+                    سررسید امروز
+                  </span>
+                ) : null}
               </div>
               <p className="text-[11px] text-muted-foreground">
                 {FOLLOW_UP_KIND_LABELS[followUpKind(item.kind)]}: {faDateTime(item.called_at)}
@@ -309,6 +335,16 @@ export function FollowUpSection({
               <p className="text-[11px] text-muted-foreground">
                 پیگیری بعدی: {faDateTime(item.next_at)}
               </p>
+              {customerId && related ? (
+                <Link
+                  to="/listings/$id"
+                  params={{ id: related.id }}
+                  className="block truncate text-[11px] font-semibold text-primary"
+                >
+                  فایل مرتبط: {related.title}
+                </Link>
+              ) : null}
+
 
               {item.call_result ? (
                 <p className="text-xs">نتیجه: {item.call_result}</p>
