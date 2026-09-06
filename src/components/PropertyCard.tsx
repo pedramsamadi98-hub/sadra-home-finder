@@ -6,12 +6,15 @@ import { PropertyTypeIcon } from "@/lib/property-type-icons";
 import { PhotoThumb } from "@/components/PhotoGallery";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
 import {
+  isLandType,
+  neighborhoodLabel,
   OWNERSHIP_LABELS,
   propertyTypeLabel,
   STATUS_LABELS,
   TRANSACTION_LABELS,
   type Property,
 } from "@/lib/properties";
+
 
 function statusClass(status: Property["status"]) {
   if (status === "active") return "bg-success/15 text-success";
@@ -32,14 +35,19 @@ export function PropertyCard({ property }: { property: Property }) {
     property.storage ? { icon: Package, label: "انباری" } : null,
   ].filter(Boolean) as Array<{ icon: typeof Car; label: string }>;
 
+  // Plot numbers belong to land listings only; a neighborhood is address text,
+  // so the stored «زمین …» zone prefix is dropped here.
   const location = [
     property.city,
     property.phase,
-    property.neighborhood,
-    property.plot_number ? `پلاک ${faDigits(property.plot_number)}` : null,
+    neighborhoodLabel(property.neighborhood),
+    isLandType(property.property_type) && property.plot_number
+      ? `پلاک ${faDigits(property.plot_number)}`
+      : null,
   ]
     .filter(Boolean)
     .join(" — ");
+
 
   return (
     <Link

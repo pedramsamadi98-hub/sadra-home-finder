@@ -171,6 +171,25 @@ const PLOT_TYPES = new Set<string>([
   "presale",
 ]);
 
+/** Usage types that really ARE land — the only ones with land info to show. */
+const LAND_TYPES = new Set<string>([
+  "land",
+  "land_phase_1",
+  "land_phase_2",
+  "apartment_land_phase_1",
+  "apartment_land_phase_2",
+  "zamin_baghshahri",
+]);
+
+/**
+ * True only for real land usage types. Land category / zone / plot must be
+ * decided from this, never from the presence of stored land values or from
+ * address text (a non-land property may sit in a zone named «زمین …»).
+ */
+export function isLandType(propertyType: string | null | undefined): boolean {
+  return Boolean(propertyType) && LAND_TYPES.has(propertyType as string);
+}
+
 export function showsPlotNumber(
   propertyType: string | null | undefined,
   landCategory?: string | null,
@@ -179,6 +198,7 @@ export function showsPlotNumber(
   // باغشهری and other legacy land categories keep their plot field visible.
   return Boolean(landCategory);
 }
+
 
 /** «امتیاز»: multi-unit project share — unit/floor unknown at registration. */
 export function isEmtiazType(propertyType: string | null | undefined): boolean {
@@ -218,6 +238,16 @@ export const PHASES = ["فاز ۱", "فاز ۲", "فاز ۳"];
 function zoneDisplay(label: string): string {
   return label.replace(/^زمین\s+/, "");
 }
+
+/**
+ * Neighborhood labels are stored using the official zone labels (which start
+ * with «زمین …»). That prefix is only meaningful for land listings, so every
+ * display surface strips it — a neighborhood is part of the address.
+ */
+export function neighborhoodLabel(value: string | null | undefined): string {
+  return value ? zoneDisplay(value) : "";
+}
+
 
 function zoneOptions(categoryId: string) {
   return (LAND_CATEGORIES.find((item) => item.id === categoryId)?.zones ?? []).map((zone) => ({
