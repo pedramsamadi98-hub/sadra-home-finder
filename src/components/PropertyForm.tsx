@@ -21,7 +21,9 @@ import {
   CITIES,
   isBaghshahriType,
   isEmtiazType,
+  isLandType,
   isPresaleType,
+
   neighborhoodsForType,
   paymentSteps,
   presaleRemaining,
