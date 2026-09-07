@@ -84,7 +84,15 @@ function Listings() {
 
   const [query, setQuery] = useState(pick("query", ""));
   const [showFilters, setShowFilters] = useState(pick("showFilters", false));
-  const [type, setType] = useState<string>(pick("type", ALL));
+  // Multi-select usage types: an empty list means "همه" (no type restriction).
+  const [types, setTypes] = useState<string[]>(() => {
+    const savedTypes = saved["types"];
+    if (Array.isArray(savedTypes)) return savedTypes.filter((v): v is string => typeof v === "string");
+    const legacy = saved["type"];
+    return typeof legacy === "string" && legacy !== ALL ? [legacy] : [];
+  });
+  const toggleType = (value: string) =>
+    setTypes((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
   const [ownership, setOwnership] = useState<string>(pick("ownership", ALL));
   const [transaction, setTransaction] = useState<string>(pick("transaction", ALL));
   const [status, setStatus] = useState<string>(pick("status", "active"));
