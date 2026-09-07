@@ -220,7 +220,7 @@ function Listings() {
   const view = {
     query,
     showFilters,
-    type,
+    types,
     ownership,
     transaction,
     status,
