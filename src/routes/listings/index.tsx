@@ -163,7 +163,8 @@ function Listings() {
         );
         if (!haystack.includes(q)) return false;
       }
-      if (type !== ALL && item.property_type !== type) return false;
+      // Multi-select: OR across the chosen usage types, AND with every other filter.
+      if (types.length && !types.includes(item.property_type)) return false;
       if (ownership !== ALL && item.ownership_type !== ownership) return false;
       if (transaction !== ALL && item.transaction_type !== transaction) return false;
       if (status !== ALL && item.status !== status) return false;
