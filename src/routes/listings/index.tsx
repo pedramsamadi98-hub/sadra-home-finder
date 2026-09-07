@@ -198,7 +198,7 @@ function Listings() {
     query,
     parsed,
     criteria,
-    type,
+    types,
     ownership,
     transaction,
     status,
