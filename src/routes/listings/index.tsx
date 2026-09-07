@@ -409,12 +409,42 @@ function Listings() {
                 onChange={setOwnership}
                 options={OWNERSHIP_LABELS}
               />
-              <Selector
-                label="کاربری"
-                value={type}
-                onChange={setType}
-                options={ALL_PROPERTY_TYPE_LABELS}
-              />
+              <div className="col-span-2 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">کاربری</Label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {types.length ? `${faDigits(types.length)} مورد انتخاب شده` : "همه"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTypes([])}
+                    className={`h-9 rounded-full border px-3 text-xs font-medium transition-colors ${
+                      types.length
+                        ? "border-border text-muted-foreground"
+                        : "border-primary bg-primary/15 text-primary"
+                    }`}
+                  >
+                    همه
+                  </button>
+                  {Object.entries(ALL_PROPERTY_TYPE_LABELS).map(([key, text]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      aria-pressed={types.includes(key)}
+                      onClick={() => toggleType(key)}
+                      className={`h-9 rounded-full border px-3 text-xs font-medium transition-colors ${
+                        types.includes(key)
+                          ? "border-primary bg-primary/15 text-primary"
+                          : "border-border text-muted-foreground"
+                      }`}
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Selector
                 label="معامله"
                 value={transaction}
