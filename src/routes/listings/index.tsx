@@ -84,7 +84,15 @@ function Listings() {
 
   const [query, setQuery] = useState(pick("query", ""));
   const [showFilters, setShowFilters] = useState(pick("showFilters", false));
-  const [type, setType] = useState<string>(pick("type", ALL));
+  // Multi-select usage types: an empty list means "همه" (no type restriction).
+  const [types, setTypes] = useState<string[]>(() => {
+    const savedTypes = saved["types"];
+    if (Array.isArray(savedTypes)) return savedTypes.filter((v): v is string => typeof v === "string");
+    const legacy = saved["type"];
+    return typeof legacy === "string" && legacy !== ALL ? [legacy] : [];
+  });
+  const toggleType = (value: string) =>
+    setTypes((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
   const [ownership, setOwnership] = useState<string>(pick("ownership", ALL));
   const [transaction, setTransaction] = useState<string>(pick("transaction", ALL));
   const [status, setStatus] = useState<string>(pick("status", "active"));
@@ -155,7 +163,8 @@ function Listings() {
         );
         if (!haystack.includes(q)) return false;
       }
-      if (type !== ALL && item.property_type !== type) return false;
+      // Multi-select: OR across the chosen usage types, AND with every other filter.
+      if (types.length && !types.includes(item.property_type)) return false;
       if (ownership !== ALL && item.ownership_type !== ownership) return false;
       if (transaction !== ALL && item.transaction_type !== transaction) return false;
       if (status !== ALL && item.status !== status) return false;
@@ -189,7 +198,7 @@ function Listings() {
     query,
     parsed,
     criteria,
-    type,
+    types,
     ownership,
     transaction,
     status,
@@ -211,7 +220,7 @@ function Listings() {
   const view = {
     query,
     showFilters,
-    type,
+    types,
     ownership,
     transaction,
     status,
@@ -304,7 +313,7 @@ function Listings() {
 
 
   function reset() {
-    setType(ALL);
+    setTypes([]);
     setOwnership(ALL);
     setTransaction(ALL);
     setStatus(ALL);
@@ -400,12 +409,42 @@ function Listings() {
                 onChange={setOwnership}
                 options={OWNERSHIP_LABELS}
               />
-              <Selector
-                label="کاربری"
-                value={type}
-                onChange={setType}
-                options={ALL_PROPERTY_TYPE_LABELS}
-              />
+              <div className="col-span-2 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">کاربری</Label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {types.length ? `${faDigits(types.length)} مورد انتخاب شده` : "همه"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTypes([])}
+                    className={`h-9 rounded-full border px-3 text-xs font-medium transition-colors ${
+                      types.length
+                        ? "border-border text-muted-foreground"
+                        : "border-primary bg-primary/15 text-primary"
+                    }`}
+                  >
+                    همه
+                  </button>
+                  {Object.entries(ALL_PROPERTY_TYPE_LABELS).map(([key, text]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      aria-pressed={types.includes(key)}
+                      onClick={() => toggleType(key)}
+                      className={`h-9 rounded-full border px-3 text-xs font-medium transition-colors ${
+                        types.includes(key)
+                          ? "border-primary bg-primary/15 text-primary"
+                          : "border-border text-muted-foreground"
+                      }`}
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Selector
                 label="معامله"
                 value={transaction}
