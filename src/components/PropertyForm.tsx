@@ -21,7 +21,9 @@ import {
   CITIES,
   isBaghshahriType,
   isEmtiazType,
+  isLandType,
   isPresaleType,
+
   neighborhoodsForType,
   paymentSteps,
   presaleRemaining,
@@ -203,14 +205,18 @@ export function PropertyForm({
       ]
         .filter(Boolean)
         .join(" ");
-      const detected = detectLand(haystack);
+      // Land info is only meaningful for real land usage types; otherwise an
+      // address like «فاز ۱ پاسارگاد» would be misread as a land zone.
+      const landAllowed = isLandType(form.property_type);
+      const detected = landAllowed ? detectLand(haystack) : null;
 
       setOcrResult({
         ...result,
-        land_category: detected.land_category,
-        land_zone: detected.land_zone,
-        plot_number: result.plot_number ?? detected.plot_number,
+        land_category: detected?.land_category ?? null,
+        land_zone: detected?.land_zone ?? null,
+        plot_number: landAllowed ? (result.plot_number ?? detected?.plot_number ?? null) : null,
       });
+
       setOcrOpen(true);
     } catch (error) {
       console.error(error);
