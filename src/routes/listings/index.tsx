@@ -313,7 +313,7 @@ function Listings() {
 
 
   function reset() {
-    setType(ALL);
+    setTypes([]);
     setOwnership(ALL);
     setTransaction(ALL);
     setStatus(ALL);
