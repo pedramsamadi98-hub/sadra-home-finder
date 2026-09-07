@@ -39,8 +39,11 @@ import {
   deleteProperty,
   fetchPropertyFor,
   isEmtiazType,
+  isLandType,
   isPresaleType,
+  neighborhoodLabel,
   OWNERSHIP_LABELS,
+
   paymentSteps,
   presaleRemaining,
   propertyTypeLabel,
