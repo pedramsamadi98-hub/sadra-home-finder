@@ -104,7 +104,7 @@ export function PrivatePhotoSection({ property }: { property: Property }) {
                 type="button"
                 disabled={busy}
                 onClick={() => removePrivate.mutate(path)}
-                className="absolute end-1 top-1 rounded-md bg-background/90 p-1 text-destructive"
+                 className="absolute end-1 top-1 flex size-10 items-center justify-center rounded-lg bg-background/90 text-destructive shadow-sm"
                 aria-label="حذف تصویر خصوصی"
               >
                 <Trash2 className="size-3.5" />

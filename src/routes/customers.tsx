@@ -129,7 +129,7 @@ function Customers({ userId }: { userId: string }) {
             setOpen((value) => !value);
           }}
           aria-label="افزودن مشتری"
-          className="flex size-9 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 text-primary"
+           className="flex size-10 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 text-primary"
         >
           <Plus className="size-4" />
         </button>
@@ -150,7 +150,7 @@ function Customers({ userId }: { userId: string }) {
               type="button"
               aria-label="پاک کردن جستجو"
               onClick={() => setSearch("")}
-              className="absolute left-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground"
+               className="absolute left-1.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground"
             >
               <X className="size-4" />
             </button>
@@ -191,7 +191,7 @@ function Customers({ userId }: { userId: string }) {
             <h2 className="text-sm font-bold text-primary">
               {editingId ? "ویرایش مشتری" : "مشتری جدید"}
             </h2>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
               <div className="space-y-1.5">
                 <Label className="text-xs">نام و نام خانوادگی</Label>
                 <Input

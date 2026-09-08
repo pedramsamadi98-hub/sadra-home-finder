@@ -72,7 +72,7 @@ function Chips<T extends string>({
             key={key}
             type="button"
             onClick={() => onChange(key)}
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`flex min-h-10 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
               value === key
                 ? "border-primary bg-primary/15 text-primary"
                 : "border-border text-muted-foreground"
@@ -381,7 +381,7 @@ export function PropertyForm({
       </Section>
 
       <Section title="موقعیت">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-xs">شهر</Label>
             <select
@@ -452,7 +452,7 @@ export function PropertyForm({
             </p>
           ) : null}
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-xs">خیابان</Label>
             <Input
@@ -485,7 +485,7 @@ export function PropertyForm({
 
       {isEmtiaz ? (
         <Section title="مبالغ امتیاز">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
             <NumberField
               label="قیمت فروش امتیاز (تومان)"
               value={form.price}
@@ -531,7 +531,7 @@ export function PropertyForm({
             onChange={(next) => set("area", next)}
           />
           {isRent ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
               <NumberField
                 label="رهن / ودیعه (تومان)"
                 value={form.deposit}
@@ -562,8 +562,9 @@ export function PropertyForm({
             <div className="space-y-3">
               {planSteps.map((step, index) => (
                 <div key={index} className="space-y-2 rounded-xl bg-secondary/60 p-3">
-                  <div className="flex items-center gap-2">
-                    <Input
+                   <div className="flex min-w-0 items-center gap-2">
+                     <Input
+                       className="min-w-0"
                       value={step.title}
                       onChange={(event) =>
                         updateStep(index, { title: event.target.value })
@@ -573,13 +574,13 @@ export function PropertyForm({
                     <button
                       type="button"
                       onClick={() => removeStep(index)}
-                      className="rounded-md p-2 text-destructive"
+                       className="flex size-10 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10"
                       aria-label="حذف مرحله"
                     >
                       <Trash2 className="size-4" />
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                   <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
                     <NumberField
                       label="مبلغ (تومان)"
                       value={step.amount}
@@ -624,7 +625,7 @@ export function PropertyForm({
       ) : null}
 
       <Section title="جزئیات ساختمان">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
           <NumberField
             label="خواب"
             value={form.bedrooms}
@@ -741,7 +742,7 @@ export function PropertyForm({
                       form.photos.filter((item) => item !== path),
                     )
                   }
-                  className="absolute end-1 top-1 rounded-md bg-background/85 p-1 text-destructive"
+                   className="absolute end-1 top-1 flex size-10 items-center justify-center rounded-lg bg-background/90 text-destructive shadow-sm"
                   aria-label="حذف عکس"
                 >
                   <Trash2 className="size-3.5" />
@@ -778,7 +779,7 @@ export function PropertyForm({
                         form.private_photos.filter((item) => item !== path),
                       )
                     }
-                    className="absolute end-1 top-1 rounded-md bg-background/85 p-1 text-destructive"
+                     className="absolute end-1 top-1 flex size-10 items-center justify-center rounded-lg bg-background/90 text-destructive shadow-sm"
                     aria-label="حذف تصویر خصوصی"
                   >
                     <Trash2 className="size-3.5" />
@@ -813,7 +814,7 @@ export function PropertyForm({
       </Section>
 
       <Section title="مالک و توضیحات">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-xs">نام مالک</Label>
             <Input
