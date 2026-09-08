@@ -123,12 +123,14 @@ function Dashboard({ userId }: { userId: string }) {
               icon={KeyRound}
               tone="bg-warning/15 text-warning"
             />
-            <StatCard
-              label="بایگانی"
-              value={faDigits(archived.length)}
-              icon={Archive}
-              tone="bg-muted text-muted-foreground"
-            />
+             <div className="col-span-2 sm:col-span-1">
+               <StatCard
+                 label="بایگانی"
+                 value={faDigits(archived.length)}
+                 icon={Archive}
+                 tone="bg-muted text-muted-foreground"
+               />
+             </div>
           </div>
 
           {byType.length ? (

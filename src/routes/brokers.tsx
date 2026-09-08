@@ -139,7 +139,7 @@ function Brokers({ userId }: { userId: string }) {
             setOpen((value) => !value);
           }}
           aria-label="افزودن دلال"
-          className="flex size-9 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 text-primary"
+           className="flex size-10 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 text-primary"
         >
           <Plus className="size-4" />
         </button>
@@ -160,7 +160,7 @@ function Brokers({ userId }: { userId: string }) {
               type="button"
               aria-label="پاک کردن جستجو"
               onClick={() => setSearch("")}
-              className="absolute left-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground"
+               className="absolute left-1.5 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground"
             >
               <X className="size-4" />
             </button>
@@ -290,7 +290,7 @@ function Brokers({ userId }: { userId: string }) {
                       });
                       setOpen(true);
                     }}
-                    className="flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground"
+                     className="flex size-10 items-center justify-center rounded-lg border border-border text-muted-foreground"
                   >
                     <Pencil className="size-3.5" />
                   </button>
@@ -304,7 +304,7 @@ function Brokers({ userId }: { userId: string }) {
                       <button
                         type="button"
                         aria-label="حذف دلال"
-                        className="flex size-9 items-center justify-center rounded-lg border border-border text-destructive"
+                         className="flex size-10 items-center justify-center rounded-lg border border-border text-destructive"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
@@ -322,7 +322,7 @@ function Brokers({ userId }: { userId: string }) {
                   </a>
                 ) : null}
 
-                <div className="flex items-center gap-2 rounded-xl bg-secondary/60 px-3 py-2">
+                 <div className="flex flex-wrap items-center gap-2 rounded-xl bg-secondary/60 px-3 py-2">
                   <span
                     className={`shrink-0 rounded-lg px-2 py-1 text-[10px] font-bold ${FRESHNESS_TONE[state]}`}
                   >
@@ -331,7 +331,7 @@ function Brokers({ userId }: { userId: string }) {
                   <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
                     {days === null
                       ? "آخرین بروزرسانی ثبت نشده"
-                      : `${faDate(broker.last_contact_at)} · ${faRelative(broker.last_contact_at)} · ${faDigits(days)} روز گذشته`}
+                       : `${faRelative(broker.last_contact_at)} · ${faDate(broker.last_contact_at)}`}
                   </span>
                   <PriceUpdateDialog
                     brokerId={broker.id}
@@ -339,7 +339,7 @@ function Brokers({ userId }: { userId: string }) {
                     trigger={
                       <button
                         type="button"
-                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 px-2.5 text-[11px] font-semibold text-primary"
+                         className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-primary/40 px-3 text-[11px] font-semibold text-primary max-[380px]:w-full max-[380px]:justify-center"
                       >
                         <Check className="size-3.5" />
                         ثبت بروزرسانی
@@ -383,12 +383,12 @@ function Brokers({ userId }: { userId: string }) {
                 ) : null}
 
                 <div className="grid grid-cols-2 gap-2">
-                  <Button asChild className="h-10 w-full">
+                   <Button asChild className="h-11 w-full">
                     <Link to="/brokers/$id" params={{ id: broker.id }}>
                       فایل‌های این دلال
                     </Link>
                   </Button>
-                  <Button asChild variant="secondary" className="h-10 w-full">
+                   <Button asChild variant="secondary" className="h-11 w-full">
                     <Link to="/listings/new" search={{ broker: broker.id }}>
                       افزودن فایل
                     </Link>

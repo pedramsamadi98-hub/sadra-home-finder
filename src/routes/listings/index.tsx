@@ -402,14 +402,14 @@ function Listings() {
 
         {showFilters ? (
           <div className="surface-card space-y-3 p-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
               <Selector
                 label="نوع ملک"
                 value={ownership}
                 onChange={setOwnership}
                 options={OWNERSHIP_LABELS}
               />
-              <div className="col-span-2 space-y-1.5">
+              <div className="space-y-1.5 min-[400px]:col-span-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs">کاربری</Label>
                   <span className="text-[11px] text-muted-foreground">
@@ -465,7 +465,7 @@ function Listings() {
                     setPhase(event.target.value);
                     setNeighborhood(ALL);
                   }}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                   className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
                 >
                   <option value={ALL}>همه</option>
                   {PHASES.map((item) => (
@@ -480,7 +480,7 @@ function Listings() {
                 <select
                   value={neighborhood}
                   onChange={(event) => setNeighborhood(event.target.value)}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                   className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
                 >
                   <option value={ALL}>همه</option>
                   {(phase === ALL
@@ -502,7 +502,7 @@ function Listings() {
                     setLandCategoryId(event.target.value);
                     setLandZone(ALL);
                   }}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                   className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
                 >
                   <option value={ALL}>همه</option>
                   {LAND_CATEGORIES.map((item) => (
@@ -518,7 +518,7 @@ function Listings() {
                   value={landZone}
                   onChange={(event) => setLandZone(event.target.value)}
                   disabled={landCategoryId === ALL || !zonesFor(landCategoryId).length}
-                  className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm disabled:opacity-60"
+                   className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm disabled:opacity-60"
                 >
                   <option value={ALL}>همه</option>
                   {(landCategoryId === ALL ? [] : zonesFor(landCategoryId)).map((zone) => (
@@ -534,7 +534,7 @@ function Listings() {
                   <select
                     value={broker}
                     onChange={(event) => setBroker(event.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                     className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
                   >
                     <option value={ALL}>همه</option>
                     <option value="none">بدون دلال</option>
@@ -547,7 +547,7 @@ function Listings() {
                 </div>
               ) : null}
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
               <TextFilter label="حداقل متراژ" value={minArea} onChange={setMinArea} />
               <TextFilter label="حداکثر متراژ" value={maxArea} onChange={setMaxArea} />
             </div>
@@ -568,7 +568,7 @@ function Listings() {
             <button
               type="button"
               onClick={reset}
-              className="w-full rounded-md border border-border py-2 text-xs text-muted-foreground"
+              className="h-11 w-full rounded-lg border border-border text-xs text-muted-foreground"
             >
               پاک کردن فیلترها
             </button>
@@ -647,7 +647,7 @@ function TextFilter({
         inputMode="numeric"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 text-left"
+        className="h-11 text-left"
       />
     </div>
   );
@@ -666,7 +666,7 @@ function ToggleChip({
     <button
       type="button"
       onClick={onToggle}
-      className={`h-10 rounded-xl border text-xs font-medium transition-colors ${
+      className={`h-11 rounded-xl border text-xs font-medium transition-colors ${
         active ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground"
       }`}
     >

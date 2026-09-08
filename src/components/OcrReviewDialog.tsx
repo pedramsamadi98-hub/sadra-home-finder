@@ -175,7 +175,7 @@ export function OcrReviewDialog({
                       type="button"
                       onClick={() => update(row.key, { accepted: true })}
                       aria-label={`تأیید ${row.label}`}
-                      className={`rounded-md p-1.5 ${
+                       className={`flex size-10 items-center justify-center rounded-lg ${
                         row.accepted ? "bg-primary/20 text-primary" : "text-muted-foreground"
                       }`}
                     >
@@ -185,7 +185,7 @@ export function OcrReviewDialog({
                       type="button"
                       onClick={() => update(row.key, { accepted: false })}
                       aria-label={`نادیده گرفتن ${row.label}`}
-                      className={`rounded-md p-1.5 ${
+                       className={`flex size-10 items-center justify-center rounded-lg ${
                         row.accepted ? "text-muted-foreground" : "bg-destructive/15 text-destructive"
                       }`}
                     >

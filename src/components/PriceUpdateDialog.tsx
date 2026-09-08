@@ -54,7 +54,7 @@ export function PriceUpdateDialog({
           </button>
         )}
       </DialogTrigger>
-      <DialogContent dir="rtl" className="max-w-[calc(100%-2rem)] rounded-2xl">
+      <DialogContent dir="rtl" className="max-h-[calc(100dvh-2rem)] rounded-2xl">
         <DialogHeader className="text-start">
           <DialogTitle className="text-base">ثبت بروزرسانی قیمت</DialogTitle>
           <DialogDescription className="text-xs leading-6">
