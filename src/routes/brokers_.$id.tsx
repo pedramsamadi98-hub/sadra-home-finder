@@ -25,6 +25,9 @@ export const Route = createFileRoute("/brokers_/$id")({
       },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    due: search["due"] === true || search["due"] === "true" ? true : undefined,
+  }),
   component: () => <AdminOnly>{() => <BrokerDetail />}</AdminOnly>,
 });
 
