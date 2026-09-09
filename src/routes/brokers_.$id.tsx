@@ -74,6 +74,14 @@ function BrokerDetail() {
       subtitle={broker.agency ?? `${faDigits(files.length)} فایل ملکی`}
     >
       <div className="space-y-4">
+        {fromStale ? (
+          <Button asChild variant="secondary" className="h-11 w-full">
+            <Link to="/brokers" search={{ due: true }}>
+              <ArrowRight className="size-4" />
+              برگشت به دلال‌های نیازمند بروزرسانی
+            </Link>
+          </Button>
+        ) : null}
         <section className="surface-card space-y-3 p-4">
           <div className="flex items-start gap-2">
             <div className="flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
