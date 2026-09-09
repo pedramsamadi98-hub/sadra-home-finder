@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { ArrowRight, Loader2, Phone, Plus, Users } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
