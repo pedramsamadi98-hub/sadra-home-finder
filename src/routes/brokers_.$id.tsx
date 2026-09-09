@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Phone, Plus, Users } from "lucide-react";
+import { ArrowRight, Loader2, Phone, Plus, Users } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { AdminOnly } from "@/components/AdminOnly";
