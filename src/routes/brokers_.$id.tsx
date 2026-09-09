@@ -31,7 +31,7 @@ export const Route = createFileRoute("/brokers_/$id")({
 function BrokerDetail() {
   const { id } = Route.useParams();
   const search = useSearch({ strict: false });
-  const fromStale = search.due === true || search.due === "true";
+  const fromStale = search.due === true;
   const { data: brokers, isLoading: loadingBrokers } = useQuery({
     queryKey: ["brokers"],
     queryFn: fetchBrokers,
