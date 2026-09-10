@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Check, Loader2, Phone, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-import { faDigits, faRelative } from "@/lib/fa";
+import { faDate, faDigits, faRelative } from "@/lib/fa";
 import {
   brokerFreshness,
   daysSinceUpdate,
