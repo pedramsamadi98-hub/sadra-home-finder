@@ -86,7 +86,7 @@ export function StaleBrokers() {
                   <span className="block truncate text-[11px] font-normal text-muted-foreground">
                     {days === null
                       ? "تا امروز تماسی ثبت نشده"
-                      : `آخرین بروزرسانی ${faRelative(broker.last_contact_at)} · ${faDigits(days)} روز`}
+                      : `آخرین بروزرسانی ${faRelative(broker.last_contact_at)} · ${faDate(broker.last_contact_at)}`}
                   </span>
                 </Link>
                 <span
