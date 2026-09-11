@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          broker_default_interval_days: number
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          broker_default_interval_days?: number
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          broker_default_interval_days?: number
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       brokers: {
         Row: {
           agency: string | null
@@ -163,8 +184,25 @@ export type Database = {
         }
         Relationships: []
       }
+      file_code_pool: {
+        Row: {
+          code: number
+          released_at: string
+        }
+        Insert: {
+          code: number
+          released_at?: string
+        }
+        Update: {
+          code?: number
+          released_at?: string
+        }
+        Relationships: []
+      }
       follow_ups: {
         Row: {
+          all_day: boolean
+          broker_id: string | null
           call_result: string | null
           called_at: string | null
           completed_at: string | null
@@ -177,10 +215,13 @@ export type Database = {
           priority: string
           property_id: string | null
           status: string
+          title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          all_day?: boolean
+          broker_id?: string | null
           call_result?: string | null
           called_at?: string | null
           completed_at?: string | null
@@ -193,10 +234,13 @@ export type Database = {
           priority?: string
           property_id?: string | null
           status?: string
+          title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          all_day?: boolean
+          broker_id?: string | null
           call_result?: string | null
           called_at?: string | null
           completed_at?: string | null
@@ -209,10 +253,18 @@ export type Database = {
           priority?: string
           property_id?: string | null
           status?: string
+          title?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "follow_ups_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "follow_ups_customer_id_fkey"
             columns: ["customer_id"]
@@ -306,8 +358,11 @@ export type Database = {
           deposited_amount: number | null
           description: string | null
           elevator: boolean
+          file_code: number | null
           floor: number | null
           id: string
+          initial_date: string | null
+          initial_price: number | null
           land_category: string | null
           land_zone: string | null
           monthly_rent: number | null
@@ -323,6 +378,7 @@ export type Database = {
           photos: string[]
           plot_number: string | null
           price: number | null
+          price_verified_at: string | null
           private_photos: string[]
           property_type: string
           status: string
@@ -334,6 +390,7 @@ export type Database = {
           unit_number: string | null
           updated_at: string
           user_id: string
+          verified_price: number | null
         }
         Insert: {
           address?: string | null
@@ -349,8 +406,11 @@ export type Database = {
           deposited_amount?: number | null
           description?: string | null
           elevator?: boolean
+          file_code?: number | null
           floor?: number | null
           id?: string
+          initial_date?: string | null
+          initial_price?: number | null
           land_category?: string | null
           land_zone?: string | null
           monthly_rent?: number | null
@@ -366,6 +426,7 @@ export type Database = {
           photos?: string[]
           plot_number?: string | null
           price?: number | null
+          price_verified_at?: string | null
           private_photos?: string[]
           property_type?: string
           status?: string
@@ -377,6 +438,7 @@ export type Database = {
           unit_number?: string | null
           updated_at?: string
           user_id: string
+          verified_price?: number | null
         }
         Update: {
           address?: string | null
@@ -392,8 +454,11 @@ export type Database = {
           deposited_amount?: number | null
           description?: string | null
           elevator?: boolean
+          file_code?: number | null
           floor?: number | null
           id?: string
+          initial_date?: string | null
+          initial_price?: number | null
           land_category?: string | null
           land_zone?: string | null
           monthly_rent?: number | null
@@ -409,6 +474,7 @@ export type Database = {
           photos?: string[]
           plot_number?: string | null
           price?: number | null
+          price_verified_at?: string | null
           private_photos?: string[]
           property_type?: string
           status?: string
@@ -420,6 +486,7 @@ export type Database = {
           unit_number?: string | null
           updated_at?: string
           user_id?: string
+          verified_price?: number | null
         }
         Relationships: [
           {
@@ -427,6 +494,62 @@ export type Database = {
             columns: ["broker_id"]
             isOneToOne: false
             referencedRelation: "brokers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_price_events: {
+        Row: {
+          confidence: string | null
+          created_at: string
+          deposit: number | null
+          event_at: string
+          id: string
+          kind: string
+          monthly_rent: number | null
+          note: string | null
+          price: number | null
+          property_id: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: string | null
+          created_at?: string
+          deposit?: number | null
+          event_at?: string
+          id?: string
+          kind?: string
+          monthly_rent?: number | null
+          note?: string | null
+          price?: number | null
+          property_id: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: string | null
+          created_at?: string
+          deposit?: number | null
+          event_at?: string
+          id?: string
+          kind?: string
+          monthly_rent?: number | null
+          note?: string | null
+          price?: number | null
+          property_id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_price_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
             referencedColumns: ["id"]
           },
         ]
@@ -529,8 +652,11 @@ export type Database = {
           deposit: number
           description: string
           elevator: boolean
+          file_code: number
           floor: number
           id: string
+          initial_date: string
+          initial_price: number
           land_category: string
           land_zone: string
           monthly_rent: number
@@ -541,6 +667,7 @@ export type Database = {
           photos: string[]
           plot_number: string
           price: number
+          price_verified_at: string
           property_type: string
           status: string
           storage: boolean
@@ -549,6 +676,7 @@ export type Database = {
           total_floors: number
           transaction_type: string
           updated_at: string
+          verified_price: number
         }[]
       }
     }
