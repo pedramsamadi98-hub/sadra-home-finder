@@ -558,3 +558,171 @@ export async function signedPhotoUrls(paths: string[]): Promise<string[]> {
     .map((item) => item.signedUrl)
     .filter((url): url is string => Boolean(url));
 }
+
+/* ----------------------------- archive scope ----------------------------- */
+
+/** Statuses that mean «the file is no longer being offered». */
+export const ARCHIVE_STATUSES: PropertyStatus[] = ["sold", "rented", "archived"];
+
+export type ArchiveScope = "active" | "both" | "archive";
+
+export const ARCHIVE_SCOPE_LABELS: Record<ArchiveScope, string> = {
+  active: "فقط فعال",
+  both: "فعال + آرشیو",
+  archive: "فقط آرشیو",
+};
+
+export function isArchived(property: Pick<Property, "status">): boolean {
+  return ARCHIVE_STATUSES.includes(property.status);
+}
+
+/** The archive scope combines with every other filter using AND. */
+export function matchesArchiveScope(
+  property: Pick<Property, "status">,
+  scope: ArchiveScope,
+): boolean {
+  if (scope === "both") return true;
+  return scope === "archive" ? isArchived(property) : !isArchived(property);
+}
+
+/** Sends a file to the archive without losing any of its information. */
+export async function archiveProperty(id: string, status: PropertyStatus = "archived") {
+  await updatePropertyStatus(id, status);
+}
+
+export async function restoreProperty(id: string) {
+  await updatePropertyStatus(id, "active");
+}
+
+/* ------------------------------- file code ------------------------------- */
+
+/** Human readable file code, e.g. «فایل ۷۷» — never reveals the file's source. */
+export function fileCodeText(code: number | null | undefined): string {
+  return code === null || code === undefined ? "—" : String(code);
+}
+
+export async function fetchPropertyByCode(code: number): Promise<Property | null> {
+  const { data, error } = await supabase
+    .from("properties")
+    .select("*")
+    .eq("file_code", code)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as unknown as Property) ?? null;
+}
+
+/* ---------------------------- price lifecycle ---------------------------- */
+
+export type PriceEventKind = "price" | "update" | "note";
+export type PriceEventSource = "manual" | "ocr" | "broker";
+
+export interface PriceEvent {
+  id: string;
+  property_id: string;
+  user_id: string;
+  kind: PriceEventKind;
+  price: number | null;
+  deposit: number | null;
+  monthly_rent: number | null;
+  event_at: string;
+  source: PriceEventSource;
+  confidence: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type PriceEventInput = {
+  price?: number | null;
+  deposit?: number | null;
+  monthly_rent?: number | null;
+  event_at?: string | null;
+  source?: PriceEventSource;
+  confidence?: string | null;
+  note?: string | null;
+  kind?: PriceEventKind;
+};
+
+/**
+ * The price a search may treat as current: only a confirmed price counts.
+ * A file whose price was never verified keeps its old value for reference,
+ * but it must never be presented as today's price.
+ */
+export function currentPrice(property: Property): number | null {
+  if (property.verified_price !== null && property.verified_price !== undefined) {
+    return property.verified_price;
+  }
+  return null;
+}
+
+/** Fallback figure for display only («قیمت ثبت‌شده»), clearly labelled in UI. */
+export function referencePrice(property: Property): number | null {
+  return currentPrice(property) ?? property.price ?? property.initial_price ?? null;
+}
+
+/** True when no confirmed price exists — the file needs a price enquiry. */
+export function needsPriceCheck(property: Property): boolean {
+  return currentPrice(property) === null;
+}
+
+export async function fetchPriceEvents(propertyId: string): Promise<PriceEvent[]> {
+  const { data, error } = await supabase
+    .from("property_price_events")
+    .select("*")
+    .eq("property_id", propertyId)
+    .order("event_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as PriceEvent[];
+}
+
+/**
+ * Records one point of a file's price history and — when it is the newest
+ * confirmed price — refreshes the file's current price. The file itself is
+ * never duplicated.
+ */
+export async function addPriceEvent(
+  property: Property,
+  userId: string,
+  input: PriceEventInput,
+) {
+  const eventAt = input.event_at ?? new Date().toISOString();
+  const { error } = await supabase.from("property_price_events").insert({
+    property_id: property.id,
+    user_id: userId,
+    kind: input.kind ?? "price",
+    price: input.price ?? null,
+    deposit: input.deposit ?? null,
+    monthly_rent: input.monthly_rent ?? null,
+    event_at: eventAt,
+    source: input.source ?? "manual",
+    confidence: input.confidence ?? null,
+    note: input.note?.trim() || null,
+  });
+  if (error) throw error;
+
+  const isNewest =
+    !property.price_verified_at ||
+    new Date(eventAt).getTime() >= new Date(property.price_verified_at).getTime();
+  if (input.price !== null && input.price !== undefined && isNewest) {
+    const patch: Record<string, unknown> = {
+      verified_price: input.price,
+      price_verified_at: eventAt,
+      price: input.price,
+    };
+    if (input.deposit !== null && input.deposit !== undefined) patch["deposit"] = input.deposit;
+    if (input.monthly_rent !== null && input.monthly_rent !== undefined) {
+      patch["monthly_rent"] = input.monthly_rent;
+    }
+    if (property.initial_price === null) patch["initial_price"] = input.price;
+    const { error: updateError } = await supabase
+      .from("properties")
+      .update(patch)
+      .eq("id", property.id);
+    if (updateError) throw updateError;
+  }
+}
+
+export async function deletePriceEvent(id: string) {
+  const { error } = await supabase.from("property_price_events").delete().eq("id", id);
+  if (error) throw error;
+}
