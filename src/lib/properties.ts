@@ -122,9 +122,20 @@ export interface Property {
   updated_at: string;
 }
 
+/**
+ * Editable fields. The file code and the price-tracking fields are managed by
+ * the database / the price-history helpers, never written by the form.
+ */
 export type PropertyInput = Omit<
   Property,
-  "id" | "user_id" | "created_at" | "updated_at"
+  | "id"
+  | "user_id"
+  | "created_at"
+  | "updated_at"
+  | "file_code"
+  | "initial_date"
+  | "verified_price"
+  | "price_verified_at"
 >;
 
 /** Selectable usage types in the form (نوع کاربری ملک). */
