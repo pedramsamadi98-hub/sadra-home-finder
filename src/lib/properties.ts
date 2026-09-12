@@ -62,6 +62,16 @@ export interface Property {
   id: string;
   user_id: string | null;
   broker_id: string | null;
+  /** Short unique file number («کد فایل») — searchable, source-neutral. */
+  file_code: number | null;
+  /** When the file first entered the system. */
+  initial_date: string | null;
+  /** The price the file was first registered with. */
+  initial_price: number | null;
+  /** Latest price confirmed with the owner / broker. */
+  verified_price: number | null;
+  /** When `verified_price` was confirmed. */
+  price_verified_at: string | null;
   title: string;
   property_type: PropertyType;
   ownership_type: OwnershipType | null;
