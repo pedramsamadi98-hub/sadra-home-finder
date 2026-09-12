@@ -315,6 +315,7 @@ export const NEIGHBORHOODS = Object.values(NEIGHBORHOODS_BY_PHASE)
 
 export const emptyProperty: PropertyInput = {
   broker_id: null,
+  initial_price: null,
   title: "",
   property_type: "complex",
   ownership_type: null,
