@@ -2,14 +2,23 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type FollowUpStatus = "pending" | "done" | "canceled";
 export type FollowUpPriority = "normal" | "important" | "urgent";
-/** How the contact happened. */
-export type FollowUpKind = "call" | "visit" | "message";
+/**
+ * What the reminder is about. `call` / `visit` / `message` keep the original
+ * customer & file follow-up meaning; `task` is a personal to-do.
+ */
+export type FollowUpKind = "call" | "visit" | "message" | "task";
 
 export interface FollowUp {
   id: string;
   user_id: string;
   property_id: string | null;
   customer_id: string | null;
+  /** Optional link to a broker — reminders can hang off any of the three. */
+  broker_id: string | null;
+  /** Free-text subject, required for reminders that have no linked record. */
+  title: string | null;
+  /** True when only the date matters (no meaningful time of day). */
+  all_day: boolean;
   kind: FollowUpKind;
   called_at: string | null;
   call_result: string | null;
@@ -24,7 +33,15 @@ export interface FollowUp {
 
 export type FollowUpInput = Pick<
   FollowUp,
-  "kind" | "called_at" | "call_result" | "next_at" | "notes" | "status" | "priority"
+  | "kind"
+  | "title"
+  | "all_day"
+  | "called_at"
+  | "call_result"
+  | "next_at"
+  | "notes"
+  | "status"
+  | "priority"
 >;
 
 export const FOLLOW_UP_STATUS_LABELS: Record<FollowUpStatus, string> = {
@@ -43,14 +60,17 @@ export const FOLLOW_UP_KIND_LABELS: Record<FollowUpKind, string> = {
   call: "تماس",
   visit: "مراجعه",
   message: "پیام",
+  task: "کار شخصی",
 };
 
 export function followUpKind(value: string | null | undefined): FollowUpKind {
-  return value === "visit" || value === "message" ? value : "call";
+  return value === "visit" || value === "message" || value === "task" ? value : "call";
 }
 
 export const emptyFollowUp: FollowUpInput = {
   kind: "call",
+  title: "",
+  all_day: false,
   called_at: null,
   call_result: "",
   next_at: null,
@@ -59,11 +79,18 @@ export const emptyFollowUp: FollowUpInput = {
   priority: "normal",
 };
 
+/** A blank general reminder: a dated personal task with a title. */
+export const emptyReminder: FollowUpInput = {
+  ...emptyFollowUp,
+  kind: "task",
+  all_day: true,
+};
 
-/** A follow-up hangs off a property file or off a customer. */
+/** A reminder can hang off a property file, a customer, a broker, or nothing. */
 export interface FollowUpTarget {
   propertyId?: string | null;
   customerId?: string | null;
+  brokerId?: string | null;
 }
 
 export async function fetchFollowUps(target?: FollowUpTarget): Promise<FollowUp[]> {
@@ -73,6 +100,7 @@ export async function fetchFollowUps(target?: FollowUpTarget): Promise<FollowUp[
     .order("created_at", { ascending: false });
   if (target?.propertyId) query = query.eq("property_id", target.propertyId);
   if (target?.customerId) query = query.eq("customer_id", target.customerId);
+  if (target?.brokerId) query = query.eq("broker_id", target.brokerId);
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as unknown as FollowUp[];
@@ -85,11 +113,46 @@ export async function createFollowUp(
 ) {
   const { error } = await supabase.from("follow_ups").insert({
     ...input,
+    title: input.title?.trim() || null,
     property_id: target.propertyId ?? null,
     customer_id: target.customerId ?? null,
+    broker_id: target.brokerId ?? null,
     user_id: userId,
   });
   if (error) throw error;
+}
+
+/** Edits an existing reminder, including which record it points at. */
+export async function updateFollowUp(
+  id: string,
+  input: FollowUpInput,
+  target?: FollowUpTarget,
+) {
+  const { error } = await supabase
+    .from("follow_ups")
+    .update({
+      ...input,
+      title: input.title?.trim() || null,
+      ...(target
+        ? {
+            property_id: target.propertyId ?? null,
+            customer_id: target.customerId ?? null,
+            broker_id: target.brokerId ?? null,
+          }
+        : {}),
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** Display subject for any reminder, whatever it is linked to. */
+export function reminderSubject(item: FollowUp): string {
+  return (
+    item.title?.trim() ||
+    item.call_result?.trim() ||
+    item.notes?.trim() ||
+    FOLLOW_UP_KIND_LABELS[followUpKind(item.kind)]
+  );
 }
 
 export async function completeFollowUp(id: string) {
