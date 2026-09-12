@@ -704,16 +704,18 @@ export async function addPriceEvent(
     !property.price_verified_at ||
     new Date(eventAt).getTime() >= new Date(property.price_verified_at).getTime();
   if (input.price !== null && input.price !== undefined && isNewest) {
-    const patch: Record<string, unknown> = {
+    const patch = {
       verified_price: input.price,
       price_verified_at: eventAt,
       price: input.price,
+      ...(input.deposit !== null && input.deposit !== undefined
+        ? { deposit: input.deposit }
+        : {}),
+      ...(input.monthly_rent !== null && input.monthly_rent !== undefined
+        ? { monthly_rent: input.monthly_rent }
+        : {}),
+      ...(property.initial_price === null ? { initial_price: input.price } : {}),
     };
-    if (input.deposit !== null && input.deposit !== undefined) patch["deposit"] = input.deposit;
-    if (input.monthly_rent !== null && input.monthly_rent !== undefined) {
-      patch["monthly_rent"] = input.monthly_rent;
-    }
-    if (property.initial_price === null) patch["initial_price"] = input.price;
     const { error: updateError } = await supabase
       .from("properties")
       .update(patch)
