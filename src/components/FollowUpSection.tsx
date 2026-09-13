@@ -60,6 +60,7 @@ export const KIND_ICONS: Record<FollowUpKind, LucideIcon> = {
   call: Phone,
   visit: Footprints,
   message: MessageSquare,
+  task: ListTodo,
 };
 
 /** Small labelled badge for the contact channel of a follow-up. */
