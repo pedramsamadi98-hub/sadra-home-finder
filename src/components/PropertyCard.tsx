@@ -63,12 +63,18 @@ export function PropertyCard({
     <Link
       to="/listings/$id"
       params={{ id: property.id }}
+      {...(brokerContext ? { search: { broker: brokerContext } } : {})}
       className="surface-card block p-3 transition-transform active:scale-[0.99]"
     >
       <div className="flex gap-3">
         <PhotoThumb paths={property.photos} alt={property.title} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-1.5">
+            {property.file_code !== null ? (
+              <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
+                {faDigits(property.file_code)}
+              </span>
+            ) : null}
             <h3 className="min-w-0 flex-1 truncate text-sm font-bold">{property.title}</h3>
             {property.ownership_type ? (
               <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning">
@@ -88,6 +94,12 @@ export function PropertyCard({
             </span>{" "}
             {priceText}
           </p>
+          {priceCheck ? (
+            <p className="mt-0.5 text-[11px] font-medium text-warning">
+              نیازمند استعلام قیمت
+            </p>
+          ) : null}
+
 
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1">
