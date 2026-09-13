@@ -7,9 +7,11 @@ import { PhotoThumb } from "@/components/PhotoGallery";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
 import {
   isLandType,
+  needsPriceCheck,
   neighborhoodLabel,
   OWNERSHIP_LABELS,
   propertyTypeLabel,
+  referencePrice,
   STATUS_LABELS,
   TRANSACTION_LABELS,
   type Property,
