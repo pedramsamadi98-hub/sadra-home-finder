@@ -23,11 +23,19 @@ function statusClass(status: Property["status"]) {
   return "bg-primary/15 text-primary";
 }
 
-export function PropertyCard({ property }: { property: Property }) {
+export function PropertyCard({
+  property,
+  /** When the card is shown inside a broker's file list, keep that context. */
+  brokerContext,
+}: {
+  property: Property;
+  brokerContext?: string;
+}) {
   const priceText =
     property.transaction_type === "sale"
-      ? faPrice(property.price)
+      ? faPrice(referencePrice(property))
       : `${faPrice(property.deposit)} رهن • ${faPrice(property.monthly_rent)} اجاره`;
+  const priceCheck = property.transaction_type === "sale" && needsPriceCheck(property);
 
   const amenities = [
     property.parking ? { icon: Car, label: "پارکینگ" } : null,
