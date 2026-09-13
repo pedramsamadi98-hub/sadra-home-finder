@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BrokersRouteImport } from './routes/brokers'
 import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as RemindersRouteImport } from './routes/reminders'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as BrokersIdRouteImport } from './routes/brokers_.$id'
@@ -41,6 +42,11 @@ const BrokersRoute = BrokersRouteImport.update({
 const CustomersRoute = CustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RemindersRoute = RemindersRouteImport.update({
+  id: '/reminders',
+  path: '/reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/brokers': typeof BrokersRoute
   '/customers': typeof CustomersRoute
+  '/reminders': typeof RemindersRoute
   '/reports': typeof ReportsRoute
   '/users': typeof UsersRoute
   '/brokers/$id': typeof BrokersIdRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/brokers': typeof BrokersRoute
   '/customers': typeof CustomersRoute
+  '/reminders': typeof RemindersRoute
   '/reports': typeof ReportsRoute
   '/users': typeof UsersRoute
   '/brokers/$id': typeof BrokersIdRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/brokers': typeof BrokersRoute
   '/customers': typeof CustomersRoute
+  '/reminders': typeof RemindersRoute
   '/reports': typeof ReportsRoute
   '/users': typeof UsersRoute
   '/brokers_/$id': typeof BrokersIdRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/brokers'
     | '/customers'
+    | '/reminders'
     | '/reports'
     | '/users'
     | '/brokers/$id'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/brokers'
     | '/customers'
+    | '/reminders'
     | '/reports'
     | '/users'
     | '/brokers/$id'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/brokers'
     | '/customers'
+    | '/reminders'
     | '/reports'
     | '/users'
     | '/brokers_/$id'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BrokersRoute: typeof BrokersRoute
   CustomersRoute: typeof CustomersRoute
+  RemindersRoute: typeof RemindersRoute
   ReportsRoute: typeof ReportsRoute
   UsersRoute: typeof UsersRoute
   BrokersIdRoute: typeof BrokersIdRoute
@@ -227,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/customers'
       preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reminders': {
+      id: '/reminders'
+      path: '/reminders'
+      fullPath: '/reminders'
+      preLoaderRoute: typeof RemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -300,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BrokersRoute: BrokersRoute,
   CustomersRoute: CustomersRoute,
+  RemindersRoute: RemindersRoute,
   ReportsRoute: ReportsRoute,
   UsersRoute: UsersRoute,
   BrokersIdRoute: BrokersIdRoute,
