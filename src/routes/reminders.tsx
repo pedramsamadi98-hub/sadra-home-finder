@@ -602,14 +602,23 @@ function Reminders({ userId }: { userId: string }) {
                           >
                             <Pencil className="size-4" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmId(item.id)}
-                            aria-label="حذف یادآور"
-                            className="flex size-10 items-center justify-center rounded-xl border border-border text-destructive"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
+                          <ConfirmDialog
+                            trigger={
+                              <button
+                                type="button"
+                                aria-label="حذف یادآور"
+                                className="flex size-10 items-center justify-center rounded-xl border border-border text-destructive"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            }
+                            title="حذف یادآور"
+                            name={reminderSubject(item)}
+                            description="این یادآور برای همیشه حذف می‌شود."
+                            confirmLabel="حذف یادآور"
+                            pending={remove.isPending}
+                            onConfirm={() => remove.mutate(item.id)}
+                          />
                         </div>
                       </li>
                     );
@@ -626,23 +635,12 @@ function Reminders({ userId }: { userId: string }) {
         !groups.upcoming.length &&
         !groups.doneToday.length ? (
           <EmptyState
+            icon={BellRing}
             title="یادآوری ثبت نشده است"
             description="با دکمه بالا یادآور جدید بسازید: پیگیری مشتری، فایل، دلال، تماس یا کار شخصی."
           />
         ) : null}
       </div>
-
-      <ConfirmDialog
-        open={Boolean(confirmId)}
-        onOpenChange={(next) => (next ? null : setConfirmId(null))}
-        title="حذف یادآور"
-        description="این یادآور برای همیشه حذف می‌شود."
-        confirmLabel="حذف یادآور"
-        onConfirm={() => {
-          if (confirmId) remove.mutate(confirmId);
-          setConfirmId(null);
-        }}
-      />
     </AppShell>
   );
 }
