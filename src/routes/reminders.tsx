@@ -136,7 +136,7 @@ function Reminders({ userId }: { userId: string }) {
   const [customerId, setCustomerId] = useState("");
   const [propertyId, setPropertyId] = useState("");
   const [brokerId, setBrokerId] = useState("");
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  
 
   const { data: items, isLoading } = useQuery({
     queryKey: ["follow_ups"],
