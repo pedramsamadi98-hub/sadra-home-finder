@@ -81,6 +81,10 @@ function EditProperty({ userId }: { userId: string }) {
     user_id: _userId,
     created_at: _createdAt,
     updated_at: _updatedAt,
+    file_code: _fileCode,
+    initial_date: _initialDate,
+    verified_price: _verifiedPrice,
+    price_verified_at: _priceVerifiedAt,
     ...initial
   } = property;
 
