@@ -183,6 +183,38 @@ function Brokers({ userId }: { userId: string }) {
           </button>
         </div>
 
+        <section className="surface-card space-y-2 p-4">
+          <Label htmlFor="global-interval" className="text-xs font-bold">
+            پیش‌فرض کلی فاصله بروزرسانی (روز)
+          </Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="global-interval"
+              dir="ltr"
+              inputMode="numeric"
+              className="h-11 flex-1 text-left"
+              value={globalText}
+              onChange={(event) => setGlobalText(enDigits(event.target.value).replace(/\D/g, ""))}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-11 shrink-0"
+              disabled={saveDefault.isPending}
+              onClick={() => saveDefault.mutate()}
+            >
+              {saveDefault.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                "ذخیره پیش‌فرض"
+              )}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            این مقدار برای دلال‌هایی استفاده می‌شود که فاصله اختصاصی ندارند.
+          </p>
+        </section>
+
         {open ? (
           <form
             onSubmit={(event) => {
