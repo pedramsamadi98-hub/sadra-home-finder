@@ -39,6 +39,7 @@ import { useRole } from "@/lib/roles";
 import {
   deleteProperty,
   fetchPropertyFor,
+  isArchived,
   isEmtiazType,
   isLandType,
   isPresaleType,
