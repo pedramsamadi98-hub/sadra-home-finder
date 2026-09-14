@@ -42,6 +42,7 @@ function EditRoute() {
 
 function EditProperty({ userId }: { userId: string }) {
   const { id } = Route.useParams();
+  const { broker } = Route.useSearch();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -56,7 +57,11 @@ function EditProperty({ userId }: { userId: string }) {
       await queryClient.invalidateQueries({ queryKey: ["properties"] });
       await queryClient.invalidateQueries({ queryKey: ["property", id] });
       toast.success("تغییرات ذخیره شد");
-      router.navigate({ to: "/listings/$id", params: { id } });
+      router.navigate({
+        to: "/listings/$id",
+        params: { id },
+        search: broker ? { broker } : {},
+      });
     },
     onError: () => toast.error("ذخیره تغییرات ناموفق بود"),
   });
