@@ -335,6 +335,11 @@ function Brokers({ userId }: { userId: string }) {
                       ? "آخرین بروزرسانی ثبت نشده"
                        : `${faRelative(broker.last_contact_at)} · ${faDate(broker.last_contact_at)}`}
                   </span>
+                  <span className="w-full text-[11px] text-muted-foreground">
+                    فاصله بروزرسانی: هر {faDigits(interval)} روز
+                    {usesGlobalInterval(broker) ? " (پیش‌فرض کلی)" : " (اختصاصی)"}
+                    {dueAt ? ` · سررسید بعدی: ${faDate(dueAt)}` : ""}
+                  </span>
                   <PriceUpdateDialog
                     brokerId={broker.id}
                     brokerName={broker.name}
