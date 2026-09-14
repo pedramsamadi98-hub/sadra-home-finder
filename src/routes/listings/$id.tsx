@@ -57,6 +57,11 @@ import {
 
 
 export const Route = createFileRoute("/listings/$id")({
+  /** Optional broker context so «برگشت» returns to that broker's file list. */
+  validateSearch: (search: Record<string, unknown>): { broker?: string } =>
+    typeof search["broker"] === "string" && search["broker"]
+      ? { broker: search["broker"] }
+      : {},
   head: () => ({
     meta: [
       { title: "جزئیات ملک | املاک صدرا" },
