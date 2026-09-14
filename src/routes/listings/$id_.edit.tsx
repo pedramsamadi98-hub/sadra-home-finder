@@ -9,6 +9,11 @@ import { PropertyForm } from "@/components/PropertyForm";
 import { fetchProperty, updateProperty, type PropertyInput } from "@/lib/properties";
 
 export const Route = createFileRoute("/listings/$id_/edit")({
+  /** Optional broker context so «برگشت» lands on that broker's file list. */
+  validateSearch: (search: Record<string, unknown>): { broker?: string } =>
+    typeof search["broker"] === "string" && search["broker"]
+      ? { broker: search["broker"] }
+      : {},
   head: () => ({
     meta: [
       { title: "ویرایش ملک | املاک صدرا" },
