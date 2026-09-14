@@ -28,6 +28,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { FollowUpSection } from "@/components/FollowUpSection";
 import { MatchingCustomers } from "@/components/MatchingCustomers";
 import { PhotoGallery } from "@/components/PhotoGallery";
+import { PriceHistorySection } from "@/components/PriceHistorySection";
 import { PrivatePhotoSection } from "@/components/PrivatePhotoSection";
 import { ShareSection } from "@/components/ShareSection";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ import { useRole } from "@/lib/roles";
 import {
   deleteProperty,
   fetchPropertyFor,
+  isArchived,
   isEmtiazType,
   isLandType,
   isPresaleType,
@@ -57,6 +59,11 @@ import {
 
 
 export const Route = createFileRoute("/listings/$id")({
+  /** Optional broker context so «برگشت» returns to that broker's file list. */
+  validateSearch: (search: Record<string, unknown>): { broker?: string } =>
+    typeof search["broker"] === "string" && search["broker"]
+      ? { broker: search["broker"] }
+      : {},
   head: () => ({
     meta: [
       { title: "جزئیات ملک | املاک صدرا" },
@@ -104,6 +111,7 @@ function Row({
 
 function Detail({ userId }: { userId: string }) {
   const { id } = Route.useParams();
+  const { broker: brokerContext } = Route.useSearch();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -165,16 +173,23 @@ function Detail({ userId }: { userId: string }) {
   const isOwn = isAdmin && (property.user_id === userId || property.user_id === null);
 
   return (
-    <AppShell title={property.title} subtitle={STATUS_LABELS[property.status]}>
+    <AppShell
+      title={property.title}
+      subtitle={`${property.file_code !== null ? `کد فایل ${faDigits(property.file_code)} • ` : ""}${STATUS_LABELS[property.status]}`}
+    >
       <div className="space-y-4">
         <Button
           type="button"
           variant="secondary"
-          className="h-10 w-full justify-start gap-2"
-          onClick={() => router.navigate({ to: "/listings" })}
+          className="h-11 w-full justify-start gap-2"
+          onClick={() =>
+            brokerContext
+              ? router.navigate({ to: "/brokers/$id", params: { id: brokerContext } })
+              : router.navigate({ to: "/listings" })
+          }
         >
           <ArrowRight className="size-4" />
-          بازگشت به املاک
+          {brokerContext ? "برگشت به فایل‌های همین دلال" : "بازگشت به املاک"}
         </Button>
         <PhotoGallery paths={property.photos} alt={property.title} />
         {isAdmin ? <PrivatePhotoSection property={property} /> : null}
@@ -421,6 +436,10 @@ function Detail({ userId }: { userId: string }) {
         {isAdmin ? <MatchingCustomers property={property} /> : null}
 
         {isAdmin ? (
+          <PriceHistorySection property={property} userId={userId} canEdit={isOwn} />
+        ) : null}
+
+        {isAdmin ? (
           <FollowUpSection propertyId={property.id} userId={userId} canEdit={isOwn} />
         ) : null}
 
@@ -467,13 +486,44 @@ function Detail({ userId }: { userId: string }) {
                 </button>
               ))}
             </div>
+            {isArchived(property) ? (
+              <>
+                <p className="rounded-xl bg-secondary/60 p-3 text-[11px] leading-5 text-muted-foreground">
+                  این فایل بایگانی شده است؛ همه اطلاعات، تصاویر، قیمت‌ها و تاریخچه آن حفظ شده
+                  است.
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="h-11 w-full"
+                  disabled={statusChange.isPending}
+                  onClick={() => statusChange.mutate("active")}
+                >
+                  بازگشت به فایل‌های فعال
+                </Button>
+              </>
+            ) : (
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-11 w-full"
+                disabled={statusChange.isPending}
+                onClick={() => statusChange.mutate("archived")}
+              >
+                انتقال به بایگانی (بدون حذف اطلاعات)
+              </Button>
+            )}
           </section>
         ) : null}
 
         {isOwn ? (
           <div className="flex gap-2">
             <Button asChild className="h-11 flex-1">
-              <Link to="/listings/$id/edit" params={{ id: property.id }}>
+              <Link
+                to="/listings/$id/edit"
+                params={{ id: property.id }}
+                {...(brokerContext ? { search: { broker: brokerContext } } : {})}
+              >
                 ویرایش
               </Link>
             </Button>

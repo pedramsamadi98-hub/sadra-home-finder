@@ -262,8 +262,10 @@ function Brokers({ userId }: { userId: string }) {
         ) : visible.length ? (
           visible.map((broker) => {
             const own = (properties ?? []).filter((item) => item.broker_id === broker.id);
-            const state = brokerFreshness(broker);
+            const state = brokerFreshness(broker, globalDefault);
             const days = daysSinceUpdate(broker);
+            const interval = effectiveInterval(broker, globalDefault);
+            const dueAt = nextDueAt(broker, globalDefault);
             return (
               <section key={broker.id} className="surface-card space-y-3 p-4">
                 <div className="flex items-start gap-2">
@@ -286,7 +288,7 @@ function Brokers({ userId }: { userId: string }) {
                         phone: broker.phone,
                         agency: broker.agency,
                         notes: broker.notes,
-                        update_interval_days: broker.update_interval_days ?? 14,
+                        update_interval_days: broker.update_interval_days ?? 0,
                       });
                       setOpen(true);
                     }}
@@ -332,6 +334,11 @@ function Brokers({ userId }: { userId: string }) {
                     {days === null
                       ? "آخرین بروزرسانی ثبت نشده"
                        : `${faRelative(broker.last_contact_at)} · ${faDate(broker.last_contact_at)}`}
+                  </span>
+                  <span className="w-full text-[11px] text-muted-foreground">
+                    فاصله بروزرسانی: هر {faDigits(interval)} روز
+                    {usesGlobalInterval(broker) ? " (پیش‌فرض کلی)" : " (اختصاصی)"}
+                    {dueAt ? ` · سررسید بعدی: ${faDate(dueAt)}` : ""}
                   </span>
                   <PriceUpdateDialog
                     brokerId={broker.id}

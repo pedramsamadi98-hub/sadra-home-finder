@@ -130,7 +130,11 @@ function BrokerDetail() {
         {files.length ? (
           <div className="space-y-3">
             {files.map((property) => (
-              <PropertyCard key={property.id} property={property} />
+              <PropertyCard
+                key={property.id}
+                property={property}
+                brokerContext={broker.id}
+              />
             ))}
           </div>
         ) : (
