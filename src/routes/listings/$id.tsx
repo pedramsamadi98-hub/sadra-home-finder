@@ -28,6 +28,7 @@ import { AuthGate } from "@/components/AuthGate";
 import { FollowUpSection } from "@/components/FollowUpSection";
 import { MatchingCustomers } from "@/components/MatchingCustomers";
 import { PhotoGallery } from "@/components/PhotoGallery";
+import { PriceHistorySection } from "@/components/PriceHistorySection";
 import { PrivatePhotoSection } from "@/components/PrivatePhotoSection";
 import { ShareSection } from "@/components/ShareSection";
 import { Button } from "@/components/ui/button";
