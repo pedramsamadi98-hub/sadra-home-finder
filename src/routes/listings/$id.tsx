@@ -434,6 +434,10 @@ function Detail({ userId }: { userId: string }) {
         {isAdmin ? <MatchingCustomers property={property} /> : null}
 
         {isAdmin ? (
+          <PriceHistorySection property={property} userId={userId} canEdit={isOwn} />
+        ) : null}
+
+        {isAdmin ? (
           <FollowUpSection propertyId={property.id} userId={userId} canEdit={isOwn} />
         ) : null}
 
