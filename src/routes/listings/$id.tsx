@@ -485,13 +485,44 @@ function Detail({ userId }: { userId: string }) {
                 </button>
               ))}
             </div>
+            {isArchived(property) ? (
+              <>
+                <p className="rounded-xl bg-secondary/60 p-3 text-[11px] leading-5 text-muted-foreground">
+                  این فایل بایگانی شده است؛ همه اطلاعات، تصاویر، قیمت‌ها و تاریخچه آن حفظ شده
+                  است.
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="h-11 w-full"
+                  disabled={statusChange.isPending}
+                  onClick={() => statusChange.mutate("active")}
+                >
+                  بازگشت به فایل‌های فعال
+                </Button>
+              </>
+            ) : (
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-11 w-full"
+                disabled={statusChange.isPending}
+                onClick={() => statusChange.mutate("archived")}
+              >
+                انتقال به بایگانی (بدون حذف اطلاعات)
+              </Button>
+            )}
           </section>
         ) : null}
 
         {isOwn ? (
           <div className="flex gap-2">
             <Button asChild className="h-11 flex-1">
-              <Link to="/listings/$id/edit" params={{ id: property.id }}>
+              <Link
+                to="/listings/$id/edit"
+                params={{ id: property.id }}
+                {...(brokerContext ? { search: { broker: brokerContext } } : {})}
+              >
                 ویرایش
               </Link>
             </Button>
