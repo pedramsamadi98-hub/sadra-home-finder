@@ -288,7 +288,7 @@ function Brokers({ userId }: { userId: string }) {
                         phone: broker.phone,
                         agency: broker.agency,
                         notes: broker.notes,
-                        update_interval_days: broker.update_interval_days ?? 14,
+                        update_interval_days: broker.update_interval_days ?? 0,
                       });
                       setOpen(true);
                     }}
