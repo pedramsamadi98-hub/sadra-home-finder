@@ -262,8 +262,10 @@ function Brokers({ userId }: { userId: string }) {
         ) : visible.length ? (
           visible.map((broker) => {
             const own = (properties ?? []).filter((item) => item.broker_id === broker.id);
-            const state = brokerFreshness(broker);
+            const state = brokerFreshness(broker, globalDefault);
             const days = daysSinceUpdate(broker);
+            const interval = effectiveInterval(broker, globalDefault);
+            const dueAt = nextDueAt(broker, globalDefault);
             return (
               <section key={broker.id} className="surface-card space-y-3 p-4">
                 <div className="flex items-start gap-2">
