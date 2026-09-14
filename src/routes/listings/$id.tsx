@@ -171,16 +171,23 @@ function Detail({ userId }: { userId: string }) {
   const isOwn = isAdmin && (property.user_id === userId || property.user_id === null);
 
   return (
-    <AppShell title={property.title} subtitle={STATUS_LABELS[property.status]}>
+    <AppShell
+      title={property.title}
+      subtitle={`${property.file_code !== null ? `کد فایل ${faDigits(property.file_code)} • ` : ""}${STATUS_LABELS[property.status]}`}
+    >
       <div className="space-y-4">
         <Button
           type="button"
           variant="secondary"
-          className="h-10 w-full justify-start gap-2"
-          onClick={() => router.navigate({ to: "/listings" })}
+          className="h-11 w-full justify-start gap-2"
+          onClick={() =>
+            brokerContext
+              ? router.navigate({ to: "/brokers/$id", params: { id: brokerContext } })
+              : router.navigate({ to: "/listings" })
+          }
         >
           <ArrowRight className="size-4" />
-          بازگشت به املاک
+          {brokerContext ? "برگشت به فایل‌های همین دلال" : "بازگشت به املاک"}
         </Button>
         <PhotoGallery paths={property.photos} alt={property.title} />
         {isAdmin ? <PrivatePhotoSection property={property} /> : null}
