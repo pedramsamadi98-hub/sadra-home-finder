@@ -225,22 +225,27 @@ function Brokers({ userId }: { userId: string }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">فاصله بروزرسانی (روز)</Label>
+              <Label className="text-xs">فاصله بروزرسانی اختصاصی (روز)</Label>
               <Input
                 dir="ltr"
                 inputMode="numeric"
-                className="text-left"
-                value={String(form.update_interval_days ?? 14)}
+                className="h-11 text-left"
+                placeholder={String(globalDefault)}
+                value={
+                  form.update_interval_days ? String(form.update_interval_days) : ""
+                }
                 onChange={(event) =>
                   setForm({
                     ...form,
                     update_interval_days:
-                      Number(enDigits(event.target.value).replace(/\D/g, "")) || 14,
+                      Number(enDigits(event.target.value).replace(/\D/g, "")) || 0,
                   })
                 }
               />
               <p className="text-[11px] text-muted-foreground">
-                اگر بیشتر از این مدت از آخرین تماس بگذرد، دلال در فهرست «نیاز به بروزرسانی» می‌آید.
+                خالی بگذارید تا از پیش‌فرض کلی ({faDigits(globalDefault)} روز) استفاده شود. اگر
+                بیشتر از این مدت از آخرین بروزرسانی بگذرد، دلال در فهرست «نیاز به بروزرسانی»
+                می‌آید.
               </p>
             </div>
             <div className="space-y-1.5">
