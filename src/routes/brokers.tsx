@@ -183,6 +183,38 @@ function Brokers({ userId }: { userId: string }) {
           </button>
         </div>
 
+        <section className="surface-card space-y-2 p-4">
+          <Label htmlFor="global-interval" className="text-xs font-bold">
+            پیش‌فرض کلی فاصله بروزرسانی (روز)
+          </Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="global-interval"
+              dir="ltr"
+              inputMode="numeric"
+              className="h-11 flex-1 text-left"
+              value={globalText}
+              onChange={(event) => setGlobalText(enDigits(event.target.value).replace(/\D/g, ""))}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-11 shrink-0"
+              disabled={saveDefault.isPending}
+              onClick={() => saveDefault.mutate()}
+            >
+              {saveDefault.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                "ذخیره پیش‌فرض"
+              )}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            این مقدار برای دلال‌هایی استفاده می‌شود که فاصله اختصاصی ندارند.
+          </p>
+        </section>
+
         {open ? (
           <form
             onSubmit={(event) => {
@@ -225,22 +257,27 @@ function Brokers({ userId }: { userId: string }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">فاصله بروزرسانی (روز)</Label>
+              <Label className="text-xs">فاصله بروزرسانی اختصاصی (روز)</Label>
               <Input
                 dir="ltr"
                 inputMode="numeric"
-                className="text-left"
-                value={String(form.update_interval_days ?? 14)}
+                className="h-11 text-left"
+                placeholder={String(globalDefault)}
+                value={
+                  form.update_interval_days ? String(form.update_interval_days) : ""
+                }
                 onChange={(event) =>
                   setForm({
                     ...form,
                     update_interval_days:
-                      Number(enDigits(event.target.value).replace(/\D/g, "")) || 14,
+                      Number(enDigits(event.target.value).replace(/\D/g, "")) || 0,
                   })
                 }
               />
               <p className="text-[11px] text-muted-foreground">
-                اگر بیشتر از این مدت از آخرین تماس بگذرد، دلال در فهرست «نیاز به بروزرسانی» می‌آید.
+                خالی بگذارید تا از پیش‌فرض کلی ({faDigits(globalDefault)} روز) استفاده شود. اگر
+                بیشتر از این مدت از آخرین بروزرسانی بگذرد، دلال در فهرست «نیاز به بروزرسانی»
+                می‌آید.
               </p>
             </div>
             <div className="space-y-1.5">
