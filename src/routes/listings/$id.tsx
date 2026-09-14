@@ -109,6 +109,7 @@ function Row({
 
 function Detail({ userId }: { userId: string }) {
   const { id } = Route.useParams();
+  const { broker: brokerContext } = Route.useSearch();
   const router = useRouter();
   const queryClient = useQueryClient();
 
