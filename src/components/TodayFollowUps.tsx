@@ -122,8 +122,13 @@ export function TodayFollowUps({ userId }: { userId: string }) {
               const isOwner = !!property && property.user_id === userId;
               const broker =
                 brokers?.find((b) => b.id === property?.broker_id) ?? null;
+              const linkedBroker = brokers?.find((b) => b.id === item.broker_id) ?? null;
               const KindIcon = KIND_ICONS[followUpKind(item.kind)];
-              const subject = item.notes?.trim() || item.call_result?.trim() || "";
+              const subject =
+                item.title?.trim() ||
+                item.notes?.trim() ||
+                item.call_result?.trim() ||
+                "";
               return (
                 <div
                   key={item.id}
