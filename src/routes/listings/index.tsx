@@ -13,7 +13,11 @@ import { fetchBrokers } from "@/lib/brokers";
 import { enDigits, faDigits, parseNumber } from "@/lib/fa";
 import {
   ALL_PROPERTY_TYPE_LABELS,
+  ARCHIVE_SCOPE_LABELS,
+  currentPrice,
   fetchPropertiesFor,
+  matchesArchiveScope,
+  needsPriceCheck,
   neighborhoodsFor,
   NEIGHBORHOODS,
   PHASES,
@@ -21,6 +25,7 @@ import {
   propertyTypeLabel,
   STATUS_LABELS,
   TRANSACTION_LABELS,
+  type ArchiveScope,
   type Property,
 } from "@/lib/properties";
 import { LAND_CATEGORIES, LAND_CATEGORY_LABELS, zonesFor } from "@/lib/land";
