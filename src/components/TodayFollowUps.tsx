@@ -248,8 +248,10 @@ export function TodayFollowUps({ userId }: { userId: string }) {
           {doneToday.map((item) => {
             const property = properties?.find((p) => p.id === item.property_id) ?? null;
             const customer = customers?.find((c) => c.id === item.customer_id) ?? null;
+            const linkedBroker = brokers?.find((b) => b.id === item.broker_id) ?? null;
             const KindIcon = KIND_ICONS[followUpKind(item.kind)];
-            const subject = item.notes?.trim() || item.call_result?.trim() || "";
+            const subject =
+              item.title?.trim() || item.notes?.trim() || item.call_result?.trim() || "";
             return (
               <div key={item.id} className="surface-card space-y-1.5 p-3 opacity-90">
                 <div className="flex items-start justify-between gap-2">
