@@ -22,6 +22,7 @@ import { useRole } from "@/lib/roles";
 const adminNav = [
   { to: "/", label: "داشبورد", icon: LayoutDashboard },
   { to: "/listings", label: "املاک", icon: List },
+  { to: "/reminders", label: "یادآورها", icon: BellRing },
   { to: "/brokers", label: "دلال‌ها", icon: Users },
   { to: "/customers", label: "مشتری‌ها", icon: UserRound },
   { to: "/reports", label: "آمار", icon: BarChart3 },
