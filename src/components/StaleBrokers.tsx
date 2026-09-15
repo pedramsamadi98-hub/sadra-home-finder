@@ -7,6 +7,7 @@ import { faDate, faDigits, faRelative } from "@/lib/fa";
 import {
   brokerFreshness,
   daysSinceUpdate,
+  DEFAULT_UPDATE_INTERVAL,
   fetchBrokers,
   FRESHNESS_LABELS,
   FRESHNESS_TONE,
@@ -14,6 +15,7 @@ import {
   staleFirst,
   touchBroker,
 } from "@/lib/brokers";
+import { fetchSettings } from "@/lib/settings";
 
 /**
  * Dashboard block that surfaces brokers whose prices / files have not been
