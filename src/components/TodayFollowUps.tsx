@@ -274,8 +274,19 @@ export function TodayFollowUps({ userId }: { userId: string }) {
                         {property.title}
                       </Link>
                     ) : null}
-                    {!customer && !property ? (
-                      <span className="text-sm font-bold">پیگیری عمومی</span>
+                    {linkedBroker ? (
+                      <Link
+                        to="/brokers/$id"
+                        params={{ id: linkedBroker.id }}
+                        className={`block truncate ${customer || property ? "text-xs text-muted-foreground" : "text-sm font-bold text-primary"}`}
+                      >
+                        {linkedBroker.name}
+                      </Link>
+                    ) : null}
+                    {!customer && !property && !linkedBroker ? (
+                      <span className="block truncate text-sm font-bold">
+                        {item.title?.trim() || "یادآور شخصی"}
+                      </span>
                     ) : null}
                   </div>
                   <span
