@@ -13,7 +13,11 @@ import { fetchBrokers } from "@/lib/brokers";
 import { enDigits, faDigits, parseNumber } from "@/lib/fa";
 import {
   ALL_PROPERTY_TYPE_LABELS,
+  ARCHIVE_SCOPE_LABELS,
+  currentPrice,
   fetchPropertiesFor,
+  matchesArchiveScope,
+  needsPriceCheck,
   neighborhoodsFor,
   NEIGHBORHOODS,
   PHASES,
@@ -21,6 +25,7 @@ import {
   propertyTypeLabel,
   STATUS_LABELS,
   TRANSACTION_LABELS,
+  type ArchiveScope,
   type Property,
 } from "@/lib/properties";
 import { LAND_CATEGORIES, LAND_CATEGORY_LABELS, zonesFor } from "@/lib/land";
@@ -96,6 +101,8 @@ function Listings() {
   const [ownership, setOwnership] = useState<string>(pick("ownership", ALL));
   const [transaction, setTransaction] = useState<string>(pick("transaction", ALL));
   const [status, setStatus] = useState<string>(pick("status", "active"));
+  // Archive scope: active files only (default), active + archive, or archive only.
+  const [scope, setScope] = useState<ArchiveScope>(pick("scope", "active" as ArchiveScope));
   const [neighborhood, setNeighborhood] = useState<string>(pick("neighborhood", ALL));
   const [phase, setPhase] = useState<string>(pick("phase", ALL));
   const [landCategoryId, setLandCategoryId] = useState<string>(pick("landCategoryId", ALL));
@@ -134,7 +141,11 @@ function Listings() {
     const priceMax = parseNumber(maxPrice);
     const bedsMin = parseNumber(minBedrooms);
 
+    const codeQuery = /^\d+$/.test(q) ? Number(q) : null;
+
     const filtered = (data ?? []).filter((item) => {
+      if (!matchesArchiveScope(item, scope)) return false;
+      if (codeQuery !== null && item.file_code === codeQuery) return true;
       if (!matchesCriteria(item, criteria)) return false;
       if (q) {
         const haystack = enDigits(
@@ -181,10 +192,22 @@ function Listings() {
       if (areaMin && (item.area ?? 0) < areaMin) return false;
       if (areaMax && (item.area ?? 0) > areaMax) return false;
       if (bedsMin && (item.bedrooms ?? 0) < bedsMin) return false;
-      const priceValue =
-        item.transaction_type === "sale" ? (item.price ?? 0) : (item.deposit ?? 0);
-      if (priceMin && priceValue < priceMin) return false;
-      if (priceMax && priceValue > priceMax) return false;
+      // Price filters run on the confirmed current price. A file whose price was
+      // never re-confirmed stays visible as a «نیازمند استعلام» candidate instead
+      // of being judged by an outdated amount.
+      if (priceMin || priceMax) {
+        if (item.transaction_type === "sale") {
+          if (!needsPriceCheck(item)) {
+            const priceValue = currentPrice(item) ?? 0;
+            if (priceMin && priceValue < priceMin) return false;
+            if (priceMax && priceValue > priceMax) return false;
+          }
+        } else {
+          const priceValue = item.deposit ?? 0;
+          if (priceMin && priceValue < priceMin) return false;
+          if (priceMax && priceValue > priceMax) return false;
+        }
+      }
       return true;
     });
 
@@ -202,6 +225,7 @@ function Listings() {
     ownership,
     transaction,
     status,
+    scope,
     neighborhood,
     phase,
     landCategoryId,
@@ -224,6 +248,7 @@ function Listings() {
     ownership,
     transaction,
     status,
+    scope,
     neighborhood,
     phase,
     landCategoryId,
@@ -317,6 +342,7 @@ function Listings() {
     setOwnership(ALL);
     setTransaction(ALL);
     setStatus(ALL);
+    setScope("active");
     setNeighborhood(ALL);
     setPhase(ALL);
     setLandCategoryId(ALL);
@@ -376,6 +402,23 @@ function Listings() {
           </div>
         ) : null}
 
+
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          {(Object.keys(ARCHIVE_SCOPE_LABELS) as ArchiveScope[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setScope(key)}
+              className={`h-9 shrink-0 rounded-full border px-4 text-xs font-medium transition-colors ${
+                scope === key
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-border text-muted-foreground"
+              }`}
+            >
+              {ARCHIVE_SCOPE_LABELS[key]}
+            </button>
+          ))}
+        </div>
 
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {[

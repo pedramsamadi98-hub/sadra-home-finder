@@ -1,6 +1,7 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import {
   BarChart3,
+  BellRing,
   LayoutDashboard,
   List,
   Moon,
@@ -22,6 +23,7 @@ import { useRole } from "@/lib/roles";
 const adminNav = [
   { to: "/", label: "داشبورد", icon: LayoutDashboard },
   { to: "/listings", label: "املاک", icon: List },
+  { to: "/reminders", label: "یادآورها", icon: BellRing },
   { to: "/brokers", label: "دلال‌ها", icon: Users },
   { to: "/customers", label: "مشتری‌ها", icon: UserRound },
   { to: "/reports", label: "آمار", icon: BarChart3 },
@@ -108,13 +110,13 @@ export function AppShell({
       <main className="mx-auto w-full max-w-3xl px-4 py-4">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-3xl items-stretch justify-around px-2 py-2">
+        <div className="mx-auto flex max-w-3xl items-stretch justify-around gap-1 overflow-x-auto px-2 py-2">
           {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               activeOptions={{ exact: item.to === "/" }}
-              className="flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-xs text-muted-foreground transition-colors"
+              className="flex min-w-[58px] flex-1 shrink-0 flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-muted-foreground transition-colors"
               activeProps={{ className: "!text-primary bg-primary/10 font-semibold" }}
             >
               <item.icon className="size-5" />

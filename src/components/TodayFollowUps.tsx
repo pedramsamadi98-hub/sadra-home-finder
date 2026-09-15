@@ -122,8 +122,13 @@ export function TodayFollowUps({ userId }: { userId: string }) {
               const isOwner = !!property && property.user_id === userId;
               const broker =
                 brokers?.find((b) => b.id === property?.broker_id) ?? null;
+              const linkedBroker = brokers?.find((b) => b.id === item.broker_id) ?? null;
               const KindIcon = KIND_ICONS[followUpKind(item.kind)];
-              const subject = item.notes?.trim() || item.call_result?.trim() || "";
+              const subject =
+                item.title?.trim() ||
+                item.notes?.trim() ||
+                item.call_result?.trim() ||
+                "";
               return (
                 <div
                   key={item.id}
@@ -149,8 +154,19 @@ export function TodayFollowUps({ userId }: { userId: string }) {
                           {property.title}
                         </Link>
                       ) : null}
-                      {!customer && !property ? (
-                        <span className="text-sm font-bold">پیگیری عمومی</span>
+                      {linkedBroker ? (
+                        <Link
+                          to="/brokers/$id"
+                          params={{ id: linkedBroker.id }}
+                          className={`block truncate ${customer || property ? "text-xs text-muted-foreground" : "text-sm font-bold text-primary"}`}
+                        >
+                          {linkedBroker.name}
+                        </Link>
+                      ) : null}
+                      {!customer && !property && !linkedBroker ? (
+                        <span className="block truncate text-sm font-bold">
+                          {item.title?.trim() || "یادآور شخصی"}
+                        </span>
                       ) : null}
                     </div>
                     <span
@@ -232,8 +248,10 @@ export function TodayFollowUps({ userId }: { userId: string }) {
           {doneToday.map((item) => {
             const property = properties?.find((p) => p.id === item.property_id) ?? null;
             const customer = customers?.find((c) => c.id === item.customer_id) ?? null;
+            const linkedBroker = brokers?.find((b) => b.id === item.broker_id) ?? null;
             const KindIcon = KIND_ICONS[followUpKind(item.kind)];
-            const subject = item.notes?.trim() || item.call_result?.trim() || "";
+            const subject =
+              item.title?.trim() || item.notes?.trim() || item.call_result?.trim() || "";
             return (
               <div key={item.id} className="surface-card space-y-1.5 p-3 opacity-90">
                 <div className="flex items-start justify-between gap-2">
@@ -256,8 +274,19 @@ export function TodayFollowUps({ userId }: { userId: string }) {
                         {property.title}
                       </Link>
                     ) : null}
-                    {!customer && !property ? (
-                      <span className="text-sm font-bold">پیگیری عمومی</span>
+                    {linkedBroker ? (
+                      <Link
+                        to="/brokers/$id"
+                        params={{ id: linkedBroker.id }}
+                        className={`block truncate ${customer || property ? "text-xs text-muted-foreground" : "text-sm font-bold text-primary"}`}
+                      >
+                        {linkedBroker.name}
+                      </Link>
+                    ) : null}
+                    {!customer && !property && !linkedBroker ? (
+                      <span className="block truncate text-sm font-bold">
+                        {item.title?.trim() || "یادآور شخصی"}
+                      </span>
                     ) : null}
                   </div>
                   <span

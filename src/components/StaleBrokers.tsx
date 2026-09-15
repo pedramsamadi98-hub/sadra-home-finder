@@ -7,6 +7,7 @@ import { faDate, faDigits, faRelative } from "@/lib/fa";
 import {
   brokerFreshness,
   daysSinceUpdate,
+  DEFAULT_UPDATE_INTERVAL,
   fetchBrokers,
   FRESHNESS_LABELS,
   FRESHNESS_TONE,
@@ -14,17 +15,24 @@ import {
   staleFirst,
   touchBroker,
 } from "@/lib/brokers";
+import { fetchSettings } from "@/lib/settings";
 
 /**
  * Dashboard block that surfaces brokers whose prices / files have not been
  * refreshed recently, so no broker is ever forgotten.
  */
-export function StaleBrokers() {
+export function StaleBrokers({ userId }: { userId?: string }) {
   const queryClient = useQueryClient();
   const { data: brokers, isLoading } = useQuery({
     queryKey: ["brokers"],
     queryFn: fetchBrokers,
   });
+  const { data: settings } = useQuery({
+    queryKey: ["app_settings", userId],
+    queryFn: () => fetchSettings(userId as string),
+    enabled: Boolean(userId),
+  });
+  const globalDefault = settings?.broker_default_interval_days ?? DEFAULT_UPDATE_INTERVAL;
 
   const touch = useMutation({
     mutationFn: (id: string) => touchBroker(id),
@@ -38,7 +46,9 @@ export function StaleBrokers() {
   if (isLoading) return null;
 
   const all = brokers ?? [];
-  const stale = all.filter(needsUpdate).sort(staleFirst);
+  const stale = all
+    .filter((broker) => needsUpdate(broker, globalDefault))
+    .sort((a, b) => staleFirst(a, b, globalDefault));
   if (!stale.length) {
     if (!all.length) return null;
     return (
@@ -71,7 +81,7 @@ export function StaleBrokers() {
 
       <ul className="space-y-2">
         {stale.slice(0, 5).map((broker) => {
-          const state = brokerFreshness(broker);
+          const state = brokerFreshness(broker, globalDefault);
           const days = daysSinceUpdate(broker);
           return (
             <li key={broker.id} className="rounded-xl bg-secondary/60 p-3">

@@ -28,18 +28,23 @@ import {
   brokerFreshness,
   createBroker,
   daysSinceUpdate,
+  DEFAULT_UPDATE_INTERVAL,
   deleteBroker,
+  effectiveInterval,
   emptyBroker,
   fetchBrokers,
   FRESHNESS_LABELS,
   FRESHNESS_TONE,
   needsUpdate,
+  nextDueAt,
   staleFirst,
   updateBroker,
+  usesGlobalInterval,
   type BrokerInput,
 } from "@/lib/brokers";
 import { enDigits, faDate, faDigits, faRelative } from "@/lib/fa";
 import { fetchProperties, STATUS_LABELS, type PropertyStatus } from "@/lib/properties";
+import { fetchSettings, setBrokerDefaultInterval } from "@/lib/settings";
 
 export const Route = createFileRoute("/brokers")({
   head: () => ({
@@ -83,11 +88,30 @@ function Brokers({ userId }: { userId: string }) {
     queryKey: ["properties"],
     queryFn: fetchProperties,
   });
+  const { data: settings } = useQuery({
+    queryKey: ["app_settings", userId],
+    queryFn: () => fetchSettings(userId),
+  });
+
+  const globalDefault = settings?.broker_default_interval_days ?? DEFAULT_UPDATE_INTERVAL;
+  const [globalText, setGlobalText] = useState("");
+  const globalValue = globalText === "" ? String(globalDefault) : globalText;
+
+  const saveDefault = useMutation({
+    mutationFn: () =>
+      setBrokerDefaultInterval(userId, Number(globalValue) || DEFAULT_UPDATE_INTERVAL),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["app_settings", userId] });
+      setGlobalText("");
+      toast.success("پیش‌فرض فاصله بروزرسانی ذخیره شد");
+    },
+    onError: () => toast.error("ذخیره پیش‌فرض ناموفق بود"),
+  });
 
   const query = enDigits(search).trim().toLowerCase();
-  const dueCount = (brokers ?? []).filter(needsUpdate).length;
+  const dueCount = (brokers ?? []).filter((broker) => needsUpdate(broker, globalDefault)).length;
   const filtered = (brokers ?? []).filter((broker) => {
-    if (onlyDue && !needsUpdate(broker)) return false;
+    if (onlyDue && !needsUpdate(broker, globalDefault)) return false;
     if (!query) return true;
     const haystack = [broker.name, broker.agency, broker.notes, broker.phone, enDigits(broker.phone ?? "")]
       .filter(Boolean)
@@ -95,7 +119,7 @@ function Brokers({ userId }: { userId: string }) {
       .toLowerCase();
     return query.split(/\s+/).every((token) => haystack.includes(token));
   });
-  const visible = [...filtered].sort(staleFirst);
+  const visible = [...filtered].sort((a, b) => staleFirst(a, b, globalDefault));
 
   function invalidate() {
     return Promise.all([
@@ -193,7 +217,7 @@ function Brokers({ userId }: { userId: string }) {
               dir="ltr"
               inputMode="numeric"
               className="h-11 flex-1 text-left"
-              value={globalText}
+              value={globalValue}
               onChange={(event) => setGlobalText(enDigits(event.target.value).replace(/\D/g, ""))}
             />
             <Button
