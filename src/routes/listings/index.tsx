@@ -248,6 +248,7 @@ function Listings() {
     ownership,
     transaction,
     status,
+    scope,
     neighborhood,
     phase,
     landCategoryId,
