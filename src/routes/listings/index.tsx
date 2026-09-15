@@ -181,10 +181,22 @@ function Listings() {
       if (areaMin && (item.area ?? 0) < areaMin) return false;
       if (areaMax && (item.area ?? 0) > areaMax) return false;
       if (bedsMin && (item.bedrooms ?? 0) < bedsMin) return false;
-      const priceValue =
-        item.transaction_type === "sale" ? (item.price ?? 0) : (item.deposit ?? 0);
-      if (priceMin && priceValue < priceMin) return false;
-      if (priceMax && priceValue > priceMax) return false;
+      // Price filters run on the confirmed current price. A file whose price was
+      // never re-confirmed stays visible as a «نیازمند استعلام» candidate instead
+      // of being judged by an outdated amount.
+      if (priceMin || priceMax) {
+        if (item.transaction_type === "sale") {
+          if (!needsPriceCheck(item)) {
+            const priceValue = currentPrice(item) ?? 0;
+            if (priceMin && priceValue < priceMin) return false;
+            if (priceMax && priceValue > priceMax) return false;
+          }
+        } else {
+          const priceValue = item.deposit ?? 0;
+          if (priceMin && priceValue < priceMin) return false;
+          if (priceMax && priceValue > priceMax) return false;
+        }
+      }
       return true;
     });
 
