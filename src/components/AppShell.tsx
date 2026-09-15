@@ -1,6 +1,7 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import {
   BarChart3,
+  BellRing,
   LayoutDashboard,
   List,
   Moon,
