@@ -81,7 +81,7 @@ export function StaleBrokers({ userId }: { userId?: string }) {
 
       <ul className="space-y-2">
         {stale.slice(0, 5).map((broker) => {
-          const state = brokerFreshness(broker);
+          const state = brokerFreshness(broker, globalDefault);
           const days = daysSinceUpdate(broker);
           return (
             <li key={broker.id} className="rounded-xl bg-secondary/60 p-3">
