@@ -217,7 +217,7 @@ function Brokers({ userId }: { userId: string }) {
               dir="ltr"
               inputMode="numeric"
               className="h-11 flex-1 text-left"
-              value={globalText}
+              value={globalValue}
               onChange={(event) => setGlobalText(enDigits(event.target.value).replace(/\D/g, ""))}
             />
             <Button
