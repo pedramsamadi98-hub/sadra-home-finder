@@ -404,6 +404,23 @@ function Listings() {
 
 
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          {(Object.keys(ARCHIVE_SCOPE_LABELS) as ArchiveScope[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setScope(key)}
+              className={`h-9 shrink-0 rounded-full border px-4 text-xs font-medium transition-colors ${
+                scope === key
+                  ? "border-primary bg-primary/15 text-primary"
+                  : "border-border text-muted-foreground"
+              }`}
+            >
+              {ARCHIVE_SCOPE_LABELS[key]}
+            </button>
+          ))}
+        </div>
+
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {[
             { key: "active", label: "فعال" },
             { key: "sold", label: "فروش رفته" },
