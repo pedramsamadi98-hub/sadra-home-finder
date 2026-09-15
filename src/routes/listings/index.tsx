@@ -342,6 +342,7 @@ function Listings() {
     setOwnership(ALL);
     setTransaction(ALL);
     setStatus(ALL);
+    setScope("active");
     setNeighborhood(ALL);
     setPhase(ALL);
     setLandCategoryId(ALL);
