@@ -96,6 +96,8 @@ function Listings() {
   const [ownership, setOwnership] = useState<string>(pick("ownership", ALL));
   const [transaction, setTransaction] = useState<string>(pick("transaction", ALL));
   const [status, setStatus] = useState<string>(pick("status", "active"));
+  // Archive scope: active files only (default), active + archive, or archive only.
+  const [scope, setScope] = useState<ArchiveScope>(pick("scope", "active" as ArchiveScope));
   const [neighborhood, setNeighborhood] = useState<string>(pick("neighborhood", ALL));
   const [phase, setPhase] = useState<string>(pick("phase", ALL));
   const [landCategoryId, setLandCategoryId] = useState<string>(pick("landCategoryId", ALL));
