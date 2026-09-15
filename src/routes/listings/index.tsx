@@ -134,7 +134,11 @@ function Listings() {
     const priceMax = parseNumber(maxPrice);
     const bedsMin = parseNumber(minBedrooms);
 
+    const codeQuery = /^\d+$/.test(q) ? Number(q) : null;
+
     const filtered = (data ?? []).filter((item) => {
+      if (!matchesArchiveScope(item, scope)) return false;
+      if (codeQuery !== null && item.file_code === codeQuery) return true;
       if (!matchesCriteria(item, criteria)) return false;
       if (q) {
         const haystack = enDigits(
