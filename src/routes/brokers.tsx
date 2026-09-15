@@ -28,18 +28,23 @@ import {
   brokerFreshness,
   createBroker,
   daysSinceUpdate,
+  DEFAULT_UPDATE_INTERVAL,
   deleteBroker,
+  effectiveInterval,
   emptyBroker,
   fetchBrokers,
   FRESHNESS_LABELS,
   FRESHNESS_TONE,
   needsUpdate,
+  nextDueAt,
   staleFirst,
   updateBroker,
+  usesGlobalInterval,
   type BrokerInput,
 } from "@/lib/brokers";
 import { enDigits, faDate, faDigits, faRelative } from "@/lib/fa";
 import { fetchProperties, STATUS_LABELS, type PropertyStatus } from "@/lib/properties";
+import { fetchSettings, setBrokerDefaultInterval } from "@/lib/settings";
 
 export const Route = createFileRoute("/brokers")({
   head: () => ({
