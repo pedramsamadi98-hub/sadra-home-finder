@@ -184,7 +184,7 @@ function Dashboard({ userId }: { userId: string }) {
             </Link>
           ) : null}
 
-          {isAdmin ? <StaleBrokers /> : null}
+          {isAdmin ? <StaleBrokers userId={userId} /> : null}
 
 
           <section className="space-y-3">
