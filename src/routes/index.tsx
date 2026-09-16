@@ -161,6 +161,29 @@ function Dashboard({ userId }: { userId: string }) {
             </section>
           ) : null}
 
+          {isAdmin ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                to="/listings/new"
+                className="surface-card flex items-center gap-2 p-3 text-sm font-semibold"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Plus className="size-4" />
+                </span>
+                <span className="truncate">ثبت ملک</span>
+              </Link>
+              <Link
+                to="/users"
+                className="surface-card flex items-center gap-2 p-3 text-sm font-semibold"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <ShieldCheck className="size-4" />
+                </span>
+                <span className="truncate">همکارها</span>
+              </Link>
+            </div>
+          ) : null}
+
           {isAdmin ? <TodayFollowUps userId={userId} /> : null}
 
           {isAdmin ? (
