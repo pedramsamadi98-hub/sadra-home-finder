@@ -281,8 +281,10 @@ export function PropertyForm({
     if (matchExisting && scanned && !matchDone) {
       setMatching(true);
       try {
-        const found = await findOcrCandidates(formToOcrResult(form, ocrResult));
+        const merged = formToOcrResult(form, ocrResult);
+        const found = await findOcrCandidates(merged);
         if (found.length) {
+          setMatchResult(merged);
           setCandidates(found);
           setMatchOpen(true);
           return;
@@ -895,15 +897,20 @@ export function PropertyForm({
 
       <OcrMatchDialog
         open={matchOpen}
-        result={ocrResult}
+        result={matchResult ?? ocrResult}
         candidates={candidates}
         userId={userId}
         onOpenChange={setMatchOpen}
         onLinked={(id) => {
+          setMatchDone(true);
           void queryClient.invalidateQueries({ queryKey: ["properties"] });
           void navigate({ to: "/listings/$id", params: { id }, search: {} });
         }}
-        onCreateNew={() => setOcrOpen(true)}
+        onCreateNew={() => {
+          // «ثبت به‌عنوان فایل جدید» — continue the normal create flow.
+          setMatchDone(true);
+          onSubmit(form);
+        }}
       />
 
       <OcrReviewDialog
