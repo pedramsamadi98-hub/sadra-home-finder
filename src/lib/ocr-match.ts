@@ -171,6 +171,30 @@ export async function findOcrCandidates(result: OcrResult): Promise<OcrCandidate
     );
   }
 
+  // 6) Street / address text — a sheet often names only the street.
+  const street = norm(result.street) || norm(result.address).split(" ").slice(0, 3).join(" ");
+  if (street.length >= 3) {
+    await collect(() =>
+      supabase
+        .from("properties")
+        .select("*")
+        .or(`street.ilike.%${street}%,address.ilike.%${street}%,title.ilike.%${street}%`)
+        .limit(CANDIDATE_LIMIT),
+    );
+  }
+
+  // 7) Area alone (±2%) — narrow and indexed, catches sheets with no location text.
+  if (result.area) {
+    await collect(() =>
+      supabase
+        .from("properties")
+        .select("*")
+        .gte("area", Math.floor(result.area! * 0.98))
+        .lte("area", Math.ceil(result.area! * 1.02))
+        .limit(CANDIDATE_LIMIT),
+    );
+  }
+
   const scored = [...found.values()]
     .map((property) => score(property, result))
     .filter((item) => item.score >= 3)
