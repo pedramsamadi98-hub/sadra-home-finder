@@ -20,6 +20,7 @@ import { Route as BrokersIdRouteImport } from './routes/brokers_.$id'
 import { Route as CustomersIdRouteImport } from './routes/customers_.$id'
 import { Route as ListingsIndexRouteImport } from './routes/listings/index'
 import { Route as ListingsIdRouteImport } from './routes/listings/$id'
+import { Route as ListingsBatchRouteImport } from './routes/listings/batch'
 import { Route as ListingsNewRouteImport } from './routes/listings/new'
 import { Route as ShareTokenRouteImport } from './routes/share/$token'
 import { Route as ListingsIdEditRouteImport } from './routes/listings/$id_.edit'
@@ -79,6 +80,11 @@ const ListingsIdRoute = ListingsIdRouteImport.update({
   path: '/listings/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ListingsBatchRoute = ListingsBatchRouteImport.update({
+  id: '/listings/batch',
+  path: '/listings/batch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ListingsNewRoute = ListingsNewRouteImport.update({
   id: '/listings/new',
   path: '/listings/new',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/brokers/$id': typeof BrokersIdRoute
   '/customers/$id': typeof CustomersIdRoute
   '/listings/$id': typeof ListingsIdRoute
+  '/listings/batch': typeof ListingsBatchRoute
   '/listings/new': typeof ListingsNewRoute
   '/share/$token': typeof ShareTokenRoute
   '/listings/': typeof ListingsIndexRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/brokers/$id': typeof BrokersIdRoute
   '/customers/$id': typeof CustomersIdRoute
   '/listings/$id': typeof ListingsIdRoute
+  '/listings/batch': typeof ListingsBatchRoute
   '/listings/new': typeof ListingsNewRoute
   '/share/$token': typeof ShareTokenRoute
   '/listings': typeof ListingsIndexRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/brokers_/$id': typeof BrokersIdRoute
   '/customers_/$id': typeof CustomersIdRoute
   '/listings/$id': typeof ListingsIdRoute
+  '/listings/batch': typeof ListingsBatchRoute
   '/listings/new': typeof ListingsNewRoute
   '/share/$token': typeof ShareTokenRoute
   '/listings/': typeof ListingsIndexRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/brokers/$id'
     | '/customers/$id'
     | '/listings/$id'
+    | '/listings/batch'
     | '/listings/new'
     | '/share/$token'
     | '/listings/'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/brokers/$id'
     | '/customers/$id'
     | '/listings/$id'
+    | '/listings/batch'
     | '/listings/new'
     | '/share/$token'
     | '/listings'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/brokers_/$id'
     | '/customers_/$id'
     | '/listings/$id'
+    | '/listings/batch'
     | '/listings/new'
     | '/share/$token'
     | '/listings/'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   BrokersIdRoute: typeof BrokersIdRoute
   CustomersIdRoute: typeof CustomersIdRoute
   ListingsIdRoute: typeof ListingsIdRoute
+  ListingsBatchRoute: typeof ListingsBatchRoute
   ListingsNewRoute: typeof ListingsNewRoute
   ShareTokenRoute: typeof ShareTokenRoute
   ListingsIndexRoute: typeof ListingsIndexRoute
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/listings/batch': {
+      id: '/listings/batch'
+      path: '/listings/batch'
+      fullPath: '/listings/batch'
+      preLoaderRoute: typeof ListingsBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/listings/new': {
       id: '/listings/new'
       path: '/listings/new'
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrokersIdRoute: BrokersIdRoute,
   CustomersIdRoute: CustomersIdRoute,
   ListingsIdRoute: ListingsIdRoute,
+  ListingsBatchRoute: ListingsBatchRoute,
   ListingsNewRoute: ListingsNewRoute,
   ShareTokenRoute: ShareTokenRoute,
   ListingsIndexRoute: ListingsIndexRoute,
