@@ -83,9 +83,9 @@ export const runBulkImportWorker = createServerFn({ method: "POST" })
     });
     if (claimError) throw new Error(claimError.message);
 
-    const items = (claimed ?? []).filter(
-      (item) => !data.batchId || item.batch_id === data.batchId,
-    );
+    // The claim is global and oldest-first, so every claimed item is processed
+    // here; filtering by batch would leave older items leased and idle.
+    const items = claimed ?? [];
     report.claimed = items.length;
     if (!items.length) {
       report.idle = true;
@@ -116,7 +116,18 @@ export const runBulkImportWorker = createServerFn({ method: "POST" })
         for (let i = 0; i < bytes.length; i += 8192) {
           binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
         }
-        const dataUrl = `data:${file.type || "image/jpeg"};base64,${btoa(binary)}`;
+        // Storage can hand back application/octet-stream; the AI gateway needs a
+        // real image mime type, so derive it from the stored file extension.
+        const ext = (item.storage_path!.split(".").pop() ?? "jpg").toLowerCase();
+        const mime =
+          file.type && file.type.startsWith("image/")
+            ? file.type
+            : ext === "png"
+              ? "image/png"
+              : ext === "webp"
+                ? "image/webp"
+                : "image/jpeg";
+        const dataUrl = `data:${mime};base64,${btoa(binary)}`;
 
         const ocr = await extractFromImageDataUrl(dataUrl);
         const enough = signalCount(ocr as unknown as Record<string, unknown>) >= 2;

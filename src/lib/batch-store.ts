@@ -330,6 +330,21 @@ export async function claimNext(batchId: string, workerId: string): Promise<Stor
   return claimed;
 }
 
+/**
+ * A bounded slice of still-pending items (with their image blob), used to mirror
+ * the device queue into the server-side queue. Claims are not touched.
+ */
+export async function pendingItems(batchId: string, limit: number): Promise<StoredItem[]> {
+  const db = await openDb();
+  const store = tx(db, [ITEMS], "readonly").objectStore(ITEMS);
+  const rows = await done<StoredItem[]>(
+    store
+      .index("batch_status")
+      .getAll([batchId, "pending" satisfies BatchStatus], limit) as IDBRequest<StoredItem[]>,
+  );
+  return rows.filter((row) => row.blob);
+}
+
 /** Puts failed items back in line, respecting the retry cap. */
 export async function resetErrors(batchId: string): Promise<number> {
   const db = await openDb();
