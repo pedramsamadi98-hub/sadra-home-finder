@@ -709,7 +709,7 @@ export async function addPriceEvent(
   const isNewest =
     !property.price_verified_at ||
     new Date(eventAt).getTime() >= new Date(property.price_verified_at).getTime();
-  if (input.price !== null && input.price !== undefined && isNewest) {
+  if (input.verify !== false && input.price !== null && input.price !== undefined && isNewest) {
     const patch = {
       verified_price: input.price,
       price_verified_at: eventAt,
