@@ -567,6 +567,7 @@ function BatchImport({ userId }: { userId: string }) {
                           </Button>
                           <Link
                             to="/listings/new"
+                            search={{ broker: undefined }}
                             className="inline-flex min-h-10 items-center rounded-lg border border-border px-3 text-xs font-semibold"
                           >
                             ثبت دستی
