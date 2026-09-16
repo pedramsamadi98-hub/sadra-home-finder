@@ -488,3 +488,81 @@ export function relevanceScore(property: Property, criteria: Criterion[], text: 
   if (property.photos.length) score += 1;
   return score;
 }
+
+/**
+ * Turns a parsed Persian query into database filters, so the smart search runs
+ * inside the paginated query instead of scanning every row on the client.
+ */
+export function criteriaToFilters(criteria: Criterion[]): {
+  types?: string[];
+  ownership?: string;
+  transaction?: string;
+  phase?: string;
+  landCategory?: string;
+  landZone?: string;
+  plotNumber?: string;
+  minArea?: number;
+  maxArea?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  minBedrooms?: number;
+  parking?: boolean;
+  elevator?: boolean;
+  storage?: boolean;
+} {
+  const out: Record<string, unknown> = {};
+  for (const c of criteria) {
+    switch (c.key) {
+      case "property_type": {
+        const value = String(c.value);
+        out["types"] = TYPE_GROUPS[value] ?? [value];
+        break;
+      }
+      case "ownership_type":
+        out["ownership"] = String(c.value);
+        break;
+      case "transaction_type":
+        out["transaction"] = String(c.value);
+        break;
+      case "phase":
+        out["phase"] = String(c.value);
+        break;
+      case "land_category":
+        out["landCategory"] = String(c.value);
+        break;
+      case "land_zone":
+        out["landZone"] = String(c.value);
+        break;
+      case "plot_number":
+        out["plotNumber"] = String(c.value);
+        break;
+      case "bedrooms":
+        out["minBedrooms"] = Number(c.value);
+        break;
+      case "minArea":
+        out["minArea"] = Number(c.value);
+        break;
+      case "maxArea":
+        out["maxArea"] = Number(c.value);
+        break;
+      case "minPrice":
+        out["minPrice"] = Number(c.value);
+        break;
+      case "maxPrice":
+        out["maxPrice"] = Number(c.value);
+        break;
+      case "parking":
+        out["parking"] = Boolean(c.value);
+        break;
+      case "elevator":
+        out["elevator"] = Boolean(c.value);
+        break;
+      case "storage":
+        out["storage"] = Boolean(c.value);
+        break;
+      case "city":
+        break;
+    }
+  }
+  return out as ReturnType<typeof criteriaToFilters>;
+}

@@ -841,9 +841,9 @@ export async function fetchPropertiesPage(
   if (q.minArea) query = query.gte("area", q.minArea);
   if (q.maxArea) query = query.lte("area", q.maxArea);
   if (q.minBedrooms) query = query.gte("bedrooms", q.minBedrooms);
-  if (q.parking) query = query.eq("parking", true);
-  if (q.elevator) query = query.eq("elevator", true);
-  if (q.storage) query = query.eq("storage", true);
+  if (q.parking !== undefined) query = query.eq("parking", q.parking);
+  if (q.elevator !== undefined) query = query.eq("elevator", q.elevator);
+  if (q.storage !== undefined) query = query.eq("storage", q.storage);
 
   const text = escapeOr(q.text ?? "");
   if (text) {
