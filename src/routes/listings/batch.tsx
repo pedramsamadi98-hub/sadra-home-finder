@@ -58,8 +58,10 @@ import {
   createServerBatch,
   pushServerItems,
   serverCounts,
+  serverMatchingResults,
   SERVER_STATUS_LABELS,
   SERVER_STATUSES,
+  type ServerMatchItem,
   type ServerStatus,
 } from "@/lib/bulk-queue";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
@@ -88,6 +90,18 @@ export const Route = createFileRoute("/listings/batch")({
 });
 
 const PAGE_SIZE = 20;
+
+const SERVER_CONFIDENCE_LABELS: Record<string, string> = {
+  high: "اطمینان بالا",
+  medium: "اطمینان متوسط",
+  low: "اطمینان کم",
+};
+
+const SERVER_CONFIDENCE_TONE: Record<string, string> = {
+  high: "bg-primary/10 text-primary",
+  medium: "bg-warning/10 text-warning",
+  low: "bg-secondary text-muted-foreground",
+};
 
 const EMPTY_COUNTS: Record<BatchStatus, number> = {
   pending: 0,
@@ -144,6 +158,7 @@ function BatchImport({ userId }: { userId: string }) {
   const [serverBatchId, setServerBatchId] = useState<string | null>(null);
   const [serverStats, setServerStats] = useState<Record<ServerStatus, number> | null>(null);
   const [serverBusy, setServerBusy] = useState(false);
+  const [serverMatches, setServerMatches] = useState<ServerMatchItem[] | null>(null);
 
   const runningRef = useRef(false);
   const pausedRef = useRef(false);
@@ -464,6 +479,7 @@ function BatchImport({ userId }: { userId: string }) {
         })),
       );
       setServerStats(await serverCounts(id));
+      setServerMatches(null);
       toast.success(`${faDigits(count)} مورد به صف سرور اضافه شد`);
     } catch (error) {
       console.error(error);
@@ -479,6 +495,7 @@ function BatchImport({ userId }: { userId: string }) {
     try {
       const report = await runWorker({ data: { batchId: serverBatchId, limit: 3 } });
       setServerStats(await serverCounts(serverBatchId));
+      setServerMatches(await serverMatchingResults(serverBatchId));
       toast.success(
         report.idle
           ? "موردی برای پردازش سروری باقی نمانده است"
@@ -496,6 +513,7 @@ function BatchImport({ userId }: { userId: string }) {
     if (!serverBatchId) return;
     try {
       setServerStats(await serverCounts(serverBatchId));
+      setServerMatches(await serverMatchingResults(serverBatchId));
     } catch (error) {
       console.error(error);
       toast.error("وضعیت صف سرور خوانده نشد");
@@ -810,6 +828,71 @@ function BatchImport({ userId }: { userId: string }) {
                 بروزرسانی وضعیت سرور
               </button>
             </>
+          ) : null}
+          {serverMatches?.length ? (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold">نتیجه تطبیق سرور</p>
+              <ul className="space-y-2">
+                {serverMatches.map((match) => (
+                  <li
+                    key={match.id}
+                    className="space-y-2 rounded-xl border border-border p-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 truncate text-xs font-semibold">{match.name}</p>
+                      {match.top_confidence ? (
+                        <span
+                          className={`shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-semibold ${
+                            SERVER_CONFIDENCE_TONE[match.top_confidence] ??
+                            "bg-secondary text-muted-foreground"
+                          }`}
+                        >
+                          {SERVER_CONFIDENCE_LABELS[match.top_confidence] ??
+                            match.top_confidence}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {faDigits(match.candidates.length)} کاندید پیدا شد
+                    </p>
+                    {match.candidates.length ? (
+                      <ul className="space-y-1">
+                        {match.candidates.map((candidate, index) => (
+                          <li
+                            key={candidate.property_id ?? index}
+                            className="space-y-1 rounded-lg bg-secondary/50 p-2 text-[11px]"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-1">
+                              <span className="font-semibold">{candidate.title}</span>
+                              <span className="text-muted-foreground">
+                                {candidate.file_code
+                                  ? `کد ${faDigits(candidate.file_code)} · `
+                                  : ""}
+                                {SERVER_CONFIDENCE_LABELS[candidate.confidence] ??
+                                  candidate.confidence}
+                              </span>
+                            </div>
+                            {candidate.reasons?.length ? (
+                              <p className="text-muted-foreground">
+                                {candidate.reasons.join(" · ")}
+                              </p>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground">
+                        کاندیدایی پیدا نشد؛ برای ثبت دستی به فهرست فایل‌ها مراجعه کنید
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : serverStats && serverStats.needs_review > 0 && serverMatches !== null ? (
+            <p className="text-[11px] text-muted-foreground">
+              نتیجه تطبیقی برای نمایش نیست.
+            </p>
           ) : null}
         </section>
 
