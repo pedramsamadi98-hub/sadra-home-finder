@@ -83,9 +83,18 @@ export const runBulkImportWorker = createServerFn({ method: "POST" })
     });
     if (claimError) throw new Error(claimError.message);
 
-    const items = (claimed ?? []).filter(
-      (item) => !data.batchId || item.batch_id === data.batchId,
-    );
+    const all = claimed ?? [];
+    const items = all.filter((item) => !data.batchId || item.batch_id === data.batchId);
+    // Claiming is global; anything claimed for another batch goes straight back
+    // in line with its lease cleared, so it is never stuck in `processing`.
+    const foreign = all.filter((item) => !items.includes(item));
+    for (const item of foreign) {
+      await supabaseAdmin
+        .from("bulk_import_items")
+        .update({ status: "pending", lease_owner: null, lease_until: null })
+        .eq("id", item.id)
+        .eq("fence", item.fence);
+    }
     report.claimed = items.length;
     if (!items.length) {
       report.idle = true;
