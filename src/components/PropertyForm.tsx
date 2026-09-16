@@ -884,7 +884,7 @@ export function PropertyForm({
         onOpenChange={setMatchOpen}
         onLinked={(id) => {
           void queryClient.invalidateQueries({ queryKey: ["properties"] });
-          void navigate({ to: "/listings/$id", params: { id }, search: { broker: undefined } });
+          void navigate({ to: "/listings/$id", params: { id }, search: {} });
         }}
         onCreateNew={() => setOcrOpen(true)}
       />
