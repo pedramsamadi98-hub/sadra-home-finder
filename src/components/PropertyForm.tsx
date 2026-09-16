@@ -231,17 +231,8 @@ export function PropertyForm({
         plot_number: landAllowed ? (result.plot_number ?? detected?.plot_number ?? null) : null,
       };
       setOcrResult(enriched);
-
-      // Before a new file is created, look for the existing file this reading may
-      // belong to. Only narrow, indexed lookups run — never a full table read.
-      if (matchExisting) {
-        const found = await findOcrCandidates(enriched);
-        if (found.length) {
-          setCandidates(found);
-          setMatchOpen(true);
-          return;
-        }
-      }
+      setScanned(true);
+      setMatchDone(false);
       setOcrOpen(true);
     } catch (error) {
       console.error(error);
