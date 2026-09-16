@@ -130,7 +130,9 @@ export function PropertyCard({
                 <span className="sr-only">{label}</span>
               </span>
             ))}
-            <span className="ms-auto">{faRelative(property.created_at)}</span>
+            {/* Only admins see how old a file is; collaborators must not skip a
+                file just because it looks old. */}
+            {isAdmin ? <span className="ms-auto">{faRelative(property.created_at)}</span> : null}
           </div>
         </div>
       </div>
