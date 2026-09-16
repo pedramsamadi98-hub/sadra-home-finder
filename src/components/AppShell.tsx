@@ -2,6 +2,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import {
   BarChart3,
   BellRing,
+  Images,
   LayoutDashboard,
   List,
   Moon,
@@ -28,6 +29,7 @@ const adminNav = [
   { to: "/customers", label: "مشتری‌ها", icon: UserRound },
   { to: "/reports", label: "آمار", icon: BarChart3 },
   { to: "/listings/new", label: "ثبت ملک", icon: Plus },
+  { to: "/listings/batch", label: "ورود گروهی", icon: Images },
   { to: "/users", label: "همکارها", icon: ShieldCheck },
 ] as const;
 
