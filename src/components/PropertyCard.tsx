@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { BedDouble, Car, MapPin, MoveVertical, Package, Ruler } from "lucide-react";
 
 import { PropertyTypeIcon } from "@/lib/property-type-icons";
+import { useRole } from "@/lib/roles";
 
 import { PhotoThumb } from "@/components/PhotoGallery";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
@@ -33,6 +34,7 @@ export function PropertyCard({
   property: Property;
   brokerContext?: string;
 }) {
+  const { isAdmin } = useRole();
   const priceText =
     property.transaction_type === "sale"
       ? faPrice(referencePrice(property))
@@ -130,7 +132,9 @@ export function PropertyCard({
                 <span className="sr-only">{label}</span>
               </span>
             ))}
-            <span className="ms-auto">{faRelative(property.created_at)}</span>
+            {/* Only admins see how old a file is; collaborators must not skip a
+                file just because it looks old. */}
+            {isAdmin ? <span className="ms-auto">{faRelative(property.created_at)}</span> : null}
           </div>
         </div>
       </div>

@@ -337,7 +337,11 @@ function Detail({ userId }: { userId: string }) {
                 .join(" • ") || "—"
             }
           />
-          <Row icon={Calendar} label="تاریخ ثبت" value={faDate(property.created_at)} />
+          {/* File age is internal: a collaborator must not judge a file as
+              "old, probably sold" — they should ask for a fresh price instead. */}
+          {isAdmin ? (
+            <Row icon={Calendar} label="تاریخ ثبت" value={faDate(property.created_at)} />
+          ) : null}
         </section>
 
         {property.description ? (
