@@ -66,20 +66,19 @@ export function faRelative(value: string | null | undefined): string {
   return faDate(value);
 }
 
-const jalaliTime = new Intl.DateTimeFormat("fa-IR-u-ca-persian", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
+const jalaliClock = new Intl.DateTimeFormat("fa-IR", {
   hour: "2-digit",
   minute: "2-digit",
+  hour12: false,
 });
 
-/** Jalali date + time, e.g. ۳ مهر ۱۴۰۴، ساعت ۱۴:۳۰ */
+/** Jalali date + time, e.g. ۲۶ شهریور ۱۴۰۵ — ساعت ۱۴:۳۰ */
 export function faDateTime(value: string | Date | null | undefined): string {
   if (!value) return "—";
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return "—";
-  return jalaliTime.format(date);
+  const clock = faDigits(jalaliClock.format(date).replace(/[\u200e\u200f]/g, ""));
+  return `${jalali.format(date)} — ساعت ${clock}`;
 }
 
 /**
