@@ -32,9 +32,28 @@ import {
   loadHashLedger,
   saveHashLedger,
   type BatchItem,
+  type BatchStatus,
 } from "@/lib/batch-import";
+import {
+  addItems,
+  claimNext,
+  countsFor,
+  createBatch,
+  deleteBatch,
+  deleteItem,
+  getItem,
+  listBatches,
+  MAX_RETRIES,
+  pageItems,
+  patchBatch,
+  patchItem,
+  releaseStale,
+  resetErrors,
+  type NewItem,
+  type StoredBatch,
+} from "@/lib/batch-store";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
-import { findOcrCandidates, type OcrCandidate } from "@/lib/ocr-match";
+import { findOcrCandidates } from "@/lib/ocr-match";
 import { fileCodeText } from "@/lib/properties";
 
 export const Route = createFileRoute("/listings/batch")({
@@ -60,6 +79,17 @@ export const Route = createFileRoute("/listings/batch")({
 
 const PAGE_SIZE = 20;
 
+const EMPTY_COUNTS: Record<BatchStatus, number> = {
+  pending: 0,
+  ocr: 0,
+  review: 0,
+  manual: 0,
+  duplicate: 0,
+  linked: 0,
+  done: 0,
+  error: 0,
+};
+
 function BatchRoute() {
   return <AdminOnly>{(userId) => <BatchImport userId={userId} />}</AdminOnly>;
 }
@@ -70,137 +100,198 @@ function formatSize(bytes: number): string {
   return `${faDigits((bytes / (1024 * 1024)).toFixed(1))} مگابایت`;
 }
 
+function faDate(value: number): string {
+  return new Intl.DateTimeFormat("fa-IR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    calendar: "persian",
+  }).format(new Date(value));
+}
+
+function remaining(counts: Record<BatchStatus, number>): number {
+  return counts.pending + counts.ocr + counts.review + counts.manual + counts.error;
+}
+
 function BatchImport({ userId }: { userId: string }) {
   const runOcr = useServerFn(extractPropertyFromImage);
   const queryClient = useQueryClient();
 
+  const [batches, setBatches] = useState<StoredBatch[]>([]);
+  const [batchId, setBatchId] = useState<string | null>(null);
   const [items, setItems] = useState<BatchItem[]>([]);
+  const [itemTotal, setItemTotal] = useState(0);
+  const [counts, setCounts] = useState<Record<BatchStatus, number>>(EMPTY_COUNTS);
+  const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
   const [page, setPage] = useState(1);
-  const [skippedZipEntries, setSkippedZipEntries] = useState<string[]>([]);
   const [reviewId, setReviewId] = useState<string | null>(null);
+  const [reviewData, setReviewData] = useState<Awaited<ReturnType<typeof getItem>>>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  /** Heavy data lives outside React state so the UI stays light for huge batches. */
-  const filesRef = useRef(new Map<string, File>());
-  const resultsRef = useRef(new Map<string, OcrResult>());
-  const candidatesRef = useRef(new Map<string, OcrCandidate[]>());
-  const itemsRef = useRef<BatchItem[]>([]);
   const runningRef = useRef(false);
   const pausedRef = useRef(false);
   const cancelRef = useRef(false);
   const ledgerRef = useRef<Set<string>>(new Set());
-  const batchHashesRef = useRef(new Set<string>());
+  /** Identifies this tab so two tabs never claim the same queue item. */
+  const workerId = useRef(crypto.randomUUID());
+  const batchIdRef = useRef<string | null>(null);
+  const pageRef = useRef(1);
 
   useEffect(() => {
-    itemsRef.current = items;
-  }, [items]);
-
+    batchIdRef.current = batchId;
+  }, [batchId]);
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
   useEffect(() => {
     ledgerRef.current = loadHashLedger();
   }, []);
 
-  const patch = useCallback((id: string, next: Partial<BatchItem>) => {
-    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...next } : item)));
+  const refresh = useCallback(async (id?: string | null) => {
+    const target = id ?? batchIdRef.current;
+    setBatches(await listBatches());
+    if (!target) {
+      setItems([]);
+      setItemTotal(0);
+      setCounts(EMPTY_COUNTS);
+      return;
+    }
+    const [nextCounts, listed] = await Promise.all([
+      countsFor(target),
+      pageItems(target, pageRef.current, PAGE_SIZE),
+    ]);
+    setCounts(nextCounts);
+    setItems(listed.rows);
+    setItemTotal(listed.total);
   }, []);
+
+  /** Restores unfinished batches after a refresh, closed browser or lost connection. */
+  useEffect(() => {
+    void (async () => {
+      try {
+        const stored = await listBatches();
+        setBatches(stored);
+        const resumable = stored.find((batch) => batch.status !== "done");
+        if (resumable) {
+          await releaseStale(resumable.id);
+          setBatchId(resumable.id);
+          batchIdRef.current = resumable.id;
+          await refresh(resumable.id);
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("صف ذخیره‌شده خوانده نشد");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [refresh]);
+
+  useEffect(() => {
+    if (batchId) void refresh(batchId);
+  }, [batchId, page, refresh]);
 
   /* ------------------------------ selecting ------------------------------ */
 
-  const addFiles = useCallback(async (incoming: File[]) => {
-    const added: BatchItem[] = [];
-    const skipped: string[] = [];
-    for (const file of incoming) {
-      const isZip =
-        file.name.toLowerCase().endsWith(".zip") ||
-        file.type === "application/zip" ||
-        file.type === "application/x-zip-compressed";
-      if (isZip) {
-        try {
-          const { files, skipped: ignored } = await expandZip(file);
-          skipped.push(...ignored);
-          for (const entry of files) {
-            const id = crypto.randomUUID();
-            filesRef.current.set(id, entry.file);
-            added.push({
-              id,
-              name: entry.name,
-              folder: entry.folder,
-              size: entry.file.size,
+  const addFiles = useCallback(
+    async (incoming: File[]) => {
+      const entries: NewItem[] = [];
+      const skipped: string[] = [];
+      for (const file of incoming) {
+        const isZip =
+          file.name.toLowerCase().endsWith(".zip") ||
+          file.type === "application/zip" ||
+          file.type === "application/x-zip-compressed";
+        if (isZip) {
+          try {
+            const { files, skipped: ignored } = await expandZip(file);
+            skipped.push(...ignored);
+            for (const entry of files) {
+              entries.push({
+                name: entry.name,
+                folder: entry.folder,
+                size: entry.file.size,
+                source: "zip",
+                zipName: file.name,
+                blob: entry.file,
+              });
+            }
+            if (!files.length) toast.error(`هیچ عکسی در ${file.name} پیدا نشد`);
+          } catch {
+            entries.push({
+              name: file.name,
+              folder: "",
+              size: file.size,
               source: "zip",
-              zipName: file.name,
-              status: "pending",
+              blob: null,
+              status: "error",
+              error: "فایل ZIP خراب یا غیرقابل خواندن است",
             });
           }
-          if (!files.length) toast.error(`هیچ عکسی در ${file.name} پیدا نشد`);
-        } catch {
-          const id = crypto.randomUUID();
-          added.push({
-            id,
-            name: file.name,
-            folder: "",
-            size: file.size,
-            source: "zip",
-            status: "error",
-            error: "فایل ZIP خراب یا غیرقابل خواندن است",
-          });
+          continue;
         }
-        continue;
+        if (!isImageName(file.name) && !file.type.startsWith("image/")) {
+          skipped.push(file.name);
+          continue;
+        }
+        entries.push({
+          name: file.name,
+          folder: "",
+          size: file.size,
+          source: "file",
+          blob: file,
+        });
       }
-      if (!isImageName(file.name) && !file.type.startsWith("image/")) {
-        skipped.push(file.name);
-        continue;
+
+      if (!entries.length) {
+        if (!skipped.length) toast.error("فایل قابل پردازشی انتخاب نشد");
+        return;
       }
-      const id = crypto.randomUUID();
-      filesRef.current.set(id, file);
-      added.push({
-        id,
-        name: file.name,
-        folder: "",
-        size: file.size,
-        source: "file",
-        status: "pending",
-      });
-    }
 
-    if (skipped.length) setSkippedZipEntries((prev) => [...prev, ...skipped]);
-    if (added.length) {
-      setItems((prev) => [...prev, ...added]);
-      toast.success(`${faDigits(added.length)} مورد به صف اضافه شد`);
-    } else if (!skipped.length) {
-      toast.error("فایل قابل پردازشی انتخاب نشد");
-    }
-  }, []);
+      let target = batchIdRef.current;
+      if (!target) {
+        const created = await createBatch(0, skipped);
+        target = created.id;
+        setBatchId(target);
+        batchIdRef.current = target;
+      } else if (skipped.length) {
+        const current = batches.find((batch) => batch.id === target);
+        await patchBatch(target, { skipped: [...(current?.skipped ?? []), ...skipped] });
+      }
+      await addItems(target, entries);
+      await refresh(target);
+      toast.success(`${faDigits(entries.length)} مورد به صف اضافه شد`);
+    },
+    [batches, refresh],
+  );
 
-  function removeItem(id: string) {
-    filesRef.current.delete(id);
-    resultsRef.current.delete(id);
-    candidatesRef.current.delete(id);
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  async function removeItem(id: string) {
+    await deleteItem(id);
+    await refresh();
   }
 
   /* ------------------------------ processing ----------------------------- */
 
   const processItem = useCallback(
-    async (item: BatchItem) => {
-      patch(item.id, { status: "ocr", error: null });
-      const file = filesRef.current.get(item.id);
+    async (item: NonNullable<Awaited<ReturnType<typeof getItem>>>) => {
+      const file = item.blob;
       if (!file) {
-        patch(item.id, { status: "error", error: "فایل تصویر در دسترس نیست" });
+        await patchItem(item.id, { status: "error", error: "فایل تصویر در دسترس نیست" });
         return;
       }
       try {
-        const hash = await hashFile(file);
-        if (hash && (ledgerRef.current.has(hash) || batchHashesRef.current.has(hash))) {
-          patch(item.id, {
+        const hash = item.hash ?? (await hashFile(new File([file], item.name)));
+        if (hash && ledgerRef.current.has(hash)) {
+          await patchItem(item.id, {
             status: "duplicate",
             hash,
+            blob: null,
             error: "این عکس قبلاً پردازش شده است؛ فایل تکراری ساخته نشد",
           });
           return;
         }
-        if (hash) batchHashesRef.current.add(hash);
 
         const dataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
@@ -209,66 +300,82 @@ function BatchImport({ userId }: { userId: string }) {
           reader.readAsDataURL(file);
         });
 
-        const result = await runOcr({ data: { image: dataUrl } });
-        resultsRef.current.set(item.id, result);
+        const result = item.ocr ?? (await runOcr({ data: { image: dataUrl } }));
+        await patchItem(item.id, { ocr: result, hash });
 
         if (!hasEnoughData(result)) {
-          patch(item.id, { status: "manual", hash, error: null });
+          await patchItem(item.id, { status: "manual", error: null });
           return;
         }
 
         const candidates = await findOcrCandidates(result);
         if (candidates.length) {
-          candidatesRef.current.set(item.id, candidates);
-          patch(item.id, { status: "review", hash, candidateCount: candidates.length });
+          await patchItem(item.id, { status: "review", candidates, error: null });
           return;
         }
 
-        const created = await createFromOcr({ result, userId, image: file });
+        const created = await createFromOcr({
+          result,
+          userId,
+          image: new File([file], item.name),
+        });
         if (hash) {
           ledgerRef.current.add(hash);
           saveHashLedger(ledgerRef.current);
         }
-        filesRef.current.delete(item.id);
-        patch(item.id, {
+        await patchItem(item.id, {
           status: "done",
-          hash,
+          blob: null,
           propertyId: created.id,
           fileCode: created.fileCode,
         });
       } catch (error) {
         console.error(error);
-        patch(item.id, {
+        const offline = typeof navigator !== "undefined" && !navigator.onLine;
+        await patchItem(item.id, {
           status: "error",
-          error: error instanceof Error ? error.message : "پردازش این عکس ناموفق بود",
+          error: offline
+            ? "اتصال اینترنت قطع شد؛ بعد از وصل شدن «تلاش دوباره» را بزنید"
+            : error instanceof Error
+              ? error.message
+              : "پردازش این عکس ناموفق بود",
         });
       }
     },
-    [patch, runOcr, userId],
+    [runOcr, userId],
   );
 
   const runQueue = useCallback(async () => {
-    if (runningRef.current) return;
+    const target = batchIdRef.current;
+    if (!target || runningRef.current) return;
     runningRef.current = true;
     cancelRef.current = false;
     pausedRef.current = false;
     setPaused(false);
     setRunning(true);
+    await patchBatch(target, { status: "active" });
     try {
-      // One image at a time: a single failure never stops the whole batch and
-      // the AI gateway is not flooded with parallel requests.
+      // One image at a time: the AI gateway is never flooded, a single failure
+      // never stops the batch, and only one claimed item is in memory.
       for (;;) {
         if (cancelRef.current || pausedRef.current) break;
-        const next = itemsRef.current.find((item) => item.status === "pending");
+        const next = await claimNext(target, workerId.current);
         if (!next) break;
         await processItem(next);
+        await patchBatch(target, { last_processed_at: Date.now() });
+        await refresh(target);
       }
     } finally {
       runningRef.current = false;
       setRunning(false);
+      const left = remaining(await countsFor(target));
+      await patchBatch(target, {
+        status: left ? (pausedRef.current || cancelRef.current ? "paused" : "active") : "done",
+      });
+      await refresh(target);
       await queryClient.invalidateQueries({ queryKey: ["properties"] });
     }
-  }, [processItem, queryClient]);
+  }, [processItem, queryClient, refresh]);
 
   function pause() {
     pausedRef.current = true;
@@ -282,32 +389,70 @@ function BatchImport({ userId }: { userId: string }) {
     toast.info("پردازش متوقف شد؛ موارد باقی‌مانده در صف می‌مانند");
   }
 
-  function retryErrors() {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.status === "error" ? { ...item, status: "pending", error: null } : item,
-      ),
-    );
-    setTimeout(() => void runQueue(), 0);
+  async function retryErrors() {
+    const target = batchIdRef.current;
+    if (!target) return;
+    const queued = await resetErrors(target);
+    await refresh(target);
+    if (!queued) {
+      toast.error(`این موارد بیش از ${faDigits(MAX_RETRIES)} بار تلاش شده‌اند`);
+      return;
+    }
+    void runQueue();
+  }
+
+  async function resumeBatch(id: string) {
+    await releaseStale(id);
+    setBatchId(id);
+    batchIdRef.current = id;
+    setPage(1);
+    pageRef.current = 1;
+    await refresh(id);
+    void runQueue();
+  }
+
+  async function removeBatch(id: string) {
+    await deleteBatch(id);
+    if (batchIdRef.current === id) {
+      setBatchId(null);
+      batchIdRef.current = null;
+    }
+    await refresh(null);
+    toast.success("دسته حذف شد");
   }
 
   /* -------------------------------- review ------------------------------- */
 
+  useEffect(() => {
+    if (!reviewId) {
+      setReviewData(null);
+      return;
+    }
+    void getItem(reviewId).then(setReviewData);
+  }, [reviewId]);
+
   async function createNewFrom(id: string) {
-    const result = resultsRef.current.get(id);
-    const file = filesRef.current.get(id);
-    if (!result) return;
+    const row = await getItem(id);
+    if (!row?.ocr) return;
     setBusyId(id);
     try {
-      const created = await createFromOcr({ result, userId, image: file ?? null });
-      patch(id, { status: "done", propertyId: created.id, fileCode: created.fileCode });
-      const item = itemsRef.current.find((row) => row.id === id);
-      if (item?.hash) {
-        ledgerRef.current.add(item.hash);
+      const created = await createFromOcr({
+        result: row.ocr,
+        userId,
+        image: row.blob ? new File([row.blob], row.name) : null,
+      });
+      if (row.hash) {
+        ledgerRef.current.add(row.hash);
         saveHashLedger(ledgerRef.current);
       }
-      filesRef.current.delete(id);
+      await patchItem(id, {
+        status: "done",
+        blob: null,
+        propertyId: created.id,
+        fileCode: created.fileCode,
+      });
       setReviewId(null);
+      await refresh();
       await queryClient.invalidateQueries({ queryKey: ["properties"] });
       toast.success("فایل جدید ثبت شد");
     } catch (error) {
@@ -319,54 +464,49 @@ function BatchImport({ userId }: { userId: string }) {
   }
 
   async function linked(id: string, propertyId: string) {
-    const file = filesRef.current.get(id);
-    if (file) {
+    const row = await getItem(id);
+    if (row?.blob) {
       try {
-        await attachPrivateImage(propertyId, userId, file);
+        await attachPrivateImage(propertyId, userId, new File([row.blob], row.name));
       } catch (error) {
         console.error(error);
       }
     }
-    const item = itemsRef.current.find((row) => row.id === id);
-    if (item?.hash) {
-      ledgerRef.current.add(item.hash);
+    if (row?.hash) {
+      ledgerRef.current.add(row.hash);
       saveHashLedger(ledgerRef.current);
     }
-    filesRef.current.delete(id);
-    patch(id, { status: "linked", propertyId });
+    await patchItem(id, { status: "linked", blob: null, propertyId });
     setReviewId(null);
+    await refresh();
     await queryClient.invalidateQueries({ queryKey: ["properties"] });
   }
 
   /* -------------------------------- summary ------------------------------ */
 
   const stats = useMemo(() => {
-    const count = (status: BatchItem["status"]) =>
-      items.filter((item) => item.status === status).length;
-    const processed = items.filter(
-      (item) => !["pending", "ocr"].includes(item.status),
-    ).length;
+    const total = itemTotal;
+    const processed = total - counts.pending - counts.ocr;
     return {
-      total: items.length,
+      total,
       processed,
-      done: count("done"),
-      linked: count("linked"),
-      review: count("review") + count("manual"),
-      duplicate: count("duplicate"),
-      error: count("error"),
-      pending: count("pending"),
+      done: counts.done,
+      linked: counts.linked,
+      review: counts.review + counts.manual,
+      duplicate: counts.duplicate,
+      error: counts.error,
+      pending: counts.pending,
       size: items.reduce((sum, item) => sum + item.size, 0),
     };
-  }, [items]);
+  }, [counts, itemTotal, items]);
 
   const percent = stats.total ? Math.round((stats.processed / stats.total) * 100) : 0;
-  const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const visible = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pageCount = Math.max(1, Math.ceil(itemTotal / PAGE_SIZE));
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
 
-  const reviewItem = reviewId ? items.find((item) => item.id === reviewId) : null;
+  const otherBatches = batches.filter((batch) => batch.id !== batchId && batch.status !== "done");
 
   return (
     <AppShell
@@ -374,6 +514,54 @@ function BatchImport({ userId }: { userId: string }) {
       subtitle="پردازش دسته‌ای عکس‌ها و فایل ZIP با OCR"
     >
       <div className="space-y-4">
+        {/* unfinished batches */}
+        {otherBatches.length ? (
+          <section className="surface-card space-y-2 p-4">
+            <p className="text-sm font-semibold">دسته‌های نیمه‌تمام</p>
+            <p className="text-xs text-muted-foreground">
+              این دسته‌ها روی همین دستگاه ذخیره شده‌اند و از همان جایی که مانده‌اند ادامه پیدا
+              می‌کنند.
+            </p>
+            <ul className="space-y-2">
+              {otherBatches.map((batch) => (
+                <li
+                  key={batch.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-3"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold">
+                      {faDigits(batch.total)} فایل · {faDate(batch.created_at)}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      آخرین پردازش:{" "}
+                      {batch.last_processed_at ? faDate(batch.last_processed_at) : "شروع نشده"}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="min-h-10"
+                      onClick={() => void resumeBatch(batch.id)}
+                    >
+                      <Play className="size-4" />
+                      ادامه پردازش
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => void removeBatch(batch.id)}
+                      className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                      حذف
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         {/* selection */}
         <section
           onDragOver={(event) => {
@@ -391,7 +579,8 @@ function BatchImport({ userId }: { userId: string }) {
           <p className="text-sm font-semibold">۱. انتخاب عکس‌ها یا فایل ZIP</p>
           <p className="text-xs text-muted-foreground">
             می‌توانید چند عکس را همزمان انتخاب کنید، فایل ZIP بدهید یا در رایانه فایل‌ها را
-            روی همین کادر رها کنید.
+            روی همین کادر رها کنید. صف روی همین دستگاه ذخیره می‌شود؛ اگر صفحه بسته شود یا
+            اینترنت قطع شود، از بین نمی‌رود.
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 py-2 text-sm font-semibold">
@@ -426,13 +615,12 @@ function BatchImport({ userId }: { userId: string }) {
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span>تعداد در صف: {faDigits(stats.total)}</span>
             <span>·</span>
-            <span>حجم کل: {formatSize(stats.size)}</span>
+            <span>حجم این صفحه: {formatSize(stats.size)}</span>
           </div>
-          {skippedZipEntries.length ? (
+          {batches.find((batch) => batch.id === batchId)?.skipped.length ? (
             <p className="text-xs text-warning">
-              {faDigits(skippedZipEntries.length)} فایل غیرتصویری نادیده گرفته شد:{" "}
-              {skippedZipEntries.slice(0, 3).join("، ")}
-              {skippedZipEntries.length > 3 ? " …" : ""}
+              {faDigits(batches.find((batch) => batch.id === batchId)?.skipped.length ?? 0)} فایل
+              غیرتصویری نادیده گرفته شد
             </p>
           ) : null}
         </section>
@@ -484,7 +672,7 @@ function BatchImport({ userId }: { userId: string }) {
               variant="outline"
               className="min-h-11"
               disabled={!stats.error || running}
-              onClick={retryErrors}
+              onClick={() => void retryErrors()}
             >
               <RefreshCw className="size-4" />
               تلاش دوباره برای خطاها
@@ -510,10 +698,14 @@ function BatchImport({ userId }: { userId: string }) {
         {/* queue */}
         <section className="space-y-2">
           <p className="text-sm font-semibold">صف پردازش</p>
-          {items.length ? (
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="size-5 animate-spin text-primary" />
+            </div>
+          ) : items.length ? (
             <>
               <ul className="space-y-2">
-                {visible.map((item) => (
+                {items.map((item) => (
                   <li key={item.id} className="surface-card space-y-2 p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 space-y-1">
@@ -586,7 +778,7 @@ function BatchImport({ userId }: { userId: string }) {
                       {item.status === "pending" || item.status === "error" ? (
                         <button
                           type="button"
-                          onClick={() => removeItem(item.id)}
+                          onClick={() => void removeItem(item.id)}
                           className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold text-destructive"
                         >
                           <Trash2 className="size-4" />
@@ -632,9 +824,9 @@ function BatchImport({ userId }: { userId: string }) {
       </div>
 
       <OcrMatchDialog
-        open={Boolean(reviewItem)}
-        result={reviewId ? (resultsRef.current.get(reviewId) ?? null) : null}
-        candidates={reviewId ? (candidatesRef.current.get(reviewId) ?? []) : []}
+        open={Boolean(reviewData)}
+        result={(reviewData?.ocr as OcrResult | null) ?? null}
+        candidates={reviewData?.candidates ?? []}
         userId={userId}
         onOpenChange={(open) => {
           if (!open) setReviewId(null);
