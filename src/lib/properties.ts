@@ -812,9 +812,12 @@ export async function fetchPropertiesPage(
 
   // Both audiences go through a real database query: admins read the table,
   // collaborators read the privacy-safe `shared_properties()` view function.
+  const adminQuery = supabase.from("properties").select("*", { count: "exact" });
   let query = isAdmin
-    ? supabase.from("properties").select("*", { count: "exact" })
-    : supabase.rpc("shared_properties", {}, { count: "exact" }).select("*");
+    ? adminQuery
+    : (supabase.rpc("shared_properties", undefined, {
+        count: "exact",
+      }) as unknown as typeof adminQuery);
 
   const scope = q.scope ?? "active";
   if (scope === "archive") {
