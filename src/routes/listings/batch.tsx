@@ -523,6 +523,32 @@ function BatchImport({ userId }: { userId: string }) {
     }
   }
 
+  /** Records the choice only — no property, price history, photo or file code. */
+  async function chooseServerDecision(
+    itemId: string,
+    decision: ServerDecision,
+    propertyId?: string | null,
+  ) {
+    try {
+      await saveServerDecision(itemId, decision, propertyId ?? null);
+      setServerMatches((current) =>
+        (current ?? []).map((match) =>
+          match.id === itemId
+            ? {
+                ...match,
+                decision,
+                decision_property_id: decision === "connect_existing" ? (propertyId ?? null) : null,
+              }
+            : match,
+        ),
+      );
+      toast.success("تصمیم ذخیره شد؛ اجرای آن در مرحله بعد انجام می‌شود");
+    } catch (error) {
+      console.error(error);
+      toast.error("ذخیره تصمیم ناموفق بود");
+    }
+  }
+
   /* -------------------------------- review ------------------------------- */
 
   useEffect(() => {
