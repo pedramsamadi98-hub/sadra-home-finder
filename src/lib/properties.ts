@@ -745,7 +745,7 @@ export async function deletePriceEvent(id: string) {
 export interface PropertyQuery {
   text?: string;
   fileCode?: number | null;
-  types?: string[];
+  types?: string[] | undefined;
   ownership?: string | null;
   transaction?: string | null;
   status?: string | null;
@@ -761,9 +761,9 @@ export interface PropertyQuery {
   minBedrooms?: number | null;
   minPrice?: number | null;
   maxPrice?: number | null;
-  parking?: boolean;
-  elevator?: boolean;
-  storage?: boolean;
+  parking?: boolean | undefined;
+  elevator?: boolean | undefined;
+  storage?: boolean | undefined;
   page?: number;
   pageSize?: number;
 }
