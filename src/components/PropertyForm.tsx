@@ -156,6 +156,10 @@ export function PropertyForm({
   const [ocrOpen, setOcrOpen] = useState(false);
   const [candidates, setCandidates] = useState<OcrCandidate[]>([]);
   const [matchOpen, setMatchOpen] = useState(false);
+  /** A reading came from an image, so matching must run before the insert. */
+  const [scanned, setScanned] = useState(false);
+  const [matchDone, setMatchDone] = useState(false);
+  const [matching, setMatching] = useState(false);
   const runOcr = useServerFn(extractPropertyFromImage);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -270,7 +274,7 @@ export function PropertyForm({
     toast.success(`${applied} فیلد از عکس پر شد`);
   }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
     if (!form.title.trim()) {
       toast.error("عنوان ملک را وارد کنید");
@@ -279,6 +283,24 @@ export function PropertyForm({
     if (!form.ownership_type) {
       toast.error("نوع ملک (ملکی یا اوقاف) را انتخاب کنید");
       return;
+    }
+    // A reading may belong to an existing file. Matching runs on the REVIEWED
+    // values, right before the new file would be inserted. Nothing is merged
+    // automatically — the user links, creates a new file, or cancels.
+    if (matchExisting && scanned && !matchDone) {
+      setMatching(true);
+      try {
+        const found = await findOcrCandidates(formToOcrResult(form, ocrResult));
+        if (found.length) {
+          setCandidates(found);
+          setMatchOpen(true);
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setMatching(false);
+      }
     }
     onSubmit(form);
   }
