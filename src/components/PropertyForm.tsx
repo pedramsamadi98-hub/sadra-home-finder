@@ -885,8 +885,12 @@ export function PropertyForm({
         </div>
       </Section>
 
-      <Button type="submit" disabled={submitting} className="h-12 w-full text-base">
-        {submitting ? <Loader2 className="size-4 animate-spin" /> : submitLabel}
+      <Button type="submit" disabled={submitting || matching} className="h-12 w-full text-base">
+        {submitting || matching ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          submitLabel
+        )}
       </Button>
 
       <OcrMatchDialog
