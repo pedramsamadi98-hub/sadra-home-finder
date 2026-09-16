@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { BedDouble, Car, MapPin, MoveVertical, Package, Ruler } from "lucide-react";
 
 import { PropertyTypeIcon } from "@/lib/property-type-icons";
+import { useRole } from "@/lib/roles";
 
 import { PhotoThumb } from "@/components/PhotoGallery";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
@@ -33,6 +34,7 @@ export function PropertyCard({
   property: Property;
   brokerContext?: string;
 }) {
+  const { isAdmin } = useRole();
   const priceText =
     property.transaction_type === "sale"
       ? faPrice(referencePrice(property))
