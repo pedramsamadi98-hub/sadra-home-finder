@@ -182,7 +182,7 @@ export async function serverMatchingResults(
 ): Promise<ServerMatchItem[]> {
   const { data, error } = await supabase
     .from("bulk_import_items")
-    .select("id, name, status, matching_result")
+    .select("id, name, status, matching_result, decision, decision_property_id")
     .eq("batch_id", batchId)
     .not("matching_result", "is", null)
     .order("created_at", { ascending: false })
