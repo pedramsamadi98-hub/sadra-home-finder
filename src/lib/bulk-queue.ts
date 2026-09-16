@@ -131,12 +131,44 @@ export interface ServerMatchCandidate {
   reasons: string[];
 }
 
+/** Explicit user decisions recorded on a queue item. Recording ≠ executing. */
+export type ServerDecision = "register_new" | "connect_existing" | "defer";
+
+export const SERVER_DECISION_LABELS: Record<ServerDecision, string> = {
+  register_new: "ثبت ملک جدید",
+  connect_existing: "اتصال به ملک موجود",
+  defer: "بعداً بررسی شود",
+};
+
 export interface ServerMatchItem {
   id: string;
   name: string;
   status: string;
   candidates: ServerMatchCandidate[];
   top_confidence: string | null;
+  decision: ServerDecision | null;
+  decision_property_id: string | null;
+}
+
+/**
+ * Records the user's choice on a server queue item — nothing else. No property
+ * is created, updated or linked, no price history, no photo, no file code; a
+ * separate later step executes the decision.
+ */
+export async function saveServerDecision(
+  itemId: string,
+  decision: ServerDecision,
+  propertyId?: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from("bulk_import_items")
+    .update({
+      decision,
+      decision_property_id: decision === "connect_existing" ? (propertyId ?? null) : null,
+      decided_at: new Date().toISOString(),
+    })
+    .eq("id", itemId);
+  if (error) throw error;
 }
 
 /**
@@ -150,7 +182,7 @@ export async function serverMatchingResults(
 ): Promise<ServerMatchItem[]> {
   const { data, error } = await supabase
     .from("bulk_import_items")
-    .select("id, name, status, matching_result")
+    .select("id, name, status, matching_result, decision, decision_property_id")
     .eq("batch_id", batchId)
     .not("matching_result", "is", null)
     .order("created_at", { ascending: false })
@@ -167,6 +199,8 @@ export async function serverMatchingResults(
       status: row.status,
       candidates: result.candidates ?? [],
       top_confidence: result.top_confidence ?? null,
+      decision: (row.decision as ServerDecision | null) ?? null,
+      decision_property_id: row.decision_property_id ?? null,
     };
   });
 }

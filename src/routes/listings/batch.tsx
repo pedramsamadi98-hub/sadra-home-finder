@@ -59,8 +59,11 @@ import {
   pushServerItems,
   serverCounts,
   serverMatchingResults,
+  saveServerDecision,
+  SERVER_DECISION_LABELS,
   SERVER_STATUS_LABELS,
   SERVER_STATUSES,
+  type ServerDecision,
   type ServerMatchItem,
   type ServerStatus,
 } from "@/lib/bulk-queue";
@@ -520,6 +523,32 @@ function BatchImport({ userId }: { userId: string }) {
     }
   }
 
+  /** Records the choice only — no property, price history, photo or file code. */
+  async function chooseServerDecision(
+    itemId: string,
+    decision: ServerDecision,
+    propertyId?: string | null,
+  ) {
+    try {
+      await saveServerDecision(itemId, decision, propertyId ?? null);
+      setServerMatches((current) =>
+        (current ?? []).map((match) =>
+          match.id === itemId
+            ? {
+                ...match,
+                decision,
+                decision_property_id: decision === "connect_existing" ? (propertyId ?? null) : null,
+              }
+            : match,
+        ),
+      );
+      toast.success("تصمیم ذخیره شد؛ اجرای آن در مرحله بعد انجام می‌شود");
+    } catch (error) {
+      console.error(error);
+      toast.error("ذخیره تصمیم ناموفق بود");
+    }
+  }
+
   /* -------------------------------- review ------------------------------- */
 
   useEffect(() => {
@@ -877,6 +906,24 @@ function BatchImport({ userId }: { userId: string }) {
                                 {candidate.reasons.join(" · ")}
                               </p>
                             ) : null}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                void chooseServerDecision(
+                                  match.id,
+                                  "connect_existing",
+                                  candidate.property_id,
+                                )
+                              }
+                              className={`inline-flex min-h-9 items-center rounded-lg border px-2 text-[11px] font-semibold ${
+                                match.decision === "connect_existing" &&
+                                match.decision_property_id === candidate.property_id
+                                  ? "border-primary text-primary"
+                                  : "border-border"
+                              }`}
+                            >
+                              اتصال به این ملک
+                            </button>
                           </li>
                         ))}
                       </ul>
@@ -885,6 +932,35 @@ function BatchImport({ userId }: { userId: string }) {
                         کاندیدایی پیدا نشد؛ برای ثبت دستی به فهرست فایل‌ها مراجعه کنید
                       </p>
                     )}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void chooseServerDecision(match.id, "register_new")}
+                        className={`inline-flex min-h-9 items-center rounded-lg border px-2 text-[11px] font-semibold ${
+                          match.decision === "register_new"
+                            ? "border-primary text-primary"
+                            : "border-border"
+                        }`}
+                      >
+                        ثبت ملک جدید
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void chooseServerDecision(match.id, "defer")}
+                        className={`inline-flex min-h-9 items-center rounded-lg border px-2 text-[11px] font-semibold ${
+                          match.decision === "defer"
+                            ? "border-primary text-primary"
+                            : "border-border"
+                        }`}
+                      >
+                        بعداً بررسی شود
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {match.decision
+                        ? `تصمیم فعلی: ${SERVER_DECISION_LABELS[match.decision]} (فقط ثبت شد، اجرا نشد)`
+                        : "تصمیمی ثبت نشده است"}
+                    </p>
                   </li>
                 ))}
               </ul>
