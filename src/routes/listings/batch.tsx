@@ -47,11 +47,21 @@ import {
   pageItems,
   patchBatch,
   patchItem,
+  pendingItems,
   releaseStale,
   resetErrors,
   type NewItem,
   type StoredBatch,
 } from "@/lib/batch-store";
+import { runBulkImportWorker } from "@/lib/bulk-worker.functions";
+import {
+  createServerBatch,
+  pushServerItems,
+  serverCounts,
+  SERVER_STATUS_LABELS,
+  SERVER_STATUSES,
+  type ServerStatus,
+} from "@/lib/bulk-queue";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
 import { findOcrCandidates } from "@/lib/ocr-match";
 import { fileCodeText } from "@/lib/properties";
@@ -129,6 +139,11 @@ function BatchImport({ userId }: { userId: string }) {
   const [reviewData, setReviewData] = useState<Awaited<ReturnType<typeof getItem>>>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  /* --- optional server queue (additive; the device queue stays the fallback) --- */
+  const runWorker = useServerFn(runBulkImportWorker);
+  const [serverBatchId, setServerBatchId] = useState<string | null>(null);
+  const [serverStats, setServerStats] = useState<Record<ServerStatus, number> | null>(null);
+  const [serverBusy, setServerBusy] = useState(false);
 
   const runningRef = useRef(false);
   const pausedRef = useRef(false);
@@ -421,6 +436,72 @@ function BatchImport({ userId }: { userId: string }) {
     toast.success("دسته حذف شد");
   }
 
+  /* ----------------------------- server queue ---------------------------- */
+
+  /** Mirrors a bounded slice of the device queue into the database queue. */
+  async function sendToServerQueue() {
+    const target = batchIdRef.current;
+    if (!target) return;
+    setServerBusy(true);
+    try {
+      const rows = await pendingItems(target, 25);
+      if (!rows.length) {
+        toast.info("موردی برای ارسال به صف سرور نیست");
+        return;
+      }
+      const id = serverBatchId ?? (await createServerBatch(userId, []));
+      setServerBatchId(id);
+      const count = await pushServerItems(
+        id,
+        userId,
+        rows.map((row) => ({
+          name: row.name,
+          folder: row.folder,
+          size: row.size,
+          source: row.source,
+          hash: row.hash ?? null,
+          file: new File([row.blob as Blob], row.name),
+        })),
+      );
+      setServerStats(await serverCounts(id));
+      toast.success(`${faDigits(count)} مورد به صف سرور اضافه شد`);
+    } catch (error) {
+      console.error(error);
+      toast.error("ارسال به صف سرور ناموفق بود؛ پردازش روی همین دستگاه فعال است");
+    } finally {
+      setServerBusy(false);
+    }
+  }
+
+  async function runServerWorker() {
+    if (!serverBatchId) return;
+    setServerBusy(true);
+    try {
+      const report = await runWorker({ data: { batchId: serverBatchId, limit: 3 } });
+      setServerStats(await serverCounts(serverBatchId));
+      toast.success(
+        report.idle
+          ? "موردی برای پردازش سروری باقی نمانده است"
+          : `${faDigits(report.processed)} مورد روی سرور پردازش شد`,
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("پردازش سروری ناموفق بود؛ می‌توانید از پردازش همین دستگاه استفاده کنید");
+    } finally {
+      setServerBusy(false);
+    }
+  }
+
+  async function refreshServerStats() {
+    if (!serverBatchId) return;
+    try {
+      setServerStats(await serverCounts(serverBatchId));
+    } catch (error) {
+      console.error(error);
+      toast.error("وضعیت صف سرور خوانده نشد");
+    }
+  }
+
   /* -------------------------------- review ------------------------------- */
 
   useEffect(() => {
@@ -679,6 +760,59 @@ function BatchImport({ userId }: { userId: string }) {
             </Button>
           </div>
         </section>
+
+        {/* server queue (optional) */}
+        <section className="surface-card space-y-3 p-4">
+          <p className="text-sm font-semibold">پردازش روی سرور (آزمایشی)</p>
+          <p className="text-xs text-muted-foreground">
+            می‌توانید بخشی از صف را به سرور بسپارید تا حتی با بسته شدن این صفحه پردازش ادامه
+            پیدا کند. پردازش روی همین دستگاه بدون تغییر باقی می‌ماند.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              disabled={serverBusy || !stats.pending}
+              onClick={() => void sendToServerQueue()}
+            >
+              {serverBusy ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Upload className="size-4" />
+              )}
+              ارسال به صف سرور
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              disabled={serverBusy || !serverBatchId}
+              onClick={() => void runServerWorker()}
+            >
+              <Play className="size-4" />
+              پردازش سروری
+            </Button>
+          </div>
+          {serverStats ? (
+            <>
+              <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+                {SERVER_STATUSES.filter((status) => serverStats[status] > 0).map((status) => (
+                  <Stat key={status} label={SERVER_STATUS_LABELS[status]} value={serverStats[status]} />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => void refreshServerStats()}
+                className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold"
+              >
+                <RefreshCw className="size-4" />
+                بروزرسانی وضعیت سرور
+              </button>
+            </>
+          ) : null}
+        </section>
+
 
         {/* report */}
         {stats.total ? (
