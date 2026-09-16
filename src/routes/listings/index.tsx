@@ -201,10 +201,13 @@ function Listings() {
   ]);
 
   const filterSignature = JSON.stringify({ ...queryInput, page: 0 });
-  // Any filter change starts again from the first page.
-  useEffect(() => {
-    setPage(1);
-  }, [filterSignature]);
+  const [lastSignature, setLastSignature] = useState(filterSignature);
+  // Any filter change starts again from the first page — applied during render so
+  // the database is never asked for a page that no longer exists.
+  if (lastSignature !== filterSignature) {
+    setLastSignature(filterSignature);
+    if (page !== 1) setPage(1);
+  }
 
   const { data: pageData, isLoading } = useQuery({
     queryKey: ["properties", isAdmin ? "admin" : "shared", "page", queryInput],
