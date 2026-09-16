@@ -83,18 +83,9 @@ export const runBulkImportWorker = createServerFn({ method: "POST" })
     });
     if (claimError) throw new Error(claimError.message);
 
-    const all = claimed ?? [];
-    const items = all.filter((item) => !data.batchId || item.batch_id === data.batchId);
-    // Claiming is global; anything claimed for another batch goes straight back
-    // in line with its lease cleared, so it is never stuck in `processing`.
-    const foreign = all.filter((item) => !items.includes(item));
-    for (const item of foreign) {
-      await supabaseAdmin
-        .from("bulk_import_items")
-        .update({ status: "pending", lease_owner: null, lease_until: null })
-        .eq("id", item.id)
-        .eq("fence", item.fence);
-    }
+    // The claim is global and oldest-first, so every claimed item is processed
+    // here; filtering by batch would leave older items leased and idle.
+    const items = claimed ?? [];
     report.claimed = items.length;
     if (!items.length) {
       report.idle = true;
