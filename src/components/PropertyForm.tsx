@@ -160,6 +160,8 @@ export function PropertyForm({
   const [scanned, setScanned] = useState(false);
   const [matchDone, setMatchDone] = useState(false);
   const [matching, setMatching] = useState(false);
+  /** The reviewed reading used for matching (form values merged over the OCR read). */
+  const [matchResult, setMatchResult] = useState<OcrResult | null>(null);
   const runOcr = useServerFn(extractPropertyFromImage);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
