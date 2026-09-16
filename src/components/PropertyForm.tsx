@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
 import { categoryOfZone, detectLand, zonesFor } from "@/lib/land";
-import { findOcrCandidates, type OcrCandidate } from "@/lib/ocr-match";
+import { findOcrCandidates, formToOcrResult, type OcrCandidate } from "@/lib/ocr-match";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
 import { PROPERTY_TYPE_ICONS } from "@/lib/property-type-icons";
 import {
