@@ -199,6 +199,8 @@ export async function serverMatchingResults(
       status: row.status,
       candidates: result.candidates ?? [],
       top_confidence: result.top_confidence ?? null,
+      decision: (row.decision as ServerDecision | null) ?? null,
+      decision_property_id: row.decision_property_id ?? null,
     };
   });
 }
