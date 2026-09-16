@@ -77,6 +77,128 @@ export type Database = {
         }
         Relationships: []
       }
+      bulk_import_batches: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          last_processed_at: string | null
+          skipped: Json
+          status: string
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_processed_at?: string | null
+          skipped?: Json
+          status?: string
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_processed_at?: string | null
+          skipped?: Json
+          status?: string
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bulk_import_items: {
+        Row: {
+          batch_id: string
+          created_at: string
+          fence: number
+          file_code: number | null
+          folder: string
+          id: string
+          idempotency_key: string
+          image_hash: string | null
+          last_error: string | null
+          lease_owner: string | null
+          lease_until: string | null
+          matching_result: Json | null
+          name: string
+          next_retry_at: string | null
+          ocr_result: Json | null
+          property_id: string | null
+          retry_count: number
+          size: number
+          source: string
+          status: string
+          storage_path: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          fence?: number
+          file_code?: number | null
+          folder?: string
+          id?: string
+          idempotency_key: string
+          image_hash?: string | null
+          last_error?: string | null
+          lease_owner?: string | null
+          lease_until?: string | null
+          matching_result?: Json | null
+          name: string
+          next_retry_at?: string | null
+          ocr_result?: Json | null
+          property_id?: string | null
+          retry_count?: number
+          size?: number
+          source?: string
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          fence?: number
+          file_code?: number | null
+          folder?: string
+          id?: string
+          idempotency_key?: string
+          image_hash?: string | null
+          last_error?: string | null
+          lease_owner?: string | null
+          lease_until?: string | null
+          matching_result?: Json | null
+          name?: string
+          next_retry_at?: string | null
+          ocr_result?: Json | null
+          property_id?: string | null
+          retry_count?: number
+          size?: number
+          source?: string
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_import_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "bulk_import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_requirements: {
         Row: {
           bedrooms: number | null
@@ -632,6 +754,40 @@ export type Database = {
     }
     Functions: {
       can_view_shared: { Args: { _user_id: string }; Returns: boolean }
+      claim_bulk_import_items: {
+        Args: { _lease_seconds?: number; _limit?: number; _worker: string }
+        Returns: {
+          batch_id: string
+          created_at: string
+          fence: number
+          file_code: number | null
+          folder: string
+          id: string
+          idempotency_key: string
+          image_hash: string | null
+          last_error: string | null
+          lease_owner: string | null
+          lease_until: string | null
+          matching_result: Json | null
+          name: string
+          next_retry_at: string | null
+          ocr_result: Json | null
+          property_id: string | null
+          retry_count: number
+          size: number
+          source: string
+          status: string
+          storage_path: string | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "bulk_import_items"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
