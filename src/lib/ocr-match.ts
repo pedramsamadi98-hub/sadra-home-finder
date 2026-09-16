@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { enDigits } from "@/lib/fa";
+import { findOcrCandidatesWith, norm } from "@/lib/ocr-match-core";
 import type { OcrPriceEvent, OcrResult } from "@/lib/ocr.functions";
 import {
   addPriceEvent,
@@ -9,30 +10,8 @@ import {
   type PropertyInput,
 } from "@/lib/properties";
 
-export type MatchConfidence = "high" | "medium" | "low";
-
-export interface OcrCandidate {
-  property: Property;
-  score: number;
-  confidence: MatchConfidence;
-  /** Persian reasons shown in the confirmation dialog. */
-  reasons: string[];
-}
-
-function norm(value: string | null | undefined): string {
-  if (!value) return "";
-  return enDigits(String(value))
-    .replace(/[يى]/g, "ی")
-    .replace(/ك/g, "ک")
-    .replace(/\u200c/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
-function digitsOnly(value: string | null | undefined): string {
-  return value ? enDigits(String(value)).replace(/\D/g, "") : "";
-}
+export type { MatchConfidence, OcrCandidate } from "@/lib/ocr-match-core";
+import type { MatchConfidence } from "@/lib/ocr-match-core";
 
 /* --------------------------- Jalali date parsing -------------------------- */
 
