@@ -336,7 +336,10 @@ export async function linkOcrToProperty(options: {
   const patch: Record<string, unknown> = {};
   for (const change of accepted) patch[change.key as string] = change.next;
   if (Object.keys(patch).length) {
-    const { error } = await supabase.from("properties").update(patch).eq("id", property.id);
+    const { error } = await supabase
+      .from("properties")
+      .update(patch as never)
+      .eq("id", property.id);
     if (error) throw error;
   }
 
