@@ -64,6 +64,7 @@ export const runBulkImportWorker = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { extractFromImageDataUrl } = await import("@/lib/ocr.server");
+    const { findOcrCandidatesWith } = await import("@/lib/ocr-match-core");
 
     const worker = `worker-${crypto.randomUUID()}`;
     const report: WorkerReport = {
@@ -170,6 +171,7 @@ export const runBulkImportWorker = createServerFn({ method: "POST" })
           .update({
             status,
             ocr_result: ocr as never,
+            matching_result: matching as never,
             last_error: null,
             next_retry_at: null,
             lease_owner: null,
