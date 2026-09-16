@@ -641,6 +641,12 @@ export type PriceEventInput = {
   confidence?: string | null;
   note?: string | null;
   kind?: PriceEventKind;
+  /**
+   * When false the event is recorded in the history only: the file's current
+   * price stays untouched, because an unconfirmed reading (e.g. OCR) must never
+   * be presented as today's price.
+   */
+  verify?: boolean;
 };
 
 /**
