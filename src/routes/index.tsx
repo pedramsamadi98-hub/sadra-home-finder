@@ -1,6 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Archive, CheckCircle2, Home, KeyRound, Loader2, RefreshCw, TrendingUp } from "lucide-react";
+import {
+  Archive,
+  CheckCircle2,
+  Home,
+  KeyRound,
+  Loader2,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  TrendingUp,
+} from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
