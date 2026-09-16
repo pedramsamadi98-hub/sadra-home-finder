@@ -64,6 +64,7 @@ export const runBulkImportWorker = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { extractFromImageDataUrl } = await import("@/lib/ocr.server");
+    const { findOcrCandidatesWith } = await import("@/lib/ocr-match-core");
 
     const worker = `worker-${crypto.randomUUID()}`;
     const report: WorkerReport = {
@@ -133,12 +134,44 @@ export const runBulkImportWorker = createServerFn({ method: "POST" })
         const enough = signalCount(ocr as unknown as Record<string, unknown>) >= 2;
         const status = enough ? "needs_review" : "manual";
 
+        // Same matching logic as the browser (shared core, narrow indexed
+        // lookups only). Nothing is merged or registered here — the candidates
+        // are stored for the existing review dialog to decide on later.
+        let matching: {
+          candidates: {
+            property_id: string;
+            file_code: number | null;
+            title: string;
+            score: number;
+            confidence: string;
+            reasons: string[];
+          }[];
+          top_confidence: string | null;
+          matched_at: string;
+        } | null = null;
+        if (enough) {
+          const candidates = await findOcrCandidatesWith(supabaseAdmin as never, ocr);
+          matching = {
+            candidates: candidates.map((candidate) => ({
+              property_id: candidate.property.id,
+              file_code: candidate.property.file_code ?? null,
+              title: candidate.property.title,
+              score: candidate.score,
+              confidence: candidate.confidence,
+              reasons: candidate.reasons,
+            })),
+            top_confidence: candidates[0]?.confidence ?? null,
+            matched_at: new Date().toISOString(),
+          };
+        }
+
         // Fencing: the update only lands while we still hold this lease version.
         const { data: updated, error: updateError } = await supabaseAdmin
           .from("bulk_import_items")
           .update({
             status,
             ocr_result: ocr as never,
+            matching_result: matching as never,
             last_error: null,
             next_retry_at: null,
             lease_owner: null,
