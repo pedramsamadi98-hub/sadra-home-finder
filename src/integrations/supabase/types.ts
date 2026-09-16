@@ -117,6 +117,9 @@ export type Database = {
         Row: {
           batch_id: string
           created_at: string
+          decided_at: string | null
+          decision: string | null
+          decision_property_id: string | null
           fence: number
           file_code: number | null
           folder: string
@@ -142,6 +145,9 @@ export type Database = {
         Insert: {
           batch_id: string
           created_at?: string
+          decided_at?: string | null
+          decision?: string | null
+          decision_property_id?: string | null
           fence?: number
           file_code?: number | null
           folder?: string
@@ -167,6 +173,9 @@ export type Database = {
         Update: {
           batch_id?: string
           created_at?: string
+          decided_at?: string | null
+          decision?: string | null
+          decision_property_id?: string | null
           fence?: number
           file_code?: number | null
           folder?: string
@@ -759,6 +768,9 @@ export type Database = {
         Returns: {
           batch_id: string
           created_at: string
+          decided_at: string | null
+          decision: string | null
+          decision_property_id: string | null
           fence: number
           file_code: number | null
           folder: string
