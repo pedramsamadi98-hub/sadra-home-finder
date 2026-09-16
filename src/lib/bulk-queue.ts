@@ -121,3 +121,52 @@ export async function deleteServerBatch(batchId: string): Promise<void> {
   const { error } = await supabase.from("bulk_import_batches").delete().eq("id", batchId);
   if (error) throw error;
 }
+
+export interface ServerMatchCandidate {
+  property_id: string;
+  file_code: number | null;
+  title: string;
+  score: number;
+  confidence: string;
+  reasons: string[];
+}
+
+export interface ServerMatchItem {
+  id: string;
+  name: string;
+  status: string;
+  candidates: ServerMatchCandidate[];
+  top_confidence: string | null;
+}
+
+/**
+ * Read-only view of the worker's stored matching results for the UI.
+ * Never writes, merges or registers anything — the final link decision stays
+ * with the existing review flow.
+ */
+export async function serverMatchingResults(
+  batchId: string,
+  limit = 25,
+): Promise<ServerMatchItem[]> {
+  const { data, error } = await supabase
+    .from("bulk_import_items")
+    .select("id, name, status, matching_result")
+    .eq("batch_id", batchId)
+    .not("matching_result", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    const result = (row.matching_result ?? {}) as {
+      candidates?: ServerMatchCandidate[];
+      top_confidence?: string | null;
+    };
+    return {
+      id: row.id,
+      name: row.name,
+      status: row.status,
+      candidates: result.candidates ?? [],
+      top_confidence: result.top_confidence ?? null,
+    };
+  });
+}
