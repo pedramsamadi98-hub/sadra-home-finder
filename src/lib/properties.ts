@@ -641,6 +641,12 @@ export type PriceEventInput = {
   confidence?: string | null;
   note?: string | null;
   kind?: PriceEventKind;
+  /**
+   * When false the event is recorded in the history only: the file's current
+   * price stays untouched, because an unconfirmed reading (e.g. OCR) must never
+   * be presented as today's price.
+   */
+  verify?: boolean;
 };
 
 /**
@@ -703,7 +709,7 @@ export async function addPriceEvent(
   const isNewest =
     !property.price_verified_at ||
     new Date(eventAt).getTime() >= new Date(property.price_verified_at).getTime();
-  if (input.price !== null && input.price !== undefined && isNewest) {
+  if (input.verify !== false && input.price !== null && input.price !== undefined && isNewest) {
     const patch = {
       verified_price: input.price,
       price_verified_at: eventAt,
@@ -727,4 +733,171 @@ export async function addPriceEvent(
 export async function deletePriceEvent(id: string) {
   const { error } = await supabase.from("property_price_events").delete().eq("id", id);
   if (error) throw error;
+}
+
+/* ------------------------------ pagination ------------------------------- */
+
+/**
+ * Every list filter, expressed so it can run inside the database query.
+ * The list view never downloads the whole table: filters + sort + range are
+ * applied by Postgres and only one page of rows comes back.
+ */
+export interface PropertyQuery {
+  text?: string;
+  fileCode?: number | null;
+  types?: string[] | undefined;
+  ownership?: string | null;
+  transaction?: string | null;
+  status?: string | null;
+  scope?: ArchiveScope;
+  phase?: string | null;
+  neighborhood?: string | null;
+  landCategory?: string | null;
+  landZone?: string | null;
+  plotNumber?: string | null;
+  brokerId?: string | null;
+  minArea?: number | null;
+  maxArea?: number | null;
+  minBedrooms?: number | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  parking?: boolean | undefined;
+  elevator?: boolean | undefined;
+  storage?: boolean | undefined;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PropertyPage {
+  rows: Property[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** Columns a free-text search may look into, per audience. */
+const TEXT_COLUMNS_ADMIN = [
+  "title",
+  "address",
+  "street",
+  "neighborhood",
+  "phase",
+  "land_zone",
+  "plot_number",
+  "owner_name",
+  "owner_phone",
+  "description",
+  "notes",
+];
+const TEXT_COLUMNS_SHARED = [
+  "title",
+  "street",
+  "neighborhood",
+  "phase",
+  "land_zone",
+  "plot_number",
+  "description",
+];
+
+function escapeOr(value: string): string {
+  return value.replace(/[(),]/g, " ").trim();
+}
+
+export async function fetchPropertiesPage(
+  isAdmin: boolean,
+  q: PropertyQuery,
+): Promise<PropertyPage> {
+  const page = Math.max(1, q.page ?? 1);
+  const pageSize = Math.min(100, Math.max(5, q.pageSize ?? 20));
+
+  // Both audiences go through a real database query: admins read the table,
+  // collaborators read the privacy-safe `shared_properties()` view function.
+  const adminQuery = supabase.from("properties").select("*", { count: "exact" });
+  let query = isAdmin
+    ? adminQuery
+    : (supabase.rpc("shared_properties", undefined, {
+        count: "exact",
+      }) as unknown as typeof adminQuery);
+
+  const scope = q.scope ?? "active";
+  if (scope === "archive") {
+    query = query.in("status", ARCHIVE_STATUSES);
+  } else if (scope === "active") {
+    query = query.not("status", "in", `(${ARCHIVE_STATUSES.join(",")})`);
+  }
+
+  if (q.status) query = query.eq("status", q.status);
+  if (q.types?.length) query = query.in("property_type", q.types);
+  if (q.ownership) query = query.eq("ownership_type", q.ownership);
+  if (q.transaction) query = query.eq("transaction_type", q.transaction);
+  if (q.phase) query = query.eq("phase", q.phase);
+  if (q.neighborhood) query = query.eq("neighborhood", q.neighborhood);
+  if (q.landCategory) query = query.eq("land_category", q.landCategory);
+  if (q.landZone) query = query.eq("land_zone", q.landZone);
+  if (q.plotNumber) query = query.ilike("plot_number", `%${q.plotNumber}%`);
+  if (isAdmin && q.brokerId) {
+    query = q.brokerId === "none" ? query.is("broker_id", null) : query.eq("broker_id", q.brokerId);
+  }
+  if (q.minArea) query = query.gte("area", q.minArea);
+  if (q.maxArea) query = query.lte("area", q.maxArea);
+  if (q.minBedrooms) query = query.gte("bedrooms", q.minBedrooms);
+  if (q.parking !== undefined) query = query.eq("parking", q.parking);
+  if (q.elevator !== undefined) query = query.eq("elevator", q.elevator);
+  if (q.storage !== undefined) query = query.eq("storage", q.storage);
+
+  const text = escapeOr(q.text ?? "");
+  if (text) {
+    const columns = isAdmin ? TEXT_COLUMNS_ADMIN : TEXT_COLUMNS_SHARED;
+    const parts = columns.map((column) => `${column}.ilike.%${text}%`);
+    if (q.fileCode !== null && q.fileCode !== undefined) {
+      parts.push(`file_code.eq.${q.fileCode}`);
+    }
+    query = query.or(parts.join(","));
+  } else if (q.fileCode !== null && q.fileCode !== undefined) {
+    query = query.eq("file_code", q.fileCode);
+  }
+
+  // Price range runs on the CONFIRMED price for sales. A file whose price was
+  // never re-confirmed stays visible as a «نیازمند استعلام» candidate instead
+  // of being judged by an outdated amount.
+  if (q.minPrice || q.maxPrice) {
+    const sale: string[] = [];
+    if (q.minPrice) sale.push(`verified_price.gte.${q.minPrice}`);
+    if (q.maxPrice) sale.push(`verified_price.lte.${q.maxPrice}`);
+    const rent: string[] = [];
+    if (q.minPrice) rent.push(`deposit.gte.${q.minPrice}`);
+    if (q.maxPrice) rent.push(`deposit.lte.${q.maxPrice}`);
+    query = query.or(
+      [
+        `and(transaction_type.eq.sale,verified_price.is.null)`,
+        `and(transaction_type.eq.sale,${sale.join(",")})`,
+        `and(transaction_type.neq.sale,${rent.join(",")})`,
+      ].join(","),
+    );
+  }
+
+  const from = (page - 1) * pageSize;
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .range(from, from + pageSize - 1);
+  if (error) throw error;
+
+  const rows = (data ?? []).map((row) => {
+    const record = row as Record<string, unknown>;
+    return isAdmin
+      ? (record as unknown as Property)
+      : ({
+          ...record,
+          user_id: null,
+          broker_id: null,
+          address: null,
+          owner_name: null,
+          owner_phone: null,
+          notes: null,
+          photos: (record["photos"] ?? []) as string[],
+          private_photos: [],
+        } as unknown as Property);
+  });
+
+  return { rows, total: count ?? rows.length, page, pageSize };
 }
