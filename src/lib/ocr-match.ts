@@ -393,3 +393,26 @@ export async function linkOcrToProperty(options: {
 
   return { fields: Object.keys(patch).length, events: events.length };
 }
+
+/**
+ * The reviewed form is the real matching source: the user may correct or complete
+ * the reading before the file is created, so matching runs again on submit with
+ * these values (price/date are deliberately not matching signals).
+ */
+export function formToOcrResult(form: PropertyInput, base?: OcrResult | null): OcrResult {
+  return {
+    ...(base ?? {}),
+    title: form.title ?? null,
+    property_type: (form.property_type as OcrResult["property_type"]) ?? null,
+    phase: form.phase ?? null,
+    neighborhood: form.neighborhood ?? null,
+    street: form.street ?? null,
+    address: form.address ?? null,
+    plot_number: form.plot_number ?? null,
+    area: form.area ?? null,
+    owner_name: form.owner_name ?? null,
+    owner_phone: form.owner_phone ?? null,
+    land_category: form.land_category ?? null,
+    land_zone: form.land_zone ?? null,
+  };
+}
