@@ -110,7 +110,12 @@ export function AppShell({
       <main className="mx-auto w-full max-w-3xl px-4 py-4">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur-md">
-        <div className="mx-auto grid max-w-3xl grid-cols-4 gap-1 px-2 py-2 sm:grid-cols-8">
+        <div
+          className="mx-auto grid max-w-3xl gap-1 px-2 py-2"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(navItems.length, 4)}, minmax(0, 1fr))`,
+          }}
+        >
           {navItems.map((item) => (
             <Link
               key={item.to}
@@ -120,7 +125,7 @@ export function AppShell({
               activeProps={{ className: "!text-primary bg-primary/10 font-semibold" }}
             >
               <item.icon className="size-5" />
-              {item.label}
+              <span className="w-full truncate text-center">{item.label}</span>
             </Link>
           ))}
         </div>
