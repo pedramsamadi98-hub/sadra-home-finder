@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouterState } from "@tanstack/react-router";
-import { Loader2, Search, SlidersHorizontal, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AppShell } from "@/components/AppShell";
@@ -14,23 +14,19 @@ import { enDigits, faDigits, parseNumber } from "@/lib/fa";
 import {
   ALL_PROPERTY_TYPE_LABELS,
   ARCHIVE_SCOPE_LABELS,
-  currentPrice,
-  fetchPropertiesFor,
-  matchesArchiveScope,
-  needsPriceCheck,
+  fetchPropertiesPage,
   neighborhoodsFor,
   NEIGHBORHOODS,
   PHASES,
   OWNERSHIP_LABELS,
-  propertyTypeLabel,
   STATUS_LABELS,
   TRANSACTION_LABELS,
   type ArchiveScope,
-  type Property,
+  type PropertyQuery,
 } from "@/lib/properties";
 import { LAND_CATEGORIES, LAND_CATEGORY_LABELS, zonesFor } from "@/lib/land";
 import { useRole } from "@/lib/roles";
-import { matchesCriteria, parseSmartQuery, relevanceScore } from "@/lib/smart-search";
+import { criteriaToFilters, parseSmartQuery, relevanceScore } from "@/lib/smart-search";
 
 
 export const Route = createFileRoute("/listings/")({
@@ -58,6 +54,9 @@ function ListingsRoute() {
 
 const ALL = "all";
 
+/** Rows fetched per page — the list never asks the database for more. */
+const PAGE_SIZE = 20;
+
 /**
  * The list view remembers search, filters and scroll position for the session,
  * so returning from a property's details lands exactly where the user left.
@@ -77,11 +76,6 @@ function readSaved(): SavedState {
 
 function Listings() {
   const { isAdmin, loading: roleLoading } = useRole();
-  const { data, isLoading } = useQuery<Property[]>({
-    queryKey: ["properties", isAdmin ? "admin" : "shared"],
-    queryFn: () => fetchPropertiesFor(isAdmin),
-    enabled: !roleLoading,
-  });
 
   const saved = useRef<SavedState>(readSaved()).current;
   const pick = <T,>(key: string, fallback: T): T =>
@@ -116,6 +110,7 @@ function Listings() {
   const [elevator, setElevator] = useState(pick("elevator", false));
   const [storageOnly, setStorageOnly] = useState(pick("storageOnly", false));
   const [broker, setBroker] = useState<string>(pick("broker", ALL));
+  const [page, setPage] = useState<number>(pick("page", 1));
 
 
   const { data: brokers } = useQuery({
@@ -132,114 +127,104 @@ function Listings() {
     [parsed, removed],
   );
 
-  const results = useMemo(() => {
-    const textQuery = criteria.length ? parsed.rest : query.trim();
-    const q = enDigits(textQuery.toLowerCase());
-    const areaMin = parseNumber(minArea);
-    const areaMax = parseNumber(maxArea);
-    const priceMin = parseNumber(minPrice);
-    const priceMax = parseNumber(maxPrice);
-    const bedsMin = parseNumber(minBedrooms);
+  const textQuery = criteria.length ? parsed.rest : query.trim();
 
-    const codeQuery = /^\d+$/.test(q) ? Number(q) : null;
+  /**
+   * Every filter is translated into ONE database query: the list never reads the
+   * whole table. Persian smart-search criteria become filters too, so paging
+   * stays correct with tens of thousands of files.
+   */
+  const queryInput: PropertyQuery = useMemo(() => {
+    const smart = criteriaToFilters(criteria);
+    const text = enDigits(textQuery.trim());
+    const codeQuery = /^\d+$/.test(text) ? Number(text) : null;
 
-    const filtered = (data ?? []).filter((item) => {
-      if (!matchesArchiveScope(item, scope)) return false;
-      if (codeQuery !== null && item.file_code === codeQuery) return true;
-      if (!matchesCriteria(item, criteria)) return false;
-      if (q) {
-        const haystack = enDigits(
-          [
-            item.title,
-            item.city,
-            item.phase,
-            item.neighborhood,
-            item.street,
-            item.address,
-            item.land_zone,
-            item.plot_number,
-            item.land_category ? LAND_CATEGORY_LABELS[item.land_category] : null,
-            item.owner_name,
-            item.owner_phone,
-            item.description,
-            item.notes,
-            propertyTypeLabel(item.property_type),
-            TRANSACTION_LABELS[item.transaction_type],
-            STATUS_LABELS[item.status],
-            item.ownership_type ? OWNERSHIP_LABELS[item.ownership_type] : null,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase(),
-        );
-        if (!haystack.includes(q)) return false;
-      }
-      // Multi-select: OR across the chosen usage types, AND with every other filter.
-      if (types.length && !types.includes(item.property_type)) return false;
-      if (ownership !== ALL && item.ownership_type !== ownership) return false;
-      if (transaction !== ALL && item.transaction_type !== transaction) return false;
-      if (status !== ALL && item.status !== status) return false;
-      if (neighborhood !== ALL && item.neighborhood !== neighborhood) return false;
-      if (phase !== ALL && item.phase !== phase) return false;
-      if (landCategoryId !== ALL && item.land_category !== landCategoryId) return false;
-      if (landZone !== ALL && item.land_zone !== landZone) return false;
-      if (parking && !item.parking) return false;
-      if (elevator && !item.elevator) return false;
-      if (storageOnly && !item.storage) return false;
-      if (broker !== ALL) {
-        if (broker === "none" ? item.broker_id !== null : item.broker_id !== broker) return false;
-      }
-      if (areaMin && (item.area ?? 0) < areaMin) return false;
-      if (areaMax && (item.area ?? 0) > areaMax) return false;
-      if (bedsMin && (item.bedrooms ?? 0) < bedsMin) return false;
-      // Price filters run on the confirmed current price. A file whose price was
-      // never re-confirmed stays visible as a «نیازمند استعلام» candidate instead
-      // of being judged by an outdated amount.
-      if (priceMin || priceMax) {
-        if (item.transaction_type === "sale") {
-          if (!needsPriceCheck(item)) {
-            const priceValue = currentPrice(item) ?? 0;
-            if (priceMin && priceValue < priceMin) return false;
-            if (priceMax && priceValue > priceMax) return false;
-          }
-        } else {
-          const priceValue = item.deposit ?? 0;
-          if (priceMin && priceValue < priceMin) return false;
-          if (priceMax && priceValue > priceMax) return false;
-        }
-      }
-      return true;
-    });
+    // Multi-select types AND smart-search type: intersection (both must hold).
+    let typeFilter: string[] | undefined = types.length ? types : smart.types;
+    if (types.length && smart.types) {
+      const both = types.filter((value) => smart.types!.includes(value));
+      typeFilter = both.length ? both : ["__none__"];
+    }
 
-    if (!criteria.length && !textQuery) return filtered;
-    return [...filtered].sort(
-      (a, b) =>
-        relevanceScore(b, criteria, textQuery) - relevanceScore(a, criteria, textQuery),
-    );
+    const maxOf = (a: number | null, b: number | undefined) =>
+      a && b ? Math.max(a, b) : (a ?? b ?? null);
+    const minOf = (a: number | null, b: number | undefined) =>
+      a && b ? Math.min(a, b) : (a ?? b ?? null);
+
+    return {
+      text,
+      fileCode: codeQuery,
+      types: typeFilter,
+      ownership: ownership !== ALL ? ownership : (smart.ownership ?? null),
+      transaction: transaction !== ALL ? transaction : (smart.transaction ?? null),
+      status: status !== ALL ? status : null,
+      scope,
+      phase: phase !== ALL ? phase : (smart.phase ?? null),
+      neighborhood: neighborhood !== ALL ? neighborhood : null,
+      landCategory: landCategoryId !== ALL ? landCategoryId : (smart.landCategory ?? null),
+      landZone: landZone !== ALL ? landZone : (smart.landZone ?? null),
+      plotNumber: smart.plotNumber ?? null,
+      brokerId: broker !== ALL ? broker : null,
+      minArea: maxOf(parseNumber(minArea), smart.minArea),
+      maxArea: minOf(parseNumber(maxArea), smart.maxArea),
+      minBedrooms: maxOf(parseNumber(minBedrooms), smart.minBedrooms),
+      minPrice: maxOf(parseNumber(minPrice), smart.minPrice),
+      maxPrice: minOf(parseNumber(maxPrice), smart.maxPrice),
+      parking: parking ? true : smart.parking,
+      elevator: elevator ? true : smart.elevator,
+      storage: storageOnly ? true : smart.storage,
+      page,
+      pageSize: PAGE_SIZE,
+    };
   }, [
-    data,
-    query,
-    parsed,
     criteria,
+    textQuery,
     types,
     ownership,
     transaction,
     status,
     scope,
-    neighborhood,
     phase,
+    neighborhood,
     landCategoryId,
     landZone,
     broker,
     minArea,
     maxArea,
+    minBedrooms,
     minPrice,
     maxPrice,
-    minBedrooms,
     parking,
     elevator,
     storageOnly,
+    page,
   ]);
+
+  const filterSignature = JSON.stringify({ ...queryInput, page: 0 });
+  // Any filter change starts again from the first page.
+  useEffect(() => {
+    setPage(1);
+  }, [filterSignature]);
+
+  const { data: pageData, isLoading } = useQuery({
+    queryKey: ["properties", isAdmin ? "admin" : "shared", "page", queryInput],
+    queryFn: () => fetchPropertiesPage(isAdmin, queryInput),
+    enabled: !roleLoading,
+    placeholderData: (previous) => previous,
+  });
+
+  const total = pageData?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // Only the current page is sorted by relevance — the database decides which
+  // rows belong to the page.
+  const results = useMemo(() => {
+    const rows = pageData?.rows ?? [];
+    if (!criteria.length && !textQuery) return rows;
+    return [...rows].sort(
+      (a, b) => relevanceScore(b, criteria, textQuery) - relevanceScore(a, criteria, textQuery),
+    );
+  }, [pageData, criteria, textQuery]);
 
   const view = {
     query,
@@ -263,6 +248,7 @@ function Listings() {
     storageOnly,
     broker,
     removed,
+    page,
   };
 
   // Persist the current view (without touching scroll, saved separately).
@@ -356,10 +342,11 @@ function Listings() {
     setParking(false);
     setElevator(false);
     setStorageOnly(false);
+    setPage(1);
   }
 
   return (
-    <AppShell title="املاک" subtitle={`${faDigits(results.length)} فایل یافت شد`}>
+    <AppShell title="املاک" subtitle={`${faDigits(total)} فایل یافت شد`}>
       <div className="space-y-3">
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -627,6 +614,32 @@ function Listings() {
             {results.map((property) => (
               <PropertyCard key={property.id} property={property} />
             ))}
+            {results.length ? (
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPage((value) => Math.max(1, value - 1))}
+                  disabled={page <= 1}
+                  className="flex h-11 min-w-24 items-center justify-center gap-1 rounded-xl border border-border px-3 text-xs font-medium disabled:opacity-40"
+                >
+                  <ChevronRight className="size-4" />
+                  قبلی
+                </button>
+                <span className="text-[11px] text-muted-foreground">
+                  صفحه {faDigits(page)} از {faDigits(pageCount)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
+                  disabled={page >= pageCount}
+                  className="flex h-11 min-w-24 items-center justify-center gap-1 rounded-xl border border-border px-3 text-xs font-medium disabled:opacity-40"
+                >
+                  بعدی
+                  <ChevronLeft className="size-4" />
+                </button>
+              </div>
+            ) : null}
+
             {!results.length ? (
               <div className="space-y-2 py-12 text-center">
                 <p className="text-sm text-muted-foreground">فایلی مطابق این جستجو پیدا نشد.</p>
