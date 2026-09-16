@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
 import { categoryOfZone, detectLand, zonesFor } from "@/lib/land";
-import { findOcrCandidates, type OcrCandidate } from "@/lib/ocr-match";
+import { findOcrCandidates, formToOcrResult, type OcrCandidate } from "@/lib/ocr-match";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
 import { PROPERTY_TYPE_ICONS } from "@/lib/property-type-icons";
 import {
@@ -156,6 +156,12 @@ export function PropertyForm({
   const [ocrOpen, setOcrOpen] = useState(false);
   const [candidates, setCandidates] = useState<OcrCandidate[]>([]);
   const [matchOpen, setMatchOpen] = useState(false);
+  /** A reading came from an image, so matching must run before the insert. */
+  const [scanned, setScanned] = useState(false);
+  const [matchDone, setMatchDone] = useState(false);
+  const [matching, setMatching] = useState(false);
+  /** The reviewed reading used for matching (form values merged over the OCR read). */
+  const [matchResult, setMatchResult] = useState<OcrResult | null>(null);
   const runOcr = useServerFn(extractPropertyFromImage);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -227,17 +233,8 @@ export function PropertyForm({
         plot_number: landAllowed ? (result.plot_number ?? detected?.plot_number ?? null) : null,
       };
       setOcrResult(enriched);
-
-      // Before a new file is created, look for the existing file this reading may
-      // belong to. Only narrow, indexed lookups run — never a full table read.
-      if (matchExisting) {
-        const found = await findOcrCandidates(enriched);
-        if (found.length) {
-          setCandidates(found);
-          setMatchOpen(true);
-          return;
-        }
-      }
+      setScanned(true);
+      setMatchDone(false);
       setOcrOpen(true);
     } catch (error) {
       console.error(error);
@@ -270,7 +267,7 @@ export function PropertyForm({
     toast.success(`${applied} فیلد از عکس پر شد`);
   }
 
-  function submit(event: FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
     if (!form.title.trim()) {
       toast.error("عنوان ملک را وارد کنید");
@@ -279,6 +276,26 @@ export function PropertyForm({
     if (!form.ownership_type) {
       toast.error("نوع ملک (ملکی یا اوقاف) را انتخاب کنید");
       return;
+    }
+    // A reading may belong to an existing file. Matching runs on the REVIEWED
+    // values, right before the new file would be inserted. Nothing is merged
+    // automatically — the user links, creates a new file, or cancels.
+    if (matchExisting && scanned && !matchDone) {
+      setMatching(true);
+      try {
+        const merged = formToOcrResult(form, ocrResult);
+        const found = await findOcrCandidates(merged);
+        if (found.length) {
+          setMatchResult(merged);
+          setCandidates(found);
+          setMatchOpen(true);
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setMatching(false);
+      }
     }
     onSubmit(form);
   }
@@ -872,21 +889,30 @@ export function PropertyForm({
         </div>
       </Section>
 
-      <Button type="submit" disabled={submitting} className="h-12 w-full text-base">
-        {submitting ? <Loader2 className="size-4 animate-spin" /> : submitLabel}
+      <Button type="submit" disabled={submitting || matching} className="h-12 w-full text-base">
+        {submitting || matching ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          submitLabel
+        )}
       </Button>
 
       <OcrMatchDialog
         open={matchOpen}
-        result={ocrResult}
+        result={matchResult ?? ocrResult}
         candidates={candidates}
         userId={userId}
         onOpenChange={setMatchOpen}
         onLinked={(id) => {
+          setMatchDone(true);
           void queryClient.invalidateQueries({ queryKey: ["properties"] });
           void navigate({ to: "/listings/$id", params: { id }, search: {} });
         }}
-        onCreateNew={() => setOcrOpen(true)}
+        onCreateNew={() => {
+          // «ثبت به‌عنوان فایل جدید» — continue the normal create flow.
+          setMatchDone(true);
+          onSubmit(form);
+        }}
       />
 
       <OcrReviewDialog

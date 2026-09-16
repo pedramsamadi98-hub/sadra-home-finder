@@ -171,6 +171,30 @@ export async function findOcrCandidates(result: OcrResult): Promise<OcrCandidate
     );
   }
 
+  // 6) Street / address text — a sheet often names only the street.
+  const street = norm(result.street) || norm(result.address).split(" ").slice(0, 3).join(" ");
+  if (street.length >= 3) {
+    await collect(() =>
+      supabase
+        .from("properties")
+        .select("*")
+        .or(`street.ilike.%${street}%,address.ilike.%${street}%,title.ilike.%${street}%`)
+        .limit(CANDIDATE_LIMIT),
+    );
+  }
+
+  // 7) Area alone (±2%) — narrow and indexed, catches sheets with no location text.
+  if (result.area) {
+    await collect(() =>
+      supabase
+        .from("properties")
+        .select("*")
+        .gte("area", Math.floor(result.area! * 0.98))
+        .lte("area", Math.ceil(result.area! * 1.02))
+        .limit(CANDIDATE_LIMIT),
+    );
+  }
+
   const scored = [...found.values()]
     .map((property) => score(property, result))
     .filter((item) => item.score >= 3)
@@ -224,6 +248,10 @@ function score(property: Property, result: OcrResult): OcrCandidate {
   if (title.length >= 4 && norm(property.title).includes(title.split(" ").slice(0, 3).join(" "))) {
     score += 2;
     reasons.push("عنوان مشابه");
+  }
+  if (result.property_type && result.property_type === property.property_type) {
+    score += 1;
+    reasons.push("نوع ملک یکسان");
   }
 
   const confidence: MatchConfidence = score >= 8 ? "high" : score >= 5 ? "medium" : "low";
@@ -364,4 +392,27 @@ export async function linkOcrToProperty(options: {
   if (options.restore && isArchived(property)) await restoreProperty(property.id);
 
   return { fields: Object.keys(patch).length, events: events.length };
+}
+
+/**
+ * The reviewed form is the real matching source: the user may correct or complete
+ * the reading before the file is created, so matching runs again on submit with
+ * these values (price/date are deliberately not matching signals).
+ */
+export function formToOcrResult(form: PropertyInput, base?: OcrResult | null): OcrResult {
+  return {
+    ...(base ?? {}),
+    title: form.title ?? null,
+    property_type: (form.property_type as OcrResult["property_type"]) ?? null,
+    phase: form.phase ?? null,
+    neighborhood: form.neighborhood ?? null,
+    street: form.street ?? null,
+    address: form.address ?? null,
+    plot_number: form.plot_number ?? null,
+    area: form.area ?? null,
+    owner_name: form.owner_name ?? null,
+    owner_phone: form.owner_phone ?? null,
+    land_category: form.land_category ?? null,
+    land_zone: form.land_zone ?? null,
+  };
 }
