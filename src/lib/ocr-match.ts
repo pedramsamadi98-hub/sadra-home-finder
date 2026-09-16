@@ -249,6 +249,10 @@ function score(property: Property, result: OcrResult): OcrCandidate {
     score += 2;
     reasons.push("عنوان مشابه");
   }
+  if (result.property_type && result.property_type === property.property_type) {
+    score += 1;
+    reasons.push("نوع ملک یکسان");
+  }
 
   const confidence: MatchConfidence = score >= 8 ? "high" : score >= 5 ? "medium" : "low";
   return { property, score, confidence, reasons };
