@@ -1,9 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ImagePlus, Loader2, Plus, ScanText, Trash2, type LucideIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
+import { OcrMatchDialog } from "@/components/OcrMatchDialog";
 import { OcrReviewDialog } from "@/components/OcrReviewDialog";
 import { usePhotoUrls } from "@/components/PhotoGallery";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { fetchBrokers } from "@/lib/brokers";
 import { faPrice, parseNumber } from "@/lib/fa";
 import { categoryOfZone, detectLand, zonesFor } from "@/lib/land";
+import { findOcrCandidates, type OcrCandidate } from "@/lib/ocr-match";
 import { extractPropertyFromImage, type OcrResult } from "@/lib/ocr.functions";
 import { PROPERTY_TYPE_ICONS } from "@/lib/property-type-icons";
 import {
@@ -136,19 +139,26 @@ export function PropertyForm({
   submitLabel,
   onSubmit,
   submitting,
+  matchExisting = false,
 }: {
   initial: PropertyInput;
   userId: string;
   submitLabel: string;
   onSubmit: (input: PropertyInput) => void;
   submitting: boolean;
+  /** On the «ثبت ملک» form: offer to link a reading to an existing file. */
+  matchExisting?: boolean;
 }) {
   const [form, setForm] = useState<PropertyInput>(initial);
   const [uploading, setUploading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
   const [ocrOpen, setOcrOpen] = useState(false);
+  const [candidates, setCandidates] = useState<OcrCandidate[]>([]);
+  const [matchOpen, setMatchOpen] = useState(false);
   const runOcr = useServerFn(extractPropertyFromImage);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: brokers } = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
   const { data: photoUrls } = usePhotoUrls(form.photos);
   const { data: privateUrls } = usePhotoUrls(form.private_photos);
@@ -210,13 +220,24 @@ export function PropertyForm({
       const landAllowed = isLandType(form.property_type);
       const detected = landAllowed ? detectLand(haystack) : null;
 
-      setOcrResult({
+      const enriched: OcrResult = {
         ...result,
         land_category: detected?.land_category ?? null,
         land_zone: detected?.land_zone ?? null,
         plot_number: landAllowed ? (result.plot_number ?? detected?.plot_number ?? null) : null,
-      });
+      };
+      setOcrResult(enriched);
 
+      // Before a new file is created, look for the existing file this reading may
+      // belong to. Only narrow, indexed lookups run — never a full table read.
+      if (matchExisting) {
+        const found = await findOcrCandidates(enriched);
+        if (found.length) {
+          setCandidates(found);
+          setMatchOpen(true);
+          return;
+        }
+      }
       setOcrOpen(true);
     } catch (error) {
       console.error(error);
@@ -854,6 +875,19 @@ export function PropertyForm({
       <Button type="submit" disabled={submitting} className="h-12 w-full text-base">
         {submitting ? <Loader2 className="size-4 animate-spin" /> : submitLabel}
       </Button>
+
+      <OcrMatchDialog
+        open={matchOpen}
+        result={ocrResult}
+        candidates={candidates}
+        userId={userId}
+        onOpenChange={setMatchOpen}
+        onLinked={(id) => {
+          void queryClient.invalidateQueries({ queryKey: ["properties"] });
+          void navigate({ to: "/listings/$id", params: { id }, search: { broker: undefined } });
+        }}
+        onCreateNew={() => setOcrOpen(true)}
+      />
 
       <OcrReviewDialog
         open={ocrOpen}

@@ -54,6 +54,7 @@ function NewProperty({ userId, brokerId }: { userId: string; brokerId: string | 
         userId={userId}
         submitLabel="ثبت ملک"
         submitting={mutation.isPending}
+        matchExisting
         onSubmit={(input) => mutation.mutate(input)}
       />
     </AppShell>
