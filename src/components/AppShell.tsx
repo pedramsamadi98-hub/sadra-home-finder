@@ -63,7 +63,7 @@ export function AppShell({
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className={`min-h-screen bg-background ${navItems.length > 4 ? "pb-36" : "pb-24"}`}>
       <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3">
           <img
@@ -110,17 +110,22 @@ export function AppShell({
       <main className="mx-auto w-full max-w-3xl px-4 py-4">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-3xl items-stretch justify-around gap-1 overflow-x-auto px-2 py-2">
+        <div
+          className="mx-auto grid max-w-3xl gap-1 px-2 py-2"
+          style={{
+            gridTemplateColumns: `repeat(${Math.min(navItems.length, 4)}, minmax(0, 1fr))`,
+          }}
+        >
           {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
               activeOptions={{ exact: item.to === "/" }}
-              className="flex min-w-[58px] flex-1 shrink-0 flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-muted-foreground transition-colors"
+              className="flex min-w-0 flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-muted-foreground transition-colors"
               activeProps={{ className: "!text-primary bg-primary/10 font-semibold" }}
             >
               <item.icon className="size-5" />
-              {item.label}
+              <span className="w-full truncate text-center">{item.label}</span>
             </Link>
           ))}
         </div>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { faDate, faPrice } from "@/lib/fa";
+import { faDate, faDateTime, faPrice } from "@/lib/fa";
 import {
   addPriceEvent,
   deletePriceEvent,
@@ -112,8 +112,8 @@ export function PriceHistorySection({
         {property.price_verified_at ? (
           <div className="flex items-center gap-2 rounded-xl bg-secondary/60 px-3 py-2">
             <span className="text-xs text-muted-foreground">آخرین تأیید قیمت</span>
-            <span className="ms-auto text-sm font-medium">
-              {faDate(property.price_verified_at)}
+            <span className="ms-auto text-end text-sm font-medium">
+              {faDateTime(property.price_verified_at)}
             </span>
           </div>
         ) : null}
@@ -184,7 +184,7 @@ export function PriceHistorySection({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-primary">{faPrice(event.price)}</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {faDate(event.event_at)}
+                  {faDateTime(event.event_at)}
                   {event.source === "ocr" ? " · از روی عکس" : ""}
                 </p>
                 {event.note ? (

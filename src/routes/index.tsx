@@ -1,6 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Archive, CheckCircle2, Home, KeyRound, Loader2, RefreshCw, TrendingUp } from "lucide-react";
+import {
+  Archive,
+  CheckCircle2,
+  Home,
+  KeyRound,
+  Loader2,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  TrendingUp,
+} from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
@@ -159,6 +169,30 @@ function Dashboard({ userId }: { userId: string }) {
                 ))}
               </div>
             </section>
+          ) : null}
+
+          {isAdmin ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                to="/listings/new"
+                search={{ broker: undefined }}
+                className="surface-card flex items-center gap-2 p-3 text-sm font-semibold"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <Plus className="size-4" />
+                </span>
+                <span className="truncate">ثبت ملک</span>
+              </Link>
+              <Link
+                to="/users"
+                className="surface-card flex items-center gap-2 p-3 text-sm font-semibold"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <ShieldCheck className="size-4" />
+                </span>
+                <span className="truncate">همکارها</span>
+              </Link>
+            </div>
           ) : null}
 
           {isAdmin ? <TodayFollowUps userId={userId} /> : null}
