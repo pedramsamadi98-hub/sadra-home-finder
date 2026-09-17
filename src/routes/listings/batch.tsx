@@ -54,6 +54,7 @@ import {
   type StoredBatch,
 } from "@/lib/batch-store";
 import { runBulkImportWorker } from "@/lib/bulk-worker.functions";
+import { executeBulkImportDecisions } from "@/lib/bulk-execute.functions";
 import {
   createServerBatch,
   pushServerItems,
@@ -158,6 +159,7 @@ function BatchImport({ userId }: { userId: string }) {
   const [dragging, setDragging] = useState(false);
   /* --- optional server queue (additive; the device queue stays the fallback) --- */
   const runWorker = useServerFn(runBulkImportWorker);
+  const runDecisions = useServerFn(executeBulkImportDecisions);
   const [serverBatchId, setServerBatchId] = useState<string | null>(null);
   const [serverStats, setServerStats] = useState<Record<ServerStatus, number> | null>(null);
   const [serverBusy, setServerBusy] = useState(false);
@@ -512,6 +514,28 @@ function BatchImport({ userId }: { userId: string }) {
     }
   }
 
+  /** Runs only the decisions the user already saved — nothing is chosen here. */
+  async function runServerDecisions() {
+    if (!serverBatchId) return;
+    setServerBusy(true);
+    try {
+      const report = await runDecisions({ data: { batchId: serverBatchId, limit: 3 } });
+      setServerStats(await serverCounts(serverBatchId));
+      setServerMatches(await serverMatchingResults(serverBatchId));
+      if (!report.considered) toast.info("تصمیم اجرانشده‌ای وجود ندارد");
+      else
+        toast.success(
+          `${faDigits(report.registered)} ثبت جدید و ${faDigits(report.connected)} اتصال انجام شد`,
+        );
+      if (report.failed) toast.error(report.errors[0] ?? "اجرای برخی تصمیم‌ها ناموفق بود");
+    } catch (error) {
+      console.error(error);
+      toast.error("اجرای تصمیم‌ها ناموفق بود");
+    } finally {
+      setServerBusy(false);
+    }
+  }
+
   async function refreshServerStats() {
     if (!serverBatchId) return;
     try {
@@ -839,6 +863,16 @@ function BatchImport({ userId }: { userId: string }) {
             >
               <Play className="size-4" />
               پردازش سروری
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11"
+              disabled={serverBusy || !serverBatchId}
+              onClick={() => void runServerDecisions()}
+            >
+              <Play className="size-4" />
+              اجرای تصمیم‌ها
             </Button>
           </div>
           {serverStats ? (
