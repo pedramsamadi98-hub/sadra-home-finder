@@ -41,6 +41,7 @@ import {
   createBatch,
   deleteBatch,
   deleteItem,
+  dismissItem,
   getItem,
   listBatches,
   MAX_RETRIES,
@@ -301,6 +302,13 @@ function BatchImport({ userId }: { userId: string }) {
     },
     [batches, refresh],
   );
+
+  /** Hides a reviewed item; nothing is deleted from the file or its data. */
+  async function dismissFromQueue(id: string) {
+    await dismissItem(id);
+    await refresh();
+    toast.success("از صف حذف شد؛ اطلاعات فایل دست‌نخورده باقی ماند");
+  }
 
   async function removeItem(id: string) {
     await deleteItem(id);
@@ -1102,11 +1110,26 @@ function BatchImport({ userId }: { userId: string }) {
                           مشاهده فایل {fileCodeText(item.fileCode)}
                         </Link>
                       ) : null}
-                      {item.status === "pending" || item.status === "error" ? (
+                      {item.status === "pending" ? (
                         <button
                           type="button"
                           onClick={() => void removeItem(item.id)}
                           className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold text-destructive"
+                        >
+                          <Trash2 className="size-4" />
+                          حذف از صف
+                        </button>
+                      ) : null}
+                      {item.status === "done" ||
+                      item.status === "linked" ||
+                      item.status === "duplicate" ||
+                      item.status === "review" ||
+                      item.status === "manual" ||
+                      item.status === "error" ? (
+                        <button
+                          type="button"
+                          onClick={() => void dismissFromQueue(item.id)}
+                          className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-border px-3 text-xs font-semibold"
                         >
                           <Trash2 className="size-4" />
                           حذف از صف

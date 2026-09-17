@@ -41,6 +41,8 @@ export interface StoredBatch {
   /** Non-image ZIP entries that were skipped on purpose. */
   skipped: string[];
   error_message: string | null;
+  /** Reviewed items the manager hid from the active queue (kept on device). */
+  dismissed_count?: number;
 }
 
 export interface StoredItem extends BatchItem {
@@ -53,6 +55,12 @@ export interface StoredItem extends BatchItem {
   updated_at: number;
   claimed_by: string | null;
   claimed_at: number | null;
+  /**
+   * Hidden from the active queue after review. The row, its OCR result, the
+   * linked property id and the file code all stay exactly as they were; only
+   * the queue view skips it and the worker never claims it again.
+   */
+  dismissed?: boolean;
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -225,6 +233,22 @@ export async function patchItem(id: string, next: Partial<StoredItem>): Promise<
   await done(store.put({ ...row, ...next, updated_at: Date.now() }));
 }
 
+/**
+ * Marks a reviewed item as handled: it leaves the active queue but nothing is
+ * deleted — no property, no photo, no price history, no file code.
+ */
+export async function dismissItem(id: string): Promise<void> {
+  const db = await openDb();
+  const store = tx(db, [ITEMS], "readwrite").objectStore(ITEMS);
+  const row = await done<StoredItem | undefined>(
+    store.get(id) as IDBRequest<StoredItem | undefined>,
+  );
+  if (!row || row.dismissed) return;
+  await done(store.put({ ...row, dismissed: true, updated_at: Date.now() }));
+  const batch = await getBatch(row.batch_id);
+  if (batch) await patchBatch(row.batch_id, { dismissed_count: (batch.dismissed_count ?? 0) + 1 });
+}
+
 export async function deleteItem(id: string): Promise<void> {
   const db = await openDb();
   await done(tx(db, [ITEMS], "readwrite").objectStore(ITEMS).delete(id));
@@ -262,13 +286,17 @@ export async function pageItems(
   const keys = await done<IDBValidKey[]>(
     store.index("batch_id").getAllKeys(batchId) as IDBRequest<IDBValidKey[]>,
   );
-  const slice = keys.slice((page - 1) * size, page * size);
   const rows: BatchItem[] = [];
-  for (const key of slice) {
+  const skip = (page - 1) * size;
+  let seen = 0;
+  for (const key of keys) {
+    if (rows.length >= size) break;
     const row = await done<StoredItem | undefined>(
       store.get(key) as IDBRequest<StoredItem | undefined>,
     );
-    if (!row) continue;
+    if (!row || row.dismissed) continue;
+    seen += 1;
+    if (seen <= skip) continue;
     rows.push({
       id: row.id,
       name: row.name,
@@ -284,7 +312,8 @@ export async function pageItems(
       hash: row.hash ?? null,
     });
   }
-  return { rows, total: keys.length };
+  const batch = await getBatch(batchId);
+  return { rows, total: Math.max(0, keys.length - (batch?.dismissed_count ?? 0)) };
 }
 
 /** Frees items a dead tab left mid-processing so resume can pick them up. */
@@ -312,11 +341,11 @@ export async function claimNext(batchId: string, workerId: string): Promise<Stor
   const transaction = tx(db, [ITEMS], "readwrite");
   const store = transaction.objectStore(ITEMS);
   const pending = await done<StoredItem[]>(
-    store.index("batch_status").getAll([batchId, "pending" satisfies BatchStatus], 1) as IDBRequest<
+    store.index("batch_status").getAll([batchId, "pending" satisfies BatchStatus], 5) as IDBRequest<
       StoredItem[]
     >,
   );
-  const row = pending[0];
+  const row = pending.find((candidate) => !candidate.dismissed);
   if (!row) return null;
   const claimed: StoredItem = {
     ...row,
@@ -342,7 +371,7 @@ export async function pendingItems(batchId: string, limit: number): Promise<Stor
       .index("batch_status")
       .getAll([batchId, "pending" satisfies BatchStatus], limit) as IDBRequest<StoredItem[]>,
   );
-  return rows.filter((row) => row.blob);
+  return rows.filter((row) => row.blob && !row.dismissed);
 }
 
 /** Puts failed items back in line, respecting the retry cap. */
@@ -357,6 +386,7 @@ export async function resetErrors(batchId: string): Promise<number> {
   let queued = 0;
   const now = Date.now();
   for (const row of failed) {
+    if (row.dismissed) continue;
     if (row.retry_count >= MAX_RETRIES) continue;
     if (!row.blob) continue;
     store.put({
