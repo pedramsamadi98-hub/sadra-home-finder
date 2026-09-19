@@ -24,6 +24,7 @@ import { Route as ListingsBatchRouteImport } from './routes/listings/batch'
 import { Route as ListingsNewRouteImport } from './routes/listings/new'
 import { Route as ShareTokenRouteImport } from './routes/share/$token'
 import { Route as ListingsIdEditRouteImport } from './routes/listings/$id_.edit'
+import { Route as ApiPublicHooksBulkImportWorkerRouteImport } from './routes/api/public/hooks/bulk-import-worker'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -100,6 +101,12 @@ const ListingsIdEditRoute = ListingsIdEditRouteImport.update({
   path: '/listings/$id/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksBulkImportWorkerRoute =
+  ApiPublicHooksBulkImportWorkerRouteImport.update({
+    id: '/api/public/hooks/bulk-import-worker',
+    path: '/api/public/hooks/bulk-import-worker',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/share/$token': typeof ShareTokenRoute
   '/listings/': typeof ListingsIndexRoute
   '/listings/$id/edit': typeof ListingsIdEditRoute
+  '/api/public/hooks/bulk-import-worker': typeof ApiPublicHooksBulkImportWorkerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -134,6 +142,7 @@ export interface FileRoutesByTo {
   '/share/$token': typeof ShareTokenRoute
   '/listings': typeof ListingsIndexRoute
   '/listings/$id/edit': typeof ListingsIdEditRoute
+  '/api/public/hooks/bulk-import-worker': typeof ApiPublicHooksBulkImportWorkerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -152,6 +161,7 @@ export interface FileRoutesById {
   '/share/$token': typeof ShareTokenRoute
   '/listings/': typeof ListingsIndexRoute
   '/listings/$id_/edit': typeof ListingsIdEditRoute
+  '/api/public/hooks/bulk-import-worker': typeof ApiPublicHooksBulkImportWorkerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/listings/'
     | '/listings/$id/edit'
+    | '/api/public/hooks/bulk-import-worker'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/listings'
     | '/listings/$id/edit'
+    | '/api/public/hooks/bulk-import-worker'
   id:
     | '__root__'
     | '/'
@@ -205,6 +217,7 @@ export interface FileRouteTypes {
     | '/share/$token'
     | '/listings/'
     | '/listings/$id_/edit'
+    | '/api/public/hooks/bulk-import-worker'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +236,7 @@ export interface RootRouteChildren {
   ShareTokenRoute: typeof ShareTokenRoute
   ListingsIndexRoute: typeof ListingsIndexRoute
   ListingsIdEditRoute: typeof ListingsIdEditRoute
+  ApiPublicHooksBulkImportWorkerRoute: typeof ApiPublicHooksBulkImportWorkerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -332,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingsIdEditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/bulk-import-worker': {
+      id: '/api/public/hooks/bulk-import-worker'
+      path: '/api/public/hooks/bulk-import-worker'
+      fullPath: '/api/public/hooks/bulk-import-worker'
+      preLoaderRoute: typeof ApiPublicHooksBulkImportWorkerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -351,6 +372,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShareTokenRoute: ShareTokenRoute,
   ListingsIndexRoute: ListingsIndexRoute,
   ListingsIdEditRoute: ListingsIdEditRoute,
+  ApiPublicHooksBulkImportWorkerRoute: ApiPublicHooksBulkImportWorkerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
