@@ -71,7 +71,7 @@ export function BackupSection() {
       const perTable: Record<string, number> = {};
 
       for (let index = 0; index < BACKUP_TABLES.length; index += 1) {
-        const table = BACKUP_TABLES[index];
+        const table = BACKUP_TABLES[index]!;
         const result = await fetchTable({ data: { table } });
         const path = `database/${table}.jsonl`;
         const bytes = strToU8(result.jsonl);
