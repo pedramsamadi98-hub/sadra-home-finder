@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AdminOnly } from "@/components/AdminOnly";
+import { BackupSection } from "@/components/BackupSection";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -179,6 +180,9 @@ function Users({ currentUserId }: { currentUserId: string }) {
             بسته است و فقط شما می‌توانید کاربر اضافه کنید.
           </p>
         </section>
+
+        <BackupSection />
+
 
         {isLoading ? (
           <div className="flex justify-center py-16">
