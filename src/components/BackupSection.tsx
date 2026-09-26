@@ -121,7 +121,7 @@ export function BackupSection() {
         });
         setProgress(Math.round(((BACKUP_TABLES.length + index + 1) / steps) * 100));
       }
-      const photoBytes = photoEntries.reduce((sum, e) => sum + (e.size_bytes as number), 0);
+      const photoBytes = photoEntries.reduce((sum, e) => sum + (e['size_bytes'] as number), 0);
 
       const total = Object.values(perTable).reduce((sum, n) => sum + n, 0);
       const approxBytes = Object.values(files).reduce((sum, file) => sum + file.byteLength, 0);
