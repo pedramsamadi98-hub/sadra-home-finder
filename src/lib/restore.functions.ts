@@ -50,8 +50,11 @@ const FKS: Partial<Record<BackupTable, Array<[string, BackupTable]>>> = {
 };
 
 type Input = {
-  manifest: { backup_format_version: unknown; project_identifier: unknown };
-  tables: Record<string, { jsonl: string; sha256: string }>;
+  /** Raw manifest.json and checksums.txt text — parsed and cross-checked on the server. */
+  manifest_text: string;
+  checksums_text: string;
+  tables: Record<string, { jsonl: string }>;
+  /** Photo bytes are verified in the browser; the server cross-checks this list against manifest + checksums. */
   photos: Array<{ bucket: string; path: string; sha256: string; size: number }>;
 };
 
