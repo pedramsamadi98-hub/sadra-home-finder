@@ -102,7 +102,14 @@ export type PhotoReport = {
 export const previewRestore = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: Input) => {
-    if (!data || typeof data !== "object" || !data.tables || !Array.isArray(data.photos)) {
+    if (
+      !data ||
+      typeof data !== "object" ||
+      typeof data.manifest_text !== "string" ||
+      typeof data.checksums_text !== "string" ||
+      !data.tables ||
+      !Array.isArray(data.photos)
+    ) {
       throw new Error("ورودی نامعتبر");
     }
     return data;
@@ -111,9 +118,53 @@ export const previewRestore = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase as never, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const errors: string[] = [];
+    const enc = new TextEncoder();
 
-    if (data.manifest.backup_format_version !== BACKUP_FORMAT_VERSION) errors.push("نسخه فرمت پشتیبان پشتیبانی نمی‌شود");
-    if (data.manifest.project_identifier !== "sadra-melk") errors.push("شناسه پروژه مطابقت ندارد");
+    // Parse checksums.txt ourselves — never trust client-computed hashes.
+    const sums = new Map<string, string>();
+    for (const line of data.checksums_text.split("\n")) {
+      const m = line.trim().match(/^([0-9a-f]{64})\s+(.+)$/);
+      if (m) sums.set(m[2]!, m[1]!);
+    }
+    if (!sums.size) errors.push("فایل checksums.txt خالی یا نامعتبر است");
+    if (sums.get("manifest.json") !== (await sha256Hex(enc.encode(data.manifest_text)))) {
+      errors.push("checksum فایل manifest.json مطابقت ندارد");
+    }
+    type Manifest = {
+      backup_format_version?: unknown;
+      project_identifier?: unknown;
+      status?: unknown;
+      tables?: Array<{ name: string; row_count: number }>;
+      storage?: { objects?: Array<{ bucket: string; path: string; file: string; sha256: string; size_bytes: number }> };
+    };
+    let manifest: Manifest = {};
+    try {
+      manifest = JSON.parse(data.manifest_text) as Manifest;
+    } catch {
+      errors.push("manifest.json خراب است");
+    }
+    if (manifest.backup_format_version !== BACKUP_FORMAT_VERSION) errors.push("نسخه فرمت پشتیبان پشتیبانی نمی‌شود");
+    if (manifest.project_identifier !== "sadra-melk") errors.push("شناسه پروژه مطابقت ندارد");
+    if (manifest.status !== "complete") errors.push("پشتیبان کامل نیست");
+
+    // Photos: list must match manifest + checksums exactly.
+    const manifestObjects = manifest.storage?.objects ?? [];
+    const sentPaths = new Set(data.photos.map((p) => `${p.bucket}/${p.path}`));
+    if (manifestObjects.length !== data.photos.length) errors.push("تعداد عکس‌ها با manifest مطابقت ندارد");
+    for (const obj of manifestObjects) {
+      const sent = data.photos.find((p) => p.bucket === obj.bucket && p.path === obj.path);
+      if (!sent) {
+        errors.push(`عکس ${obj.path} در فایل ارسالی نیست`);
+        continue;
+      }
+      const listed = sums.get(obj.file);
+      if (listed !== obj.sha256 || sent.sha256 !== listed || sent.size !== obj.size_bytes) {
+        errors.push(`checksum عکس ${obj.path} مطابقت ندارد`);
+      }
+    }
+    for (const key of sentPaths) {
+      if (!manifestObjects.some((o) => `${o.bucket}/${o.path}` === key)) errors.push(`عکس اضافی خارج از manifest: ${key}`);
+    }
 
     // Live schema (read-only OpenAPI description of the REST API).
     let schema: Record<string, string[]> = {};
@@ -129,17 +180,17 @@ export const previewRestore = createServerFn({ method: "POST" })
       errors.push("ساختار فعلی دیتابیس خوانده نشد");
     }
 
-    // Parse + re-verify table checksums server-side.
+    // Parse + verify each table against checksums.txt and manifest row counts on the server.
     const rows: Record<string, Array<Record<string, unknown>>> = {};
     for (const table of BACKUP_TABLES) {
       const entry = data.tables[table];
-      if (!entry) {
+      if (!entry || typeof entry.jsonl !== "string") {
         errors.push(`فایل جدول ${table} وجود ندارد`);
         rows[table] = [];
         continue;
       }
-      if ((await sha256Hex(new TextEncoder().encode(entry.jsonl))) !== entry.sha256) {
-        errors.push(`checksum جدول ${table} در سرور مطابقت ندارد`);
+      if ((await sha256Hex(enc.encode(entry.jsonl))) !== sums.get(`database/${table}.jsonl`)) {
+        errors.push(`checksum جدول ${table} مطابقت ندارد`);
       }
       try {
         rows[table] = entry.jsonl.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l));
@@ -147,6 +198,8 @@ export const previewRestore = createServerFn({ method: "POST" })
         errors.push(`JSONL جدول ${table} خراب است`);
         rows[table] = [];
       }
+      const expected = manifest.tables?.find((t) => t.name === table)?.row_count;
+      if (expected !== rows[table]!.length) errors.push(`تعداد ردیف جدول ${table} با manifest مطابقت ندارد`);
     }
 
     // Live keys per table (for FK and existence checks).
