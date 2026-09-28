@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { AdminOnly } from "@/components/AdminOnly";
 import { BackupSection } from "@/components/BackupSection";
+import { RestoreCheckSection } from "@/components/RestoreCheckSection";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -182,6 +183,7 @@ function Users({ currentUserId }: { currentUserId: string }) {
         </section>
 
         <BackupSection />
+        <RestoreCheckSection />
 
 
         {isLoading ? (
