@@ -97,6 +97,7 @@ export type PhotoReport = {
   size: number;
   action: "upload" | "identical" | "conflict";
   reason?: string;
+  linked: boolean;
 };
 
 export const previewRestore = createServerFn({ method: "POST" })
@@ -310,11 +311,20 @@ export const previewRestore = createServerFn({ method: "POST" })
       const { error } = await supabaseAdmin.storage.getBucket(bucket);
       if (error) errors.push(`باکت ${bucket} وجود ندارد`);
     }
+    // Which photo paths are referenced by property rows in the backup itself.
+    const referenced = new Set<string>();
+    for (const p of rows["properties"] ?? []) {
+      for (const col of ["photos", "private_photos"]) {
+        const v = p[col];
+        if (Array.isArray(v)) for (const s of v) if (typeof s === "string") referenced.add(s);
+      }
+    }
     for (const photo of data.photos) {
       if (!(BACKUP_BUCKETS as readonly string[]).includes(photo.bucket) || !safePath(photo.path)) {
         errors.push(`مسیر عکس ناامن: ${photo.path}`);
         continue;
       }
+      const linked = referenced.has(photo.path);
       const slash = photo.path.lastIndexOf("/");
       const folder = slash >= 0 ? photo.path.slice(0, slash) : "";
       const name = photo.path.slice(slash + 1);
@@ -323,7 +333,7 @@ export const previewRestore = createServerFn({ method: "POST" })
         .list(folder, { search: name, limit: 100 });
       if (error) throw new Error(`${photo.path}: ${error.message}`);
       if (!(listed ?? []).some((e) => e.name === name && e.id !== null)) {
-        photos.push({ path: photo.path, size: photo.size, action: "upload" });
+        photos.push({ path: photo.path, size: photo.size, action: "upload", linked });
         continue;
       }
       const { data: file, error: dlError } = await supabaseAdmin.storage.from(photo.bucket).download(photo.path);
@@ -331,10 +341,11 @@ export const previewRestore = createServerFn({ method: "POST" })
       const liveHash = await sha256Hex(new Uint8Array(await file.arrayBuffer()));
       photos.push(
         liveHash === photo.sha256
-          ? { path: photo.path, size: photo.size, action: "identical" }
-          : { path: photo.path, size: photo.size, action: "conflict", reason: "همان مسیر با محتوای متفاوت" },
+          ? { path: photo.path, size: photo.size, action: "identical", linked }
+          : { path: photo.path, size: photo.size, action: "conflict", reason: "همان مسیر با محتوای متفاوت", linked },
       );
     }
+
 
     for (const r of reports) {
       if (r.unknown_columns.length) errors.push(`جدول ${r.table}: ستون ناشناخته ${r.unknown_columns.join("، ")}`);
