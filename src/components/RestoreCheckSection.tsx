@@ -255,7 +255,26 @@ export function RestoreCheckSection() {
             </details>
           ) : null}
 
+          {tables.some((t) => t.fk_errors.length || t.unknown_columns.length || t.missing_columns.length) ? (
+            <details>
+              <summary className="cursor-pointer font-semibold">جزئیات ارتباط‌ها و ستون‌ها</summary>
+              <ul className="mt-1 max-h-48 space-y-1 overflow-y-auto break-all" dir="ltr">
+                {tables.flatMap((t) => [
+                  ...t.unknown_columns.map((c) => <li key={`${t.table}-u-${c}`}>{t.table}: unknown column {c}</li>),
+                  ...t.missing_columns.map((c) => <li key={`${t.table}-m-${c}`}>{t.table}: missing column {c}</li>),
+                  ...t.fk_errors.map((e) => <li key={`${t.table}-f-${e}`}>{t.table}: {e}</li>),
+                ])}
+              </ul>
+            </details>
+          ) : null}
+
           <p className="rounded-lg bg-secondary/60 p-2 leading-6 text-muted-foreground">
+            حساب‌های ورود (رمز عبور) در پشتیبان نیستند؛ پروفایل و نقش کاربران فقط برای حساب‌هایی قابل بازگردانی است که
+            هنوز در سامانه وجود دارند (کد فایل تکراری و حساب‌های مفقود در بالا به‌عنوان تداخل/ارتباط نامعتبر نمایش
+            داده می‌شوند).
+          </p>
+          <p className="rounded-lg bg-secondary/60 p-2 leading-6 text-muted-foreground">
+
             محدودیت: کد امنیتی لینک‌های اشتراک عمداً در پشتیبان ذخیره نمی‌شود؛ بنابراین{" "}
             {faDigits(shares?.not_restorable ?? 0)} لینک اشتراکِ حذف‌شده قابل بازگردانی نیست و باید دوباره ساخته شود.
           </p>
