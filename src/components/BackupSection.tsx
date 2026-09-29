@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { zipSync, strToU8 } from "fflate";
+import { zipSync, strToU8, strFromU8 } from "fflate";
+import { buildPortableLayer, PORTABLE_FORMAT, PORTABLE_FORMAT_VERSION, type PortablePhoto } from "@/lib/portable-backup";
 import { DatabaseBackup, Download, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -123,41 +124,37 @@ export function BackupSection() {
       }
       const photoBytes = photoEntries.reduce((sum, e) => sum + (e['size_bytes'] as number), 0);
 
+      // Portable, vendor-neutral layer (text only; photos are referenced, not duplicated).
+      const createdAt = new Date().toISOString();
+      const jsonlByTable: Record<string, string> = {};
+      for (const table of BACKUP_TABLES) jsonlByTable[table] = strFromU8(files[`database/${table}.jsonl`]!);
+      const portable = buildPortableLayer(jsonlByTable, photoEntries as unknown as PortablePhoto[], createdAt);
+      for (const [path, text] of Object.entries(portable.files)) {
+        const bytes = strToU8(text);
+        files[path] = bytes;
+        checksumLines.push(`${await sha256(bytes)}  ${path}`);
+      }
+
       const total = Object.values(perTable).reduce((sum, n) => sum + n, 0);
       const approxBytes = Object.values(files).reduce((sum, file) => sum + file.byteLength, 0);
       const manifest = {
         backup_format_version: BACKUP_FORMAT_VERSION,
         backup_type: "full",
-        created_at: new Date().toISOString(),
-        project_identifier: "sadra-melk",
-        application: "Sadra Melk / Sadra Property Hub",
-        schema_reference: "supabase/migrations (latest applied)",
-        tables: BACKUP_TABLES.map((table) => ({
-          name: table,
-          file: `database/${table}.jsonl`,
-          row_count: perTable[table] ?? 0,
-        })),
-        total_rows: total,
-        approximate_data_bytes: approxBytes,
-        storage: {
-          buckets: [...new Set(list.objects.map((o) => o.bucket))].length
-            ? [...new Set(list.objects.map((o) => o.bucket))]
-            : ["property-photos"],
-          object_count: photoEntries.length,
-          total_bytes: photoBytes,
-          objects: photoEntries,
-        },
-        files: [...Object.keys(files), "manifest.json", "checksums.txt"],
-        excluded: [
-          "auth users and credentials",
-          "signed URLs and storage credentials",
-          "secrets and API keys",
-          "property_shares.token_hash",
-        ],
+        created_at: createdAt,
+...
         status: "complete",
+        portable: {
+          format: PORTABLE_FORMAT,
+          format_version: PORTABLE_FORMAT_VERSION,
+          readme: "portable/README.md",
+          schema: "portable/schema.json",
+          media_index: "portable/media/index.json",
+          media_unlinked: portable.summary.unlinked,
+        },
       };
 
       const manifestBytes = strToU8(JSON.stringify(manifest, null, 2));
+
       files["manifest.json"] = manifestBytes;
       checksumLines.push(`${await sha256(manifestBytes)}  manifest.json`);
       files["checksums.txt"] = strToU8(checksumLines.join("\n") + "\n");
