@@ -141,7 +141,31 @@ export function BackupSection() {
         backup_format_version: BACKUP_FORMAT_VERSION,
         backup_type: "full",
         created_at: createdAt,
-...
+        project_identifier: "sadra-melk",
+        application: "Sadra Melk / Sadra Property Hub",
+        schema_reference: "supabase/migrations (latest applied)",
+        tables: BACKUP_TABLES.map((table) => ({
+          name: table,
+          file: `database/${table}.jsonl`,
+          row_count: perTable[table] ?? 0,
+        })),
+        total_rows: total,
+        approximate_data_bytes: approxBytes,
+        storage: {
+          buckets: [...new Set(list.objects.map((o) => o.bucket))].length
+            ? [...new Set(list.objects.map((o) => o.bucket))]
+            : ["property-photos"],
+          object_count: photoEntries.length,
+          total_bytes: photoBytes,
+          objects: photoEntries,
+        },
+        files: [...Object.keys(files), "manifest.json", "checksums.txt"],
+        excluded: [
+          "auth users and credentials",
+          "signed URLs and storage credentials",
+          "secrets and API keys",
+          "property_shares.token_hash",
+        ],
         status: "complete",
         portable: {
           format: PORTABLE_FORMAT,
