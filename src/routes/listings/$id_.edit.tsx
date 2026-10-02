@@ -31,7 +31,7 @@ export const Route = createFileRoute("/listings/$id_/edit")({
   component: EditRoute,
   errorComponent: ({ error }) => (
     <div className="p-6 text-center text-sm text-destructive" role="alert">
-      {error.message}
+      {(error as Error).message}
     </div>
   ),
 });
