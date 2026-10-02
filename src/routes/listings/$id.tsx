@@ -81,7 +81,7 @@ export const Route = createFileRoute("/listings/$id")({
   component: DetailRoute,
   errorComponent: ({ error }) => (
     <div className="p-6 text-center text-sm text-destructive" role="alert">
-      {error.message}
+      {(error as Error).message}
     </div>
   ),
   notFoundComponent: () => <div className="p-6 text-center text-sm">ملک پیدا نشد</div>,
