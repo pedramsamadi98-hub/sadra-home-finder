@@ -118,6 +118,11 @@ export interface Property {
   photos: string[];
   /** Private OCR source images. Admin-only, never returned to collaborators. */
   private_photos: string[];
+  /**
+   * Manager-selected cover. null/absent = category default image. A path is
+   * only honoured while it is still inside `photos` (never private_photos).
+   */
+  cover_photo?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -136,7 +141,20 @@ export type PropertyInput = Omit<
   | "initial_date"
   | "verified_price"
   | "price_verified_at"
+  | "cover_photo"
 >;
+
+/** Saves the manager's cover choice: null = category default, path = a public photo. */
+export async function setPropertyCover(property: Property, path: string | null) {
+  if (path !== null && !property.photos.includes(path)) {
+    throw new Error("فقط عکس‌های قابل نمایش همین ملک می‌توانند تصویر اصلی باشند");
+  }
+  const { error } = await supabase
+    .from("properties")
+    .update({ cover_photo: path })
+    .eq("id", property.id);
+  if (error) throw error;
+}
 
 /** Selectable usage types in the form (نوع کاربری ملک). */
 export const PROPERTY_TYPE_LABELS: Record<NewPropertyType, string> = {

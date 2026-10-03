@@ -484,6 +484,7 @@ export type Database = {
           city: string
           company_payable_amount: number | null
           company_payment_terms: string | null
+          cover_photo: string | null
           created_at: string
           deposit: number | null
           deposited_amount: number | null
@@ -532,6 +533,7 @@ export type Database = {
           city?: string
           company_payable_amount?: number | null
           company_payment_terms?: string | null
+          cover_photo?: string | null
           created_at?: string
           deposit?: number | null
           deposited_amount?: number | null
@@ -580,6 +582,7 @@ export type Database = {
           city?: string
           company_payable_amount?: number | null
           company_payment_terms?: string | null
+          cover_photo?: string | null
           created_at?: string
           deposit?: number | null
           deposited_amount?: number | null

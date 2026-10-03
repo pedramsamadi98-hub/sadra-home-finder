@@ -4,7 +4,7 @@ import { BedDouble, Car, MapPin, MoveVertical, Package, Ruler } from "lucide-rea
 import { PropertyTypeIcon } from "@/lib/property-type-icons";
 import { useRole } from "@/lib/roles";
 
-import { PhotoThumb } from "@/components/PhotoGallery";
+import { CoverThumb } from "@/components/PhotoGallery";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
 import {
   isLandType,
@@ -69,7 +69,7 @@ export function PropertyCard({
       className="surface-card block p-3 transition-transform active:scale-[0.99]"
     >
       <div className="flex gap-3">
-        <PhotoThumb paths={property.photos} alt={property.title} />
+        <CoverThumb property={property} />
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-1.5">
             {property.file_code !== null ? (

@@ -1,7 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
 import { ImageOff } from "lucide-react";
 
-import { signedPhotoUrls } from "@/lib/properties";
+import { defaultCoverUrl, resolvedCoverPath } from "@/lib/default-covers";
+import { signedPhotoUrls, propertyTypeLabel, type Property } from "@/lib/properties";
+import { PropertyTypeIcon } from "@/lib/property-type-icons";
+
+/** Category default cover: real asset if provided, else a styled type tile. */
+export function DefaultCover({ type, className }: { type: string; className: string }) {
+  const url = defaultCoverUrl(type);
+  if (url) return <img src={url} alt={propertyTypeLabel(type)} className={`${className} object-cover`} />;
+  return (
+    <div className={`${className} flex flex-col items-center justify-center gap-1 bg-secondary text-primary`}>
+      <PropertyTypeIcon type={type} className="size-6" />
+      <span className="px-1 text-center text-[10px] text-muted-foreground">{propertyTypeLabel(type)}</span>
+    </div>
+  );
+}
+
+/** List thumbnail: manager-chosen real cover, otherwise category default. */
+export function CoverThumb({ property }: { property: Property }) {
+  const path = resolvedCoverPath(property);
+  const { data } = usePhotoUrls(path ? [path] : []);
+  if (path && data?.[0]) {
+    return <img src={data[0]} alt={property.title} loading="lazy" className="size-20 shrink-0 rounded-xl object-cover" />;
+  }
+  return <DefaultCover type={property.property_type} className="size-20 shrink-0 rounded-xl" />;
+}
 
 export function usePhotoUrls(paths: string[]) {
   return useQuery({

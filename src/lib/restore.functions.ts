@@ -63,6 +63,9 @@ async function sha256Hex(bytes: Uint8Array) {
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** Nullable columns added after backup V1; their absence in older backups is fine. */
+const LATER_NULLABLE: Partial<Record<string, string[]>> = { properties: ["cover_photo"] };
+
 function canonical(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -222,7 +225,7 @@ export const previewRestore = createServerFn({ method: "POST" })
         not_restorable: 0,
         unknown_columns: liveCols.length ? [...backupCols].filter((c) => !liveCols.includes(c)) : [],
         missing_columns: backupRows.length
-          ? liveCols.filter((c) => !backupCols.has(c) && !omit.includes(c))
+          ? liveCols.filter((c) => !backupCols.has(c) && !omit.includes(c) && !LATER_NULLABLE[table]?.includes(c))
           : [],
         fk_errors: [],
       };
@@ -251,6 +254,8 @@ export const previewRestore = createServerFn({ method: "POST" })
         }
         const cmp = { ...existing };
         for (const k of omit) delete cmp[k];
+        // Older backups predate optional columns: absent in backup + null live = same.
+        for (const k of LATER_NULLABLE[table] ?? []) if (!(k in row) && cmp[k] == null) delete cmp[k];
         if (canonical(cmp) === canonical(row)) report.identical += 1;
         else {
           const diff = Object.keys({ ...cmp, ...row }).filter((k) => canonical(cmp[k]) !== canonical(row[k]));

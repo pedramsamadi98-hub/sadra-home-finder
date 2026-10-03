@@ -1,0 +1,2 @@
+ALTER TABLE public.properties ADD COLUMN IF NOT EXISTS cover_photo text NULL;
+COMMENT ON COLUMN public.properties.cover_photo IS 'Manager-selected cover. NULL = category default image; otherwise a storage path that must also be in photos (public) to be shown.';
