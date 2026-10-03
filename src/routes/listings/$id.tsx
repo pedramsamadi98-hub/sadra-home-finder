@@ -27,7 +27,9 @@ import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { FollowUpSection } from "@/components/FollowUpSection";
 import { MatchingCustomers } from "@/components/MatchingCustomers";
-import { PhotoGallery } from "@/components/PhotoGallery";
+import { DefaultCover, PhotoGallery } from "@/components/PhotoGallery";
+import { CoverSelector } from "@/components/CoverSelector";
+import { resolvedCoverPath } from "@/lib/default-covers";
 import { PriceHistorySection } from "@/components/PriceHistorySection";
 import { PrivatePhotoSection } from "@/components/PrivatePhotoSection";
 import { ShareSection } from "@/components/ShareSection";
@@ -191,7 +193,17 @@ function Detail({ userId }: { userId: string }) {
           <ArrowRight className="size-4" />
           {brokerContext ? "برگشت به فایل‌های همین دلال" : "بازگشت به املاک"}
         </Button>
-        <PhotoGallery paths={property.photos} alt={property.title} />
+        {resolvedCoverPath(property) ? null : (
+          <DefaultCover type={property.property_type} className="h-44 w-full rounded-2xl" />
+        )}
+        <PhotoGallery
+          paths={(() => {
+            const c = resolvedCoverPath(property);
+            return c ? [c, ...property.photos.filter((p) => p !== c)] : property.photos;
+          })()}
+          alt={property.title}
+        />
+        {isAdmin ? <CoverSelector property={property} /> : null}
         {isAdmin ? <PrivatePhotoSection property={property} /> : null}
 
 
