@@ -85,6 +85,8 @@ function EditProperty({ userId }: { userId: string }) {
     initial_date: _initialDate,
     verified_price: _verifiedPrice,
     price_verified_at: _priceVerifiedAt,
+    // Cover choice is saved only by the dedicated selector, never by the form.
+    cover_photo: _coverPhoto,
     ...initial
   } = property;
 
