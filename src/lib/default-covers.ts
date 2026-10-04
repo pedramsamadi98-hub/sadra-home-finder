@@ -54,7 +54,10 @@ export function defaultCoverUrl(type: string | null | undefined): string | null 
   return URLS[defaultCoverKey(type)] ?? null;
 }
 
-/** Real cover only if chosen AND still a public photo; otherwise default. */
-export function resolvedCoverPath(p: Pick<Property, "photos" | "cover_photo">): string | null {
-  return p.cover_photo && p.photos.includes(p.cover_photo) ? p.cover_photo : null;
+/** Real cover only if chosen AND still a non-private photo; otherwise default. */
+export function resolvedCoverPath(
+  p: Pick<Property, "photos" | "cover_photo"> & { private_photos?: string[] },
+): string | null {
+  const c = p.cover_photo;
+  return c && p.photos.includes(c) && !(p.private_photos ?? []).includes(c) ? c : null;
 }

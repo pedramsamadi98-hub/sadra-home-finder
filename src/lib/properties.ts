@@ -144,10 +144,20 @@ export type PropertyInput = Omit<
   | "cover_photo"
 >;
 
-/** Saves the manager's cover choice: null = category default, path = a public photo. */
+/**
+ * Saves the manager's cover choice: null = category default, path = a photo
+ * of this property explicitly classified public_listing (never private/OCR or
+ * unclassified), so a cover can never expose a private image.
+ */
 export async function setPropertyCover(property: Property, path: string | null) {
-  if (path !== null && !property.photos.includes(path)) {
-    throw new Error("فقط عکس‌های قابل نمایش همین ملک می‌توانند تصویر اصلی باشند");
+  if (path !== null) {
+    const allowed =
+      property.photos.includes(path) &&
+      !property.private_photos.includes(path) &&
+      (await fetchPhotoVisibility([path]))[path] === "public_listing";
+    if (!allowed) {
+      throw new Error("فقط عکس‌های قابل نمایش همین ملک می‌توانند تصویر اصلی باشند");
+    }
   }
   const { error } = await supabase
     .from("properties")

@@ -1,16 +1,26 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { DefaultCover, usePhotoUrls } from "@/components/PhotoGallery";
 import { resolvedCoverPath } from "@/lib/default-covers";
-import { setPropertyCover, type Property } from "@/lib/properties";
+import { fetchPhotoVisibility, setPropertyCover, type Property } from "@/lib/properties";
 
-/** Admin-only: choose the category default or one public photo as the cover. */
+/** Admin-only: choose the category default or one public-listing photo as the cover. */
 export function CoverSelector({ property }: { property: Property }) {
   const qc = useQueryClient();
   const current = resolvedCoverPath(property);
-  const { data: urls } = usePhotoUrls(property.photos);
+  const { data: visibility } = useQuery({
+    queryKey: ["photo-visibility", property.photos],
+    queryFn: () => fetchPhotoVisibility(property.photos),
+    enabled: property.photos.length > 0,
+  });
+  // Only photos explicitly marked public_listing are offered; private/OCR and
+  // unclassified images can never become a cover.
+  const selectable = property.photos.filter(
+    (p) => visibility?.[p] === "public_listing" && !property.private_photos.includes(p),
+  );
+  const { data: urls } = usePhotoUrls(selectable);
   const save = useMutation({
     mutationFn: (path: string | null) => setPropertyCover(property, path),
     onSuccess: async () => {
