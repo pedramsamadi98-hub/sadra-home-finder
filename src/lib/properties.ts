@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { enDigits, faDigits } from "@/lib/fa";
 import { LAND_CATEGORIES } from "@/lib/land";
 
 /** Legacy values kept for existing rows. */
@@ -25,6 +26,23 @@ export type PropertyType = NewPropertyType | LegacyPropertyType;
 export type TransactionType = "sale" | "rent" | "mortgage";
 export type PropertyStatus = "active" | "sold" | "rented" | "archived";
 export type OwnershipType = "melki" | "owqaf";
+/** «وضعیت سند» — independent of ownership_type. null = ثبت نشده. */
+export type DeedStatus = "single_sheet" | "attorney" | "none";
+/** Search-only deed filter: «سند دارد» = single_sheet OR attorney. */
+export type DeedFilter = DeedStatus | "has";
+
+export const DEED_STATUS_LABELS: Record<DeedStatus, string> = {
+  single_sheet: "سند تک برگ",
+  attorney: "وکالتی",
+  none: "بدون سند",
+};
+
+export const DEED_FILTER_LABELS: Record<DeedFilter, string> = {
+  single_sheet: "سند تک برگ",
+  attorney: "وکالتی",
+  has: "سند دارد",
+  none: "بدون سند",
+};
 
 
 /** One step of a پیش‌فروش payment plan. */
@@ -123,6 +141,8 @@ export interface Property {
    * only honoured while it is still inside `photos` (never private_photos).
    */
   cover_photo?: string | null;
+  /** «وضعیت سند»; null/absent = ثبت نشده. Not returned to collaborators. */
+  deed_status?: DeedStatus | null;
   created_at: string;
   updated_at: string;
 }
@@ -347,6 +367,7 @@ export const emptyProperty: PropertyInput = {
   title: "",
   property_type: "complex",
   ownership_type: null,
+  deed_status: null,
   transaction_type: "sale",
   status: "active",
   city: "صدرا",
@@ -695,6 +716,23 @@ export function referencePrice(property: Property): number | null {
 }
 
 /** True when no confirmed price exists — the file needs a price enquiry. */
+/** Effective sale price used by search: verified_price, else price. */
+export function effectiveSalePrice(property: Pick<Property, "verified_price" | "price">): number | null {
+  if (property.verified_price !== null && property.verified_price !== undefined) {
+    return property.verified_price;
+  }
+  return property.price ?? null;
+}
+
+/** Legacy land categories → equivalent usage type for files with no category. */
+export const LEGACY_CATEGORY_TYPE: Record<string, string> = {
+  residential_phase_1: "land_phase_1",
+  residential_phase_2: "land_phase_2",
+  apartment_phase_1: "apartment_land_phase_1",
+  apartment_phase_2: "apartment_land_phase_2",
+  baghshahri: "zamin_baghshahri",
+};
+
 export function needsPriceCheck(property: Property): boolean {
   return currentPrice(property) === null;
 }
@@ -786,7 +824,13 @@ export interface PropertyQuery {
   brokerId?: string | null;
   minArea?: number | null;
   maxArea?: number | null;
-  minBedrooms?: number | null;
+  /** Exact bedroom count (bedrooms = N); NULL never matches. */
+  bedrooms?: number | null;
+  city?: string | null;
+  /** Admin-only: collaborators' shared view has no deed column. */
+  deed?: DeedFilter | null;
+  /** Set when combined UI + smart filters contradict: the result is empty. */
+  impossible?: boolean;
   minPrice?: number | null;
   maxPrice?: number | null;
   parking?: boolean | undefined;
@@ -837,6 +881,7 @@ export async function fetchPropertiesPage(
 ): Promise<PropertyPage> {
   const page = Math.max(1, q.page ?? 1);
   const pageSize = Math.min(100, Math.max(5, q.pageSize ?? 20));
+  if (q.impossible) return { rows: [], total: 0, page: 1, pageSize };
 
   // Both audiences go through a real database query: admins read the table,
   // collaborators read the privacy-safe `shared_properties()` view function.
@@ -860,7 +905,16 @@ export async function fetchPropertiesPage(
   if (q.transaction) query = query.eq("transaction_type", q.transaction);
   if (q.phase) query = query.eq("phase", q.phase);
   if (q.neighborhood) query = query.eq("neighborhood", q.neighborhood);
-  if (q.landCategory) query = query.eq("land_category", q.landCategory);
+  if (q.landCategory) {
+    // Exact stored category; legacy files (no category yet, typed by the
+    // equivalent usage type) keep matching as before.
+    const legacyType = LEGACY_CATEGORY_TYPE[q.landCategory];
+    query = legacyType
+      ? query.or(
+          `land_category.eq.${q.landCategory},and(land_category.is.null,property_type.eq.${legacyType})`,
+        )
+      : query.eq("land_category", q.landCategory);
+  }
   if (q.landZone) query = query.eq("land_zone", q.landZone);
   if (q.plotNumber) query = query.ilike("plot_number", `%${q.plotNumber}%`);
   if (isAdmin && q.brokerId) {
@@ -868,37 +922,54 @@ export async function fetchPropertiesPage(
   }
   if (q.minArea) query = query.gte("area", q.minArea);
   if (q.maxArea) query = query.lte("area", q.maxArea);
-  if (q.minBedrooms) query = query.gte("bedrooms", q.minBedrooms);
+  if (q.bedrooms !== null && q.bedrooms !== undefined) query = query.eq("bedrooms", q.bedrooms);
+  if (q.city) query = query.ilike("city", `%${q.city}%`);
+  if (isAdmin && q.deed) {
+    query =
+      q.deed === "has"
+        ? query.in("deed_status", ["single_sheet", "attorney"])
+        : query.eq("deed_status", q.deed);
+  }
   if (q.parking !== undefined) query = query.eq("parking", q.parking);
   if (q.elevator !== undefined) query = query.eq("elevator", q.elevator);
   if (q.storage !== undefined) query = query.eq("storage", q.storage);
 
+  // A purely numeric query is a file code: exact match only. Any other text is
+  // one OR-group over the audience's columns, ANDed with every other filter.
+  // Stored text may use Persian or latin digits, so both spellings are tried.
   const text = escapeOr(q.text ?? "");
-  if (text) {
-    const columns = isAdmin ? TEXT_COLUMNS_ADMIN : TEXT_COLUMNS_SHARED;
-    const parts = columns.map((column) => `${column}.ilike.%${text}%`);
-    if (q.fileCode !== null && q.fileCode !== undefined) {
-      parts.push(`file_code.eq.${q.fileCode}`);
-    }
-    query = query.or(parts.join(","));
-  } else if (q.fileCode !== null && q.fileCode !== undefined) {
+  if (q.fileCode !== null && q.fileCode !== undefined) {
     query = query.eq("file_code", q.fileCode);
+  } else if (text) {
+    const columns = isAdmin ? TEXT_COLUMNS_ADMIN : TEXT_COLUMNS_SHARED;
+    const variants = Array.from(new Set([text, enDigits(text), faDigits(enDigits(text))]));
+    const parts = columns.flatMap((column) =>
+      variants.map((variant) => `${column}.ilike.%${variant}%`),
+    );
+    query = query.or(parts.join(","));
   }
 
-  // Price range runs on the CONFIRMED price for sales. A file whose price was
-  // never re-confirmed stays visible as a «نیازمند استعلام» candidate instead
-  // of being judged by an outdated amount.
+  // Sale price range runs on the EFFECTIVE price: verified_price when it
+  // exists, otherwise price. A verified price never falls back to the old one,
+  // and a file with neither price never passes an active range.
   if (q.minPrice || q.maxPrice) {
-    const sale: string[] = [];
-    if (q.minPrice) sale.push(`verified_price.gte.${q.minPrice}`);
-    if (q.maxPrice) sale.push(`verified_price.lte.${q.maxPrice}`);
+    const verified: string[] = [];
+    const fallback: string[] = [];
+    if (q.minPrice) {
+      verified.push(`verified_price.gte.${q.minPrice}`);
+      fallback.push(`price.gte.${q.minPrice}`);
+    }
+    if (q.maxPrice) {
+      verified.push(`verified_price.lte.${q.maxPrice}`);
+      fallback.push(`price.lte.${q.maxPrice}`);
+    }
     const rent: string[] = [];
     if (q.minPrice) rent.push(`deposit.gte.${q.minPrice}`);
     if (q.maxPrice) rent.push(`deposit.lte.${q.maxPrice}`);
     query = query.or(
       [
-        `and(transaction_type.eq.sale,verified_price.is.null)`,
-        `and(transaction_type.eq.sale,${sale.join(",")})`,
+        `and(transaction_type.eq.sale,verified_price.not.is.null,${verified.join(",")})`,
+        `and(transaction_type.eq.sale,verified_price.is.null,${fallback.join(",")})`,
         `and(transaction_type.neq.sale,${rent.join(",")})`,
       ].join(","),
     );

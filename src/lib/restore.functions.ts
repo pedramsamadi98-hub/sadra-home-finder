@@ -64,7 +64,7 @@ async function sha256Hex(bytes: Uint8Array) {
 }
 
 /** Nullable columns added after backup V1; their absence in older backups is fine. */
-const LATER_NULLABLE: Partial<Record<string, string[]>> = { properties: ["cover_photo"] };
+const LATER_NULLABLE: Partial<Record<string, string[]>> = { properties: ["cover_photo", "deed_status"] };
 
 function canonical(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);

@@ -7,7 +7,9 @@ import {
   landCategory,
   normalizeFa,
 } from "@/lib/land";
+import { LEGACY_CATEGORY_TYPE, effectiveSalePrice } from "@/lib/properties";
 import type {
+  DeedFilter,
   OwnershipType,
   Property,
   PropertyType,
@@ -30,7 +32,8 @@ export type CriterionKey =
   | "maxPrice"
   | "parking"
   | "elevator"
-  | "storage";
+  | "storage"
+  | "deed_status";
 
 export interface Criterion {
   id: string;
@@ -148,6 +151,22 @@ export function parseSmartQuery(input: string): ParsedQuery {
   }
 
 
+
+  // --- deed status (independent of ملکی/اوقاف) ---
+  const deedRules: { re: RegExp; value: DeedFilter; label: string }[] = [
+    { re: /بدون\s*سند/, value: "none", label: "بدون سند" },
+    { re: /(?:سند\s*)?تک\s*برگ/, value: "single_sheet", label: "سند تک برگ" },
+    { re: /وکالتی/, value: "attorney", label: "وکالتی" },
+    { re: /سند\s*(?:دارد|داره|دار)|با\s*سند/, value: "has", label: "سند دارد" },
+  ];
+  for (const rule of deedRules) {
+    const m = text.match(rule.re);
+    if (m) {
+      add("deed_status", rule.label, rule.value);
+      strip(m[0]);
+      break;
+    }
+  }
 
   // --- price (with units) ---
   const unit = "(میلیارد|میلیون)";
@@ -387,13 +406,7 @@ const TYPE_GROUPS: Record<string, string[]> = {
 };
 
 /** Legacy land categories and their equivalent new usage type. */
-const CATEGORY_TYPE: Record<string, string> = {
-  residential_phase_1: "land_phase_1",
-  residential_phase_2: "land_phase_2",
-  apartment_phase_1: "apartment_land_phase_1",
-  apartment_phase_2: "apartment_land_phase_2",
-  baghshahri: "zamin_baghshahri",
-};
+const CATEGORY_TYPE = LEGACY_CATEGORY_TYPE;
 
 function typeMatches(propertyType: string, criterion: string): boolean {
   const group = TYPE_GROUPS[criterion];
@@ -414,7 +427,7 @@ export function matchesCriteria(property: Property, criteria: Criterion[]): bool
         if (property.transaction_type !== (c.value as TransactionType)) return false;
         break;
       case "bedrooms":
-        if ((property.bedrooms ?? 0) < Number(c.value)) return false;
+        if (property.bedrooms !== Number(c.value)) return false;
         break;
       case "phase":
         if (normalize(property.phase ?? "") !== normalize(String(c.value))) return false;
@@ -425,7 +438,7 @@ export function matchesCriteria(property: Property, criteria: Criterion[]): bool
       case "land_category":
         if (
           property.land_category !== String(c.value) &&
-          CATEGORY_TYPE[String(c.value)] !== property.property_type
+          !(property.land_category == null && CATEGORY_TYPE[String(c.value)] === property.property_type)
         )
           return false;
         break;
@@ -448,7 +461,8 @@ export function matchesCriteria(property: Property, criteria: Criterion[]): bool
       case "minPrice":
       case "maxPrice": {
         const value =
-          property.transaction_type === "sale" ? (property.price ?? 0) : (property.deposit ?? 0);
+          property.transaction_type === "sale" ? effectiveSalePrice(property) : property.deposit;
+        if (value === null || value === undefined) return false;
         if (c.key === "minPrice" && value < Number(c.value)) return false;
         if (c.key === "maxPrice" && value > Number(c.value)) return false;
         break;
@@ -462,6 +476,12 @@ export function matchesCriteria(property: Property, criteria: Criterion[]): bool
       case "storage":
         if (property.storage !== Boolean(c.value)) return false;
         break;
+      case "deed_status": {
+        const deed = property.deed_status ?? null;
+        if (c.value === "has" ? deed !== "single_sheet" && deed !== "attorney" : deed !== c.value)
+          return false;
+        break;
+      }
     }
   }
   return true;
@@ -505,7 +525,9 @@ export function criteriaToFilters(criteria: Criterion[]): {
   maxArea?: number;
   minPrice?: number;
   maxPrice?: number;
-  minBedrooms?: number;
+  bedrooms?: number;
+  city?: string;
+  deed?: DeedFilter;
   parking?: boolean;
   elevator?: boolean;
   storage?: boolean;
@@ -537,7 +559,7 @@ export function criteriaToFilters(criteria: Criterion[]): {
         out["plotNumber"] = String(c.value);
         break;
       case "bedrooms":
-        out["minBedrooms"] = Number(c.value);
+        out["bedrooms"] = Number(c.value);
         break;
       case "minArea":
         out["minArea"] = Number(c.value);
@@ -561,6 +583,10 @@ export function criteriaToFilters(criteria: Criterion[]): {
         out["storage"] = Boolean(c.value);
         break;
       case "city":
+        out["city"] = String(c.value);
+        break;
+      case "deed_status":
+        out["deed"] = String(c.value);
         break;
     }
   }
