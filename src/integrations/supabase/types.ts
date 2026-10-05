@@ -486,6 +486,7 @@ export type Database = {
           company_payment_terms: string | null
           cover_photo: string | null
           created_at: string
+          deed_status: string | null
           deposit: number | null
           deposited_amount: number | null
           description: string | null
@@ -535,6 +536,7 @@ export type Database = {
           company_payment_terms?: string | null
           cover_photo?: string | null
           created_at?: string
+          deed_status?: string | null
           deposit?: number | null
           deposited_amount?: number | null
           description?: string | null
@@ -584,6 +586,7 @@ export type Database = {
           company_payment_terms?: string | null
           cover_photo?: string | null
           created_at?: string
+          deed_status?: string | null
           deposit?: number | null
           deposited_amount?: number | null
           description?: string | null
