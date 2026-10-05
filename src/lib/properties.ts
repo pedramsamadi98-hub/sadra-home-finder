@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { enDigits, faDigits } from "@/lib/fa";
 import { LAND_CATEGORIES } from "@/lib/land";
 
 /** Legacy values kept for existing rows. */
