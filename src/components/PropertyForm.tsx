@@ -32,6 +32,8 @@ import {
   presaleRemaining,
   PHASES,
   OWNERSHIP_LABELS,
+  DEED_STATUS_LABELS,
+  type DeedStatus,
   PROPERTY_TYPE_LABELS,
   showsPlotNumber,
   STATUS_LABELS,
@@ -378,6 +380,23 @@ export function PropertyForm({
               انتخاب نوع ملک الزامی است.
             </p>
           ) : null}
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">وضعیت سند</Label>
+          <select
+            value={form.deed_status ?? ""}
+            onChange={(event) =>
+              set("deed_status", (event.target.value || null) as DeedStatus | null)
+            }
+            className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+          >
+            <option value="">ثبت نشده</option>
+            {(Object.keys(DEED_STATUS_LABELS) as DeedStatus[]).map((key) => (
+              <option key={key} value={key}>
+                {DEED_STATUS_LABELS[key]}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="space-y-2">
           <Label className="text-xs">نوع کاربری ملک</Label>

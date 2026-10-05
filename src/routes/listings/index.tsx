@@ -22,6 +22,8 @@ import {
   STATUS_LABELS,
   TRANSACTION_LABELS,
   type ArchiveScope,
+  type DeedFilter,
+  DEED_FILTER_LABELS,
   type PropertyQuery,
 } from "@/lib/properties";
 import { LAND_CATEGORIES, LAND_CATEGORY_LABELS, zonesFor } from "@/lib/land";
