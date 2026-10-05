@@ -110,6 +110,7 @@ function Listings() {
   const [elevator, setElevator] = useState(pick("elevator", false));
   const [storageOnly, setStorageOnly] = useState(pick("storageOnly", false));
   const [broker, setBroker] = useState<string>(pick("broker", ALL));
+  const [deed, setDeed] = useState<string>(pick("deed", ALL));
   const [page, setPage] = useState<number>(pick("page", 1));
 
 
@@ -123,8 +124,12 @@ function Listings() {
 
   const parsed = useMemo(() => parseSmartQuery(query), [query]);
   const criteria = useMemo(
-    () => parsed.criteria.filter((item) => !removed.includes(item.id)),
-    [parsed, removed],
+    () =>
+      parsed.criteria.filter(
+        // Deed status is not part of the collaborators' shared view.
+        (item) => !removed.includes(item.id) && (isAdmin || item.key !== "deed_status"),
+      ),
+    [parsed, removed, isAdmin],
   );
 
   const textQuery = criteria.length ? parsed.rest : query.trim();
@@ -139,12 +144,36 @@ function Listings() {
     const text = enDigits(textQuery.trim());
     const codeQuery = /^\d+$/.test(text) ? Number(text) : null;
 
-    // Multi-select types AND smart-search type: intersection (both must hold).
+    // When the UI and the smart search set the same filter, only their logical
+    // intersection applies; a contradiction yields an empty result.
+    let impossible = false;
+    const both = <T,>(ui: T | null, sm: T | undefined): T | null => {
+      if (ui !== null && sm !== undefined && ui !== sm) impossible = true;
+      return ui ?? sm ?? null;
+    };
+    const flag = (ui: boolean, sm: boolean | undefined) =>
+      both<boolean>(ui ? true : null, sm) ?? undefined;
+
+    // Multi-select types (OR inside) AND smart-search type: intersection.
     let typeFilter: string[] | undefined = types.length ? types : smart.types;
     if (types.length && smart.types) {
-      const both = types.filter((value) => smart.types!.includes(value));
-      typeFilter = both.length ? both : ["__none__"];
+      typeFilter = types.filter((value) => smart.types!.includes(value));
+      if (!typeFilter.length) impossible = true;
     }
+
+    // Deed: «سند دارد» = single_sheet OR attorney.
+    const deedSet = (v: string) => (v === "has" ? ["single_sheet", "attorney"] : [v]);
+    let deedFilter: string | null = isAdmin && deed !== ALL ? deed : null;
+    if (smart.deed) {
+      if (!deedFilter) deedFilter = smart.deed;
+      else {
+        const common = deedSet(deedFilter).filter((v) => deedSet(smart.deed!).includes(v));
+        if (!common.length) impossible = true;
+        deedFilter = common.length === 2 ? "has" : (common[0] ?? null);
+      }
+    }
+
+    const uiBedrooms = parseNumber(minBedrooms);
 
     const maxOf = (a: number | null, b: number | undefined) =>
       a && b ? Math.max(a, b) : (a ?? b ?? null);
@@ -155,24 +184,27 @@ function Listings() {
       text,
       fileCode: codeQuery,
       types: typeFilter,
-      ownership: ownership !== ALL ? ownership : (smart.ownership ?? null),
-      transaction: transaction !== ALL ? transaction : (smart.transaction ?? null),
+      ownership: both(ownership !== ALL ? ownership : null, smart.ownership),
+      transaction: both(transaction !== ALL ? transaction : null, smart.transaction),
       status: status !== ALL ? status : null,
       scope,
-      phase: phase !== ALL ? phase : (smart.phase ?? null),
+      phase: both(phase !== ALL ? phase : null, smart.phase),
       neighborhood: neighborhood !== ALL ? neighborhood : null,
-      landCategory: landCategoryId !== ALL ? landCategoryId : (smart.landCategory ?? null),
-      landZone: landZone !== ALL ? landZone : (smart.landZone ?? null),
+      landCategory: both(landCategoryId !== ALL ? landCategoryId : null, smart.landCategory),
+      landZone: both(landZone !== ALL ? landZone : null, smart.landZone),
       plotNumber: smart.plotNumber ?? null,
-      brokerId: broker !== ALL ? broker : null,
+      brokerId: isAdmin && broker !== ALL ? broker : null,
+      city: smart.city ?? null,
+      deed: deedFilter as PropertyQuery["deed"],
       minArea: maxOf(parseNumber(minArea), smart.minArea),
       maxArea: minOf(parseNumber(maxArea), smart.maxArea),
-      minBedrooms: maxOf(parseNumber(minBedrooms), smart.minBedrooms),
+      bedrooms: both(uiBedrooms, smart.bedrooms),
       minPrice: maxOf(parseNumber(minPrice), smart.minPrice),
       maxPrice: minOf(parseNumber(maxPrice), smart.maxPrice),
-      parking: parking ? true : smart.parking,
-      elevator: elevator ? true : smart.elevator,
-      storage: storageOnly ? true : smart.storage,
+      parking: flag(parking, smart.parking),
+      elevator: flag(elevator, smart.elevator),
+      storage: flag(storageOnly, smart.storage),
+      impossible,
       page,
       pageSize: PAGE_SIZE,
     };
@@ -189,6 +221,8 @@ function Listings() {
     landCategoryId,
     landZone,
     broker,
+    deed,
+    isAdmin,
     minArea,
     maxArea,
     minBedrooms,
@@ -199,6 +233,15 @@ function Listings() {
     storageOnly,
     page,
   ]);
+
+  // A remembered neighborhood/zone that no longer fits the chosen phase or
+  // land category is dropped instead of being kept silently.
+  const neighborhoodOptions =
+    phase === ALL ? NEIGHBORHOODS : neighborhoodsFor(phase).map((item) => item.value);
+  if (neighborhood !== ALL && !neighborhoodOptions.includes(neighborhood)) setNeighborhood(ALL);
+  const zoneOptions =
+    landCategoryId === ALL ? [] : zonesFor(landCategoryId).map((zone) => zone.label);
+  if (landZone !== ALL && !zoneOptions.includes(landZone)) setLandZone(ALL);
 
   const filterSignature = JSON.stringify({ ...queryInput, page: 0 });
   const [lastSignature, setLastSignature] = useState(filterSignature);
@@ -250,6 +293,7 @@ function Listings() {
     elevator,
     storageOnly,
     broker,
+    deed,
     removed,
     page,
   };
@@ -337,6 +381,7 @@ function Listings() {
     setLandCategoryId(ALL);
     setLandZone(ALL);
     setBroker(ALL);
+    setDeed(ALL);
     setMinArea("");
     setMaxArea("");
     setMinPrice("");
@@ -579,6 +624,23 @@ function Listings() {
                   </select>
                 </div>
               ) : null}
+              {isAdmin ? (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">وضعیت سند</Label>
+                  <select
+                    value={deed}
+                    onChange={(event) => setDeed(event.target.value)}
+                    className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                  >
+                    <option value={ALL}>همه</option>
+                    {(Object.keys(DEED_FILTER_LABELS) as DeedFilter[]).map((key) => (
+                      <option key={key} value={key}>
+                        {DEED_FILTER_LABELS[key]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
             </div>
             <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
               <TextFilter label="حداقل متراژ" value={minArea} onChange={setMinArea} />
@@ -588,7 +650,7 @@ function Listings() {
               <MoneyFilterInput label="حداقل قیمت (تومان)" value={minPrice} onChange={setMinPrice} />
               <MoneyFilterInput label="حداکثر قیمت (تومان)" value={maxPrice} onChange={setMaxPrice} />
             </div>
-            <TextFilter label="حداقل خواب" value={minBedrooms} onChange={setMinBedrooms} />
+            <TextFilter label="تعداد خواب" value={minBedrooms} onChange={setMinBedrooms} />
             <div className="grid grid-cols-3 gap-2">
               <ToggleChip label="پارکینگ" active={parking} onToggle={() => setParking((v) => !v)} />
               <ToggleChip label="آسانسور" active={elevator} onToggle={() => setElevator((v) => !v)} />
