@@ -115,6 +115,8 @@ export function parseSmartQuery(input: string): ParsedQuery {
   // --- land category / zone / plot (official taxonomy) ---
   const land = detectLand(text);
   const stripAliases = (aliases: string[]) => {
+    // Aliases are matched on normalized text (آ→ا, Persian digits→latin).
+    text = ` ${normalizeFa(text)} `;
     for (const alias of aliases) {
       text = text.replace(aliasRegex(alias, "g"), " ");
     }
