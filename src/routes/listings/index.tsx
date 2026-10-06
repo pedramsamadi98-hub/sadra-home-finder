@@ -197,7 +197,7 @@ function Listings() {
       plotNumber: smart.plotNumber ?? null,
       brokerId: isAdmin && broker !== ALL ? broker : null,
       city: smart.city ?? null,
-      deed: deedFilter as PropertyQuery["deed"],
+      deed: (deedFilter ?? null) as NonNullable<PropertyQuery["deed"]> | null,
       minArea: maxOf(parseNumber(minArea), smart.minArea),
       maxArea: minOf(parseNumber(maxArea), smart.maxArea),
       bedrooms: both(uiBedrooms, smart.bedrooms),
