@@ -498,6 +498,7 @@ export type Database = {
           initial_price: number | null
           land_category: string | null
           land_zone: string | null
+          last_activity_at: string | null
           monthly_rent: number | null
           neighborhood: string | null
           notes: string | null
@@ -514,6 +515,7 @@ export type Database = {
           price_verified_at: string | null
           private_photos: string[]
           property_type: string
+          seller_status: string | null
           status: string
           storage: boolean
           street: string | null
@@ -548,6 +550,7 @@ export type Database = {
           initial_price?: number | null
           land_category?: string | null
           land_zone?: string | null
+          last_activity_at?: string | null
           monthly_rent?: number | null
           neighborhood?: string | null
           notes?: string | null
@@ -564,6 +567,7 @@ export type Database = {
           price_verified_at?: string | null
           private_photos?: string[]
           property_type?: string
+          seller_status?: string | null
           status?: string
           storage?: boolean
           street?: string | null
@@ -598,6 +602,7 @@ export type Database = {
           initial_price?: number | null
           land_category?: string | null
           land_zone?: string | null
+          last_activity_at?: string | null
           monthly_rent?: number | null
           neighborhood?: string | null
           notes?: string | null
@@ -614,6 +619,7 @@ export type Database = {
           price_verified_at?: string | null
           private_photos?: string[]
           property_type?: string
+          seller_status?: string | null
           status?: string
           storage?: boolean
           street?: string | null
@@ -647,6 +653,7 @@ export type Database = {
           note: string | null
           price: number | null
           property_id: string
+          seller_status: string | null
           source: string
           updated_at: string
           user_id: string
@@ -662,6 +669,7 @@ export type Database = {
           note?: string | null
           price?: number | null
           property_id: string
+          seller_status?: string | null
           source?: string
           updated_at?: string
           user_id: string
@@ -677,6 +685,7 @@ export type Database = {
           note?: string | null
           price?: number | null
           property_id?: string
+          seller_status?: string | null
           source?: string
           updated_at?: string
           user_id?: string
@@ -768,6 +777,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_property_price_event: {
+        Args: {
+          _confidence?: string
+          _deposit?: number
+          _event_at?: string
+          _kind: string
+          _monthly_rent?: number
+          _note?: string
+          _price?: number
+          _property_id: string
+          _seller_status?: string
+          _source?: string
+          _verify?: boolean
+        }
+        Returns: string
+      }
       can_view_shared: { Args: { _user_id: string }; Returns: boolean }
       claim_bulk_import_items: {
         Args: { _lease_seconds?: number; _limit?: number; _worker: string }

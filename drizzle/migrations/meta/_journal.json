@@ -8,6 +8,13 @@
       "when": 1791192194750,
       "tag": "0000_add_property_deed_status",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793563693513,
+      "tag": "0001_price_seller_availability_history",
+      "breakpoints": true
     }
   ]
 }
