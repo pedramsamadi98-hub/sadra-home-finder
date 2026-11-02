@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { enDigits, faDigits } from "@/lib/fa";
 import { LAND_CATEGORIES } from "@/lib/land";
 
@@ -143,6 +144,10 @@ export interface Property {
   cover_photo?: string | null;
   /** «وضعیت سند»; null/absent = ثبت نشده. Not returned to collaborators. */
   deed_status?: DeedStatus | null;
+  /** Real time of the latest sales activity; null = none recorded yet. */
+  last_activity_at?: string | null;
+  /** Current seller availability; null = unknown (never inferred). */
+  seller_status?: "available" | "unavailable" | null;
   created_at: string;
   updated_at: string;
 }
@@ -663,6 +668,11 @@ export async function fetchPropertyByCode(code: number): Promise<Property | null
 /* ---------------------------- price lifecycle ---------------------------- */
 
 export type PriceEventKind = "price" | "update" | "note";
+export type SellerStatus = "available" | "unavailable";
+export const SELLER_STATUS_LABELS: Record<SellerStatus, string> = {
+  available: "فروشنده است",
+  unavailable: "فعلاً فروشنده نیست",
+};
 export type PriceEventSource = "manual" | "ocr" | "broker";
 
 export interface PriceEvent {
@@ -677,6 +687,8 @@ export interface PriceEvent {
   source: PriceEventSource;
   confidence: string | null;
   note: string | null;
+  /** null = this event did not record a seller status. */
+  seller_status?: SellerStatus | null;
   created_at: string;
   updated_at: string;
 }
@@ -794,6 +806,42 @@ export async function addPriceEvent(
       .eq("id", property.id);
     if (updateError) throw updateError;
   }
+}
+
+export type ManualEventInput =
+  | { kind: "price"; price: number; seller_status?: SellerStatus | null; event_at?: string | null; note?: string | null }
+  | { kind: "update"; seller_status: SellerStatus; event_at?: string | null; note?: string | null }
+  | { kind: "note"; note: string; event_at?: string | null };
+
+/**
+ * Manual entry from the price form, written atomically by the
+ * `add_property_price_event` database function (admin-only, identity from the
+ * session). Bulk Import / OCR keep using `addPriceEvent` unchanged.
+ * Returns the new event id.
+ */
+export async function addManualPriceEvent(propertyId: string, input: ManualEventInput): Promise<string> {
+  const note = input.note?.trim() || undefined;
+  const args: Database["public"]["Functions"]["add_property_price_event"]["Args"] = {
+    _property_id: propertyId,
+    _kind: input.kind,
+    _source: "manual",
+    ...(input.event_at ? { _event_at: input.event_at } : {}),
+    ...(note ? { _note: note } : {}),
+  };
+  if (input.kind === "price") {
+    if (!Number.isFinite(input.price) || input.price < 0) throw new Error("invalid price");
+    args._price = input.price;
+    args._verify = true;
+    if (input.seller_status) args._seller_status = input.seller_status;
+  } else if (input.kind === "update") {
+    args._seller_status = input.seller_status;
+  } else if (!note) {
+    throw new Error("empty note");
+  }
+  const { data, error } = await supabase.rpc("add_property_price_event", args);
+  if (error) throw error;
+  if (typeof data !== "string" || !data) throw new Error("no event id returned");
+  return data;
 }
 
 export async function deletePriceEvent(id: string) {
