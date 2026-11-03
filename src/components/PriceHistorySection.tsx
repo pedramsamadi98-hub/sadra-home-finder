@@ -153,9 +153,36 @@ export function PriceHistorySection({
             onChange={setPrice}
             placeholder="مثلاً 20000000000"
           />
+          {negative ? (
+            <p className="text-[11px] text-destructive">مبلغ نمی‌تواند منفی باشد.</p>
+          ) : null}
+          <div className="space-y-1.5">
+            <p className="text-xs">وضعیت فروشنده</p>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="وضعیت فروشنده">
+              {(
+                [
+                  ["none", "بدون تغییر"],
+                  ["available", SELLER_STATUS_LABELS.available],
+                  ["unavailable", SELLER_STATUS_LABELS.unavailable],
+                ] as const
+              ).map(([value, label]) => (
+                <Button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={sellerStatus === value}
+                  variant={sellerStatus === value ? "default" : "outline"}
+                  className="h-11 px-1 text-[11px]"
+                  onClick={() => setSellerStatus(value)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor={`price-date-${property.id}`} className="text-xs">
-              تاریخ اعلام قیمت (اختیاری)
+              تاریخ اعلام (اختیاری)
             </Label>
             <Input
               id={`price-date-${property.id}`}
@@ -181,7 +208,7 @@ export function PriceHistorySection({
           <Button
             type="button"
             className="h-11 w-full"
-            disabled={price === null || save.isPending}
+            disabled={!canSave || save.isPending}
             onClick={() => save.mutate()}
           >
             {save.isPending ? (
@@ -189,7 +216,7 @@ export function PriceHistorySection({
             ) : (
               <Check className="size-4" />
             )}
-            ثبت قیمت و افزودن به تاریخچه
+            {price !== null ? "ثبت قیمت و افزودن به تاریخچه" : status ? "ثبت وضعیت فروشنده" : "ثبت یادداشت"}
           </Button>
         </div>
       ) : null}
@@ -206,7 +233,15 @@ export function PriceHistorySection({
               className="flex items-start gap-2 rounded-xl bg-secondary/60 p-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-primary">{faPrice(event.price)}</p>
+                {event.price !== null ? (
+                  <p className="text-sm font-bold text-primary">{faPrice(event.price)}</p>
+                ) : null}
+                {event.seller_status === "available" || event.seller_status === "unavailable" ? (
+                  <p className="text-xs font-semibold">{SELLER_STATUS_LABELS[event.seller_status]}</p>
+                ) : null}
+                {event.price === null && !event.seller_status && event.kind === "note" ? (
+                  <p className="text-xs font-semibold text-muted-foreground">یادداشت</p>
+                ) : null}
                 <p className="text-[11px] text-muted-foreground">
                   {faDateTime(event.event_at)}
                   {event.source === "ocr" ? " · از روی عکس" : ""}
