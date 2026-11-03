@@ -51,6 +51,7 @@ import {
   paymentSteps,
   presaleRemaining,
   propertyTypeLabel,
+  SELLER_STATUS_LABELS,
   STATUS_LABELS,
   TRANSACTION_LABELS,
   updatePropertyOwnership,
@@ -288,6 +289,21 @@ function Detail({ userId }: { userId: string }) {
           </section>
         ) : null}
 
+
+        {/* null/absent seller_status = unknown: no badge, nothing inferred. */}
+        {property.seller_status === "available" || property.seller_status === "unavailable" ? (
+          <div className="flex">
+            <span
+              className={
+                property.seller_status === "available"
+                  ? "rounded-full bg-success/15 px-3 py-1 text-xs font-semibold text-success"
+                  : "rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground"
+              }
+            >
+              {SELLER_STATUS_LABELS[property.seller_status]}
+            </span>
+          </div>
+        ) : null}
 
         <section className="grid gap-2">
           <Row
