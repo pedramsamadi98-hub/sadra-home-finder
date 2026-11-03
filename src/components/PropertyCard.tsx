@@ -18,6 +18,15 @@ import {
   type Property,
 } from "@/lib/properties";
 
+/** Newest of last activity / price verification; else initial date; else created. */
+function cardDate(property: Property): string {
+  const times = [property.last_activity_at, property.price_verified_at]
+    .filter((v): v is string => !!v && !Number.isNaN(new Date(v).getTime()));
+  if (times.length) {
+    return times.reduce((a, b) => (new Date(b).getTime() > new Date(a).getTime() ? b : a));
+  }
+  return property.initial_date ?? property.created_at;
+}
 
 function statusClass(status: Property["status"]) {
   if (status === "active") return "bg-success/15 text-success";

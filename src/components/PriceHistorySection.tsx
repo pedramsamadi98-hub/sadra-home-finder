@@ -11,11 +11,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { faDate, faDateTime, faPrice } from "@/lib/fa";
 import {
-  addPriceEvent,
+  addManualPriceEvent,
   deletePriceEvent,
   fetchPriceEvents,
+  SELLER_STATUS_LABELS,
+  type ManualEventInput,
   type Property,
+  type SellerStatus,
 } from "@/lib/properties";
+
+type StatusChoice = "none" | SellerStatus;
 
 /**
  * Price lifecycle of one file: the initial price it was registered with, the
@@ -24,7 +29,7 @@ import {
  */
 export function PriceHistorySection({
   property,
-  userId,
+  userId: _userId,
   canEdit,
 }: {
   property: Property;
@@ -35,6 +40,7 @@ export function PriceHistorySection({
   const [price, setPrice] = useState<number | null>(null);
   const [date, setDate] = useState("");
   const [note, setNote] = useState("");
+  const [sellerStatus, setSellerStatus] = useState<StatusChoice>("none");
 
   const { data: events, isLoading } = useQuery({
     queryKey: ["price_events", property.id],
@@ -49,24 +55,42 @@ export function PriceHistorySection({
     ]);
   }
 
+  const trimmedNote = note.trim();
+  const negative = price !== null && price < 0;
+  const status = sellerStatus === "none" ? null : sellerStatus;
+  /** Builds exactly one allowed event, or null when nothing meaningful is entered. */
+  function buildEvent(): ManualEventInput | null {
+    const eventAt = date ? new Date(`${date}T12:00`).toISOString() : null;
+    if (price !== null) {
+      return { kind: "price", price, seller_status: status, event_at: eventAt, note: trimmedNote || null };
+    }
+    if (status) return { kind: "update", seller_status: status, event_at: eventAt, note: trimmedNote || null };
+    if (trimmedNote) return { kind: "note", note: trimmedNote, event_at: eventAt };
+    return null;
+  }
+  const canSave = !negative && buildEvent() !== null;
+
   const save = useMutation({
     mutationFn: async () => {
-      const eventAt = date ? new Date(`${date}T12:00`).toISOString() : new Date().toISOString();
-      await addPriceEvent(property, userId, {
-        price,
-        event_at: eventAt,
-        source: "manual",
-        note,
-      });
+      if (negative) throw new Error("negative");
+      const input = buildEvent();
+      if (!input) throw new Error("empty");
+      await addManualPriceEvent(property.id, input);
     },
     onSuccess: async () => {
       await invalidate();
       setPrice(null);
       setDate("");
       setNote("");
-      toast.success("قیمت جدید ثبت شد");
+      setSellerStatus("none");
+      toast.success("ثبت شد و به تاریخچه اضافه شد");
     },
-    onError: () => toast.error("ثبت قیمت ناموفق بود"),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error && error.message === "negative"
+          ? "مبلغ نمی‌تواند منفی باشد"
+          : "ثبت ناموفق بود",
+      ),
   });
 
   const remove = useMutation({
@@ -129,9 +153,36 @@ export function PriceHistorySection({
             onChange={setPrice}
             placeholder="مثلاً 20000000000"
           />
+          {negative ? (
+            <p className="text-[11px] text-destructive">مبلغ نمی‌تواند منفی باشد.</p>
+          ) : null}
+          <div className="space-y-1.5">
+            <p className="text-xs">وضعیت فروشنده</p>
+            <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="وضعیت فروشنده">
+              {(
+                [
+                  ["none", "بدون تغییر"],
+                  ["available", SELLER_STATUS_LABELS.available],
+                  ["unavailable", SELLER_STATUS_LABELS.unavailable],
+                ] as const
+              ).map(([value, label]) => (
+                <Button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={sellerStatus === value}
+                  variant={sellerStatus === value ? "default" : "outline"}
+                  className="h-11 px-1 text-[11px]"
+                  onClick={() => setSellerStatus(value)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor={`price-date-${property.id}`} className="text-xs">
-              تاریخ اعلام قیمت (اختیاری)
+              تاریخ اعلام (اختیاری)
             </Label>
             <Input
               id={`price-date-${property.id}`}
@@ -157,7 +208,7 @@ export function PriceHistorySection({
           <Button
             type="button"
             className="h-11 w-full"
-            disabled={price === null || save.isPending}
+            disabled={!canSave || save.isPending}
             onClick={() => save.mutate()}
           >
             {save.isPending ? (
@@ -165,7 +216,7 @@ export function PriceHistorySection({
             ) : (
               <Check className="size-4" />
             )}
-            ثبت قیمت و افزودن به تاریخچه
+            {price !== null ? "ثبت قیمت و افزودن به تاریخچه" : status ? "ثبت وضعیت فروشنده" : "ثبت یادداشت"}
           </Button>
         </div>
       ) : null}
@@ -182,7 +233,15 @@ export function PriceHistorySection({
               className="flex items-start gap-2 rounded-xl bg-secondary/60 p-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-primary">{faPrice(event.price)}</p>
+                {event.price !== null ? (
+                  <p className="text-sm font-bold text-primary">{faPrice(event.price)}</p>
+                ) : null}
+                {event.seller_status === "available" || event.seller_status === "unavailable" ? (
+                  <p className="text-xs font-semibold">{SELLER_STATUS_LABELS[event.seller_status]}</p>
+                ) : null}
+                {event.price === null && !event.seller_status && event.kind === "note" ? (
+                  <p className="text-xs font-semibold text-muted-foreground">یادداشت</p>
+                ) : null}
                 <p className="text-[11px] text-muted-foreground">
                   {faDateTime(event.event_at)}
                   {event.source === "ocr" ? " · از روی عکس" : ""}
