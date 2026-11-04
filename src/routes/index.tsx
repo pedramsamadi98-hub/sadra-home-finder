@@ -59,7 +59,7 @@ function StatCard({
   icon: typeof Home;
   tone: string;
   /** Admin only: the card opens its own archive tab. */
-  tab?: "sold" | "rented" | "archived";
+  tab?: "sold" | "rented" | "archived" | undefined;
 }) {
   const body = (
     <>
