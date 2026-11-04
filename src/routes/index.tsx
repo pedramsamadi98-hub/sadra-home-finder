@@ -52,20 +52,30 @@ function StatCard({
   value,
   icon: Icon,
   tone,
+  tab,
 }: {
   label: string;
   value: string;
   icon: typeof Home;
   tone: string;
+  /** Admin only: the card opens its own archive tab. */
+  tab?: "sold" | "rented" | "archived";
 }) {
-  return (
-    <div className="surface-card p-3">
+  const body = (
+    <>
       <div className={`flex size-8 items-center justify-center rounded-lg ${tone}`}>
         <Icon className="size-4" />
       </div>
       <p className="mt-2 text-xl font-bold">{value}</p>
       <p className="text-[11px] text-muted-foreground">{label}</p>
-    </div>
+    </>
+  );
+  return tab ? (
+    <Link to="/archive" search={{ tab }} className="surface-card block p-3 transition-transform active:scale-[0.99]">
+      {body}
+    </Link>
+  ) : (
+    <div className="surface-card p-3">{body}</div>
   );
 }
 
@@ -124,12 +134,14 @@ function Dashboard({ userId }: { userId: string }) {
             <StatCard
               label="فروش رفته"
               value={faDigits(sold.length)}
+              tab={isAdmin ? "sold" : undefined}
               icon={CheckCircle2}
               tone="bg-destructive/15 text-destructive"
             />
             <StatCard
               label="اجاره داده شده"
               value={faDigits(rented.length)}
+              tab={isAdmin ? "rented" : undefined}
               icon={KeyRound}
               tone="bg-warning/15 text-warning"
             />
@@ -137,6 +149,7 @@ function Dashboard({ userId }: { userId: string }) {
                <StatCard
                  label="بایگانی"
                  value={faDigits(archived.length)}
+              tab={isAdmin ? "archived" : undefined}
                  icon={Archive}
                  tone="bg-muted text-muted-foreground"
                />
