@@ -19,7 +19,7 @@ const clean = (v: string | null | undefined) => (v ?? "").trim();
  * really differs (clearing a value keeps the old one). No name matching, so a
  * retry after a successful save adds nothing — the persisted values already match.
  */
-export function historyLines(
+function historyLines(
   latest: Pick<Property, "owner_name" | "owner_phone" | "broker_id">,
   next: Pick<PropertyInput, "owner_name" | "owner_phone" | "broker_id">,
   brokerName: (id: string) => string,

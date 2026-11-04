@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ArchiveRouteImport } from './routes/archive'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BrokersRouteImport } from './routes/brokers'
 import { Route as CustomersRouteImport } from './routes/customers'
@@ -29,6 +30,11 @@ import { Route as ApiPublicHooksBulkImportWorkerRouteImport } from './routes/api
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArchiveRoute = ArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -110,6 +116,7 @@ const ApiPublicHooksBulkImportWorkerRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
   '/brokers': typeof BrokersRoute
   '/customers': typeof CustomersRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
   '/brokers': typeof BrokersRoute
   '/customers': typeof CustomersRoute
@@ -147,6 +155,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/archive': typeof ArchiveRoute
   '/auth': typeof AuthRoute
   '/brokers': typeof BrokersRoute
   '/customers': typeof CustomersRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/archive'
     | '/auth'
     | '/brokers'
     | '/customers'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/archive'
     | '/auth'
     | '/brokers'
     | '/customers'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/archive'
     | '/auth'
     | '/brokers'
     | '/customers'
@@ -222,6 +234,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ArchiveRoute: typeof ArchiveRoute
   AuthRoute: typeof AuthRoute
   BrokersRoute: typeof BrokersRoute
   CustomersRoute: typeof CustomersRoute
@@ -246,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/archive': {
+      id: '/archive'
+      path: '/archive'
+      fullPath: '/archive'
+      preLoaderRoute: typeof ArchiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -358,6 +378,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ArchiveRoute: ArchiveRoute,
   AuthRoute: AuthRoute,
   BrokersRoute: BrokersRoute,
   CustomersRoute: CustomersRoute,
