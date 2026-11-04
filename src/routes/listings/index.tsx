@@ -13,13 +13,11 @@ import { fetchBrokers } from "@/lib/brokers";
 import { enDigits, faDigits, parseNumber } from "@/lib/fa";
 import {
   ALL_PROPERTY_TYPE_LABELS,
-  ARCHIVE_SCOPE_LABELS,
   fetchPropertiesPage,
   neighborhoodsFor,
   NEIGHBORHOODS,
   PHASES,
   OWNERSHIP_LABELS,
-  STATUS_LABELS,
   TRANSACTION_LABELS,
   type ArchiveScope,
   type DeedFilter,
@@ -495,12 +493,6 @@ function Listings() {
                 value={transaction}
                 onChange={setTransaction}
                 options={TRANSACTION_LABELS}
-              />
-              <Selector
-                label="وضعیت"
-                value={status}
-                onChange={setStatus}
-                options={STATUS_LABELS}
               />
               <div className="space-y-1.5">
                 <Label className="text-xs">فاز</Label>
