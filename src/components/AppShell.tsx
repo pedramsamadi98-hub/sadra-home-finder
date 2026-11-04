@@ -1,6 +1,8 @@
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import {
+  Archive,
   BarChart3,
+  MoreHorizontal,
   BellRing,
   Images,
   LayoutDashboard,
@@ -17,19 +19,30 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 
 import logoIcon from "@/assets/sadra-icon.png";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/lib/roles";
 
+// Two rows of four; the last slot opens «بیشتر» with the remaining pages.
 const adminNav = [
   { to: "/", label: "داشبورد", icon: LayoutDashboard },
   { to: "/listings", label: "املاک", icon: List },
-  { to: "/reminders", label: "یادآورها", icon: BellRing },
+  { to: "/archive", label: "آرشیو", icon: Archive },
+  { to: "/listings/new", label: "ثبت ملک", icon: Plus },
   { to: "/brokers", label: "دلال‌ها", icon: Users },
   { to: "/customers", label: "مشتری‌ها", icon: UserRound },
-  { to: "/reports", label: "آمار", icon: BarChart3 },
-  { to: "/listings/new", label: "ثبت ملک", icon: Plus },
   { to: "/listings/batch", label: "ورود گروهی", icon: Images },
+] as const;
+
+const moreNav = [
+  { to: "/reports", label: "آمار", icon: BarChart3 },
+  { to: "/reminders", label: "یادآورها", icon: BellRing },
   { to: "/users", label: "همکارها", icon: ShieldCheck },
 ] as const;
 
@@ -54,6 +67,7 @@ export function AppShell({
   const { theme, toggle } = useTheme();
   const router = useRouter();
   const { isAdmin } = useRole();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const navItems: ReadonlyArray<{ to: string; label: string; icon: typeof List }> = isAdmin
     ? adminNav
     : collaboratorNav;
@@ -67,7 +81,7 @@ export function AppShell({
   return (
     <div
       className={`min-h-screen bg-background ${
-        navItems.length > 4
+        isAdmin
           ? "pb-[calc(13rem+env(safe-area-inset-bottom))]"
           : "pb-[calc(6rem+env(safe-area-inset-bottom))]"
       }`}
@@ -121,7 +135,7 @@ export function AppShell({
         <div
           className="mx-auto grid max-w-3xl gap-1 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
           style={{
-            gridTemplateColumns: `repeat(${Math.min(navItems.length, 4)}, minmax(0, 1fr))`,
+            gridTemplateColumns: `repeat(${Math.min(navItems.length + (isAdmin ? 1 : 0), 4)}, minmax(0, 1fr))`,
           }}
         >
           {navItems.map((item) => (
@@ -136,6 +150,30 @@ export function AppShell({
               <span className="w-full truncate text-center">{item.label}</span>
             </Link>
           ))}
+          {isAdmin ? (
+            <DropdownMenu dir="rtl">
+              <DropdownMenuTrigger
+                className={`flex min-w-0 flex-col items-center gap-1 rounded-xl py-2 text-[10px] text-muted-foreground transition-colors ${
+                  moreNav.some((item) => pathname.startsWith(item.to))
+                    ? "!text-primary bg-primary/10 font-semibold"
+                    : ""
+                }`}
+              >
+                <MoreHorizontal className="size-5" />
+                <span className="w-full truncate text-center">بیشتر</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="end" className="min-w-40">
+                {moreNav.map((item) => (
+                  <DropdownMenuItem key={item.to} asChild>
+                    <Link to={item.to} className="flex items-center gap-2">
+                      <item.icon className="size-4" />
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
         </div>
       </nav>
     </div>

@@ -1,10 +1,12 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { BedDouble, Car, MapPin, MoveVertical, Package, Ruler } from "lucide-react";
+import { BedDouble, UserRound, Car, MapPin, MoveVertical, Package, Ruler } from "lucide-react";
 
 import { PropertyTypeIcon } from "@/lib/property-type-icons";
 import { useRole } from "@/lib/roles";
 
 import { CoverThumb } from "@/components/PhotoGallery";
+import { fetchBrokers } from "@/lib/brokers";
 import { faArea, faDigits, faPrice, faRelative } from "@/lib/fa";
 import {
   isLandType,
@@ -44,6 +46,16 @@ export function PropertyCard({
   brokerContext?: string;
 }) {
   const { isAdmin } = useRole();
+  // Shared cached list (same key as other pages) — no per-card request.
+  const { data: brokers } = useQuery({
+    queryKey: ["brokers"],
+    queryFn: fetchBrokers,
+    enabled: isAdmin && !!property.broker_id,
+  });
+  const brokerName =
+    isAdmin && property.broker_id
+      ? (brokers?.find((b) => b.id === property.broker_id)?.name ?? null)
+      : null;
   const priceText =
     property.transaction_type === "sale"
       ? faPrice(referencePrice(property))
@@ -135,6 +147,12 @@ export function PropertyCard({
           </p>
 
           <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+            {brokerName ? (
+              <span className="flex min-w-0 items-center gap-1">
+                <UserRound className="size-3.5 shrink-0" />
+                <span className="truncate">{brokerName}</span>
+              </span>
+            ) : null}
             {amenities.map(({ icon: Icon, label }) => (
               <span key={label} className="flex items-center gap-1" title={label}>
                 <Icon className="size-3.5" aria-hidden="true" />

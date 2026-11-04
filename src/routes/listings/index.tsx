@@ -13,13 +13,11 @@ import { fetchBrokers } from "@/lib/brokers";
 import { enDigits, faDigits, parseNumber } from "@/lib/fa";
 import {
   ALL_PROPERTY_TYPE_LABELS,
-  ARCHIVE_SCOPE_LABELS,
   fetchPropertiesPage,
   neighborhoodsFor,
   NEIGHBORHOODS,
   PHASES,
   OWNERSHIP_LABELS,
-  STATUS_LABELS,
   TRANSACTION_LABELS,
   type ArchiveScope,
   type DeedFilter,
@@ -182,14 +180,18 @@ function Listings() {
     const minOf = (a: number | null, b: number | undefined) =>
       a && b ? Math.min(a, b) : (a ?? b ?? null);
 
+    // No query: active files only. An admin's text / file-code search looks
+    // across every status (sold, rented, archived included).
+    const searchAll = isAdmin && query.trim().length > 0;
+
     return {
       text,
       fileCode: codeQuery,
       types: typeFilter,
       ownership: both(ownership !== ALL ? ownership : null, smart.ownership),
       transaction: both(transaction !== ALL ? transaction : null, smart.transaction),
-      status: status !== ALL ? status : null,
-      scope,
+      status: searchAll ? null : "active",
+      scope: searchAll ? "both" : "active",
       phase: both(phase !== ALL ? phase : null, smart.phase),
       neighborhood: neighborhood !== ALL ? neighborhood : null,
       landCategory: both(landCategoryId !== ALL ? landCategoryId : null, smart.landCategory),
@@ -213,6 +215,7 @@ function Listings() {
   }, [
     criteria,
     textQuery,
+    query,
     types,
     ownership,
     transaction,
@@ -440,46 +443,6 @@ function Listings() {
         ) : null}
 
 
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          {(Object.keys(ARCHIVE_SCOPE_LABELS) as ArchiveScope[]).map((key) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setScope(key)}
-              className={`h-9 shrink-0 rounded-full border px-4 text-xs font-medium transition-colors ${
-                scope === key
-                  ? "border-primary bg-primary/15 text-primary"
-                  : "border-border text-muted-foreground"
-              }`}
-            >
-              {ARCHIVE_SCOPE_LABELS[key]}
-            </button>
-          ))}
-        </div>
-
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          {[
-            { key: "active", label: "فعال" },
-            { key: "sold", label: "فروش رفته" },
-            { key: "rented", label: "اجاره داده شده" },
-            { key: "archived", label: "بایگانی" },
-            { key: ALL, label: "همه" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setStatus(tab.key)}
-              className={`h-9 shrink-0 rounded-full border px-4 text-xs font-medium transition-colors ${
-                status === tab.key
-                  ? "border-primary bg-primary/15 text-primary"
-                  : "border-border text-muted-foreground"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
         {showFilters ? (
           <div className="surface-card space-y-3 p-4">
             <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
@@ -530,12 +493,6 @@ function Listings() {
                 value={transaction}
                 onChange={setTransaction}
                 options={TRANSACTION_LABELS}
-              />
-              <Selector
-                label="وضعیت"
-                value={status}
-                onChange={setStatus}
-                options={STATUS_LABELS}
               />
               <div className="space-y-1.5">
                 <Label className="text-xs">فاز</Label>

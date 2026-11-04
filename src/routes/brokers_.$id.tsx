@@ -47,6 +47,8 @@ function BrokerDetail() {
     status,
     count: files.filter((item) => item.status === status).length,
   }));
+  // Only active files are listed; sold/rented/archived live in «آرشیو».
+  const activeFiles = files.filter((item) => item.status === "active");
 
   if (loadingBrokers || loadingProps) {
     return (
@@ -127,9 +129,9 @@ function BrokerDetail() {
           </div>
         </section>
 
-        {files.length ? (
+        {activeFiles.length ? (
           <div className="space-y-3">
-            {files.map((property) => (
+            {activeFiles.map((property) => (
               <PropertyCard
                 key={property.id}
                 property={property}
@@ -139,7 +141,7 @@ function BrokerDetail() {
           </div>
         ) : (
           <p className="surface-card p-6 text-center text-sm text-muted-foreground">
-            هنوز فایلی برای این دلال ثبت نشده است.
+            {files.length ? "فایل فعالی برای این دلال وجود ندارد." : "هنوز فایلی برای این دلال ثبت نشده است."}
           </p>
         )}
 
