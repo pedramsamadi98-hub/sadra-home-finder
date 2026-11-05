@@ -19,7 +19,7 @@ import {
   PHASES,
   OWNERSHIP_LABELS,
   TRANSACTION_LABELS,
-  type ArchiveScope,
+  STATUS_LABELS,
   type DeedFilter,
   DEED_FILTER_LABELS,
   type PropertyQuery,
@@ -53,6 +53,9 @@ function ListingsRoute() {
 }
 
 const ALL = "all";
+
+/** Statuses the admin search-status selector may pick from. */
+const SEARCH_STATUSES = ["active", "sold", "rented", "archived"] as const;
 
 /** Rows fetched per page — the list never asks the database for more. */
 const PAGE_SIZE = 20;
@@ -94,9 +97,14 @@ function Listings() {
     setTypes((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
   const [ownership, setOwnership] = useState<string>(pick("ownership", ALL));
   const [transaction, setTransaction] = useState<string>(pick("transaction", ALL));
-  const [status, setStatus] = useState<string>(pick("status", "active"));
-  // Archive scope: active files only (default), active + archive, or archive only.
-  const [scope, setScope] = useState<ArchiveScope>(pick("scope", "active" as ArchiveScope));
+  // Admin search-status filter. Applied only while search text is present;
+  // a stored value from an older session is validated, anything else is ALL.
+  const [status, setStatus] = useState<string>(() => {
+    const stored = saved["status"];
+    return typeof stored === "string" && (stored === ALL || SEARCH_STATUSES.includes(stored as (typeof SEARCH_STATUSES)[number]))
+      ? stored
+      : ALL;
+  });
   const [neighborhood, setNeighborhood] = useState<string>(pick("neighborhood", ALL));
   const [phase, setPhase] = useState<string>(pick("phase", ALL));
   const [landCategoryId, setLandCategoryId] = useState<string>(pick("landCategoryId", ALL));
@@ -181,8 +189,10 @@ function Listings() {
       a && b ? Math.min(a, b) : (a ?? b ?? null);
 
     // No query: active files only. An admin's text / file-code search looks
-    // across every status (sold, rented, archived included).
+    // across every status (sold, rented, archived included), optionally
+    // narrowed to the single status picked in the filters.
     const searchAll = isAdmin && query.trim().length > 0;
+    const searchStatus = searchAll && status !== ALL ? status : null;
 
     return {
       text,
@@ -190,7 +200,7 @@ function Listings() {
       types: typeFilter,
       ownership: both(ownership !== ALL ? ownership : null, smart.ownership),
       transaction: both(transaction !== ALL ? transaction : null, smart.transaction),
-      status: searchAll ? null : "active",
+      status: searchAll ? searchStatus : "active",
       scope: searchAll ? "both" : "active",
       phase: both(phase !== ALL ? phase : null, smart.phase),
       neighborhood: neighborhood !== ALL ? neighborhood : null,
@@ -220,7 +230,6 @@ function Listings() {
     ownership,
     transaction,
     status,
-    scope,
     phase,
     neighborhood,
     landCategoryId,
@@ -284,7 +293,6 @@ function Listings() {
     ownership,
     transaction,
     status,
-    scope,
     neighborhood,
     phase,
     landCategoryId,
@@ -380,7 +388,6 @@ function Listings() {
     setOwnership(ALL);
     setTransaction(ALL);
     setStatus(ALL);
-    setScope("active");
     setNeighborhood(ALL);
     setPhase(ALL);
     setLandCategoryId(ALL);
@@ -598,6 +605,27 @@ function Listings() {
                       </option>
                     ))}
                   </select>
+                </div>
+              ) : null}
+              {isAdmin ? (
+                <div className="space-y-1.5 min-[400px]:col-span-2">
+                  <Label className="text-xs">وضعیت در جست‌وجو</Label>
+                  <select
+                    value={status}
+                    onChange={(event) => setStatus(event.target.value)}
+                    disabled={!query.trim()}
+                    className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm disabled:opacity-60"
+                  >
+                    <option value={ALL}>همه وضعیت‌ها</option>
+                    {SEARCH_STATUSES.map((key) => (
+                      <option key={key} value={key}>
+                        {STATUS_LABELS[key]}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-muted-foreground">
+                    این فیلتر فقط هنگام جست‌وجو اعمال می‌شود.
+                  </p>
                 </div>
               ) : null}
             </div>
