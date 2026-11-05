@@ -886,7 +886,14 @@ export interface PropertyQuery {
   storage?: boolean | undefined;
   page?: number;
   pageSize?: number;
+  /**
+   * Admin-only: broker ids whose NAME matched the free text. They join the
+   * text OR-group, so a row matches a property field OR its broker's name.
+   */
+  matchedBrokerIds?: string[];
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface PropertyPage {
   rows: Property[];
@@ -994,6 +1001,8 @@ export async function fetchPropertiesPage(
     const parts = columns.flatMap((column) =>
       variants.map((variant) => `${column}.ilike.%${variant}%`),
     );
+    const brokerIds = isAdmin ? (q.matchedBrokerIds ?? []).filter((id) => UUID_RE.test(id)) : [];
+    if (brokerIds.length) parts.push(`broker_id.in.(${brokerIds.join(",")})`);
     query = query.or(parts.join(","));
   }
 
