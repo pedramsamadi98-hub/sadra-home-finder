@@ -10,7 +10,9 @@ import { PropertyCard } from "@/components/PropertyCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchBrokers } from "@/lib/brokers";
 import { enDigits, faDigits } from "@/lib/fa";
+import { normalizeFa } from "@/lib/land";
 import { fetchPropertiesPage, restoreProperty, type PropertyStatus } from "@/lib/properties";
 
 type Tab = "sold" | "rented" | "archived";
@@ -20,6 +22,8 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "archived", label: "بایگانی دستی" },
 ];
 const PAGE_SIZE = 20;
+/** Cap on broker ids sent in one request (~7.4 KB of URL); warned when hit. */
+const MAX_BROKER_IDS = 200;
 
 export const Route = createFileRoute("/archive")({
   validateSearch: (search: Record<string, unknown>): { tab?: Tab } => {
@@ -75,11 +79,40 @@ function ArchivePage() {
     },
   });
 
+  // Shared cached broker list; names are matched client-side, ids go to the DB.
+  const brokersQuery = useQuery({ queryKey: ["brokers"], queryFn: fetchBrokers });
+  const needle = fileCode === null ? normalizeFa(text) : "";
+  const matchedAll = needle
+    ? (brokersQuery.data ?? [])
+        .filter((b) => {
+          const name = normalizeFa(b.name ?? "");
+          return (
+            name.includes(needle) || name.replace(/ /g, "").includes(needle.replace(/ /g, ""))
+          );
+        })
+        .map((b) => b.id)
+        .sort()
+    : [];
+  const brokerLimitHit = matchedAll.length > MAX_BROKER_IDS;
+  const matchedBrokerIds = matchedAll.slice(0, MAX_BROKER_IDS);
+  // Wait for brokers before a text search so a broker-less first result is
+  // never shown; if the broker list fails, property-field search still runs.
+  const brokersPending = !!needle && brokersQuery.isPending;
+
   const { data, isLoading } = useQuery({
-    queryKey: ["properties", "admin", "archive", tab, text, page],
+    queryKey: ["properties", "admin", "archive", tab, text, page, matchedBrokerIds],
     // Exactly one status per tab — the statuses never mix.
     queryFn: () =>
-      fetchPropertiesPage(true, { status: tab, scope: "both", text, fileCode, page, pageSize: PAGE_SIZE }),
+      fetchPropertiesPage(true, {
+        status: tab,
+        scope: "both",
+        text,
+        fileCode,
+        page,
+        pageSize: PAGE_SIZE,
+        matchedBrokerIds,
+      }),
+    enabled: !brokersPending,
     placeholderData: (previous) => previous,
   });
 
@@ -133,7 +166,14 @@ function ArchivePage() {
           />
         </div>
 
-        {isLoading ? (
+        {brokerLimitHit ? (
+          <p className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+            بیش از {faDigits(MAX_BROKER_IDS)} دلال با این عبارت مطابقت دارند؛ فقط {faDigits(MAX_BROKER_IDS)} دلال اول
+            در جست‌وجو لحاظ شد و ممکن است نتایج کامل نباشد. عبارت دقیق‌تری وارد کنید.
+          </p>
+        ) : null}
+
+        {isLoading || brokersPending ? (
           <div className="flex justify-center py-16">
             <Loader2 className="size-6 animate-spin text-primary" />
           </div>
