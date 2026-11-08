@@ -15,6 +15,13 @@
       "when": 1793563693513,
       "tag": "0001_price_seller_availability_history",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794147689139,
+      "tag": "0002_stage0_storage_policy_and_photo_visibility_fix",
+      "breakpoints": true
     }
   ]
 }
